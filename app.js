@@ -390,10 +390,23 @@ function runAgent(agent) {
 }
 
 function tryDelegate(lead, content) {
-    const re=/\/\/CALL:(\S+)\s+([\s\S]+?)(?=\/\/CALL:|$)/g; let m;
-    while((m=re.exec(content))!==null){
-        const target=state.agents.find(a=>a.name.toLowerCase()===m[1].toLowerCase());
-        if(target){log(`⭐ ${lead.name} → ${target.name}`,'info');state.history.push({role:'user',content:m[2].trim()});runAgent(target);}
+    const re = /\/\/CALL:(\S+)\s+([\s\S]+?)(?=\/\/CALL:|$)/g;
+    let m;
+    while ((m = re.exec(content)) !== null) {
+        const targetName = m[1];
+        const task = m[2].trim();
+        const target = state.agents.find(a => a.name.toLowerCase() === targetName.toLowerCase());
+        
+        if (target) {
+            log(`⭐ ${lead.name} delegating to ${target.name}`, 'info');
+            const area = q('#chat-area');
+            const tag = el('div', 'delegation-tag');
+            tag.innerHTML = `<span>⚡</span> Delegated to <strong>${target.name}</strong>`;
+            area.appendChild(tag);
+            
+            state.history.push({ role: 'user', content: `[DELEGATED TASK FROM ${lead.name}]: ${task}` });
+            runAgent(target);
+        }
     }
 }
 
