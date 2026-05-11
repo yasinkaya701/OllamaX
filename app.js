@@ -11,6 +11,7 @@ const PROMPT_TEMPLATES = [
     { id: 'tutor',    icon: '🎓', label: 'Learning Tutor',     prompt: 'You are a patient and knowledgeable tutor. Explain concepts step-by-step, use analogies, check understanding, and adapt to the learner\'s level.' },
     { id: 'creative', icon: '🎨', label: 'Creative Thinker',   prompt: 'You are a creative thinker and brainstormer. Generate innovative ideas, explore unconventional approaches, and help break through creative blocks.' },
     { id: 'review',   icon: '🔍', label: 'Code Reviewer',      prompt: 'You are a thorough code reviewer. Check for bugs, security vulnerabilities, performance issues, and adherence to best practices. Provide constructive feedback.' },
+    { id: 'lead',     icon: '⭐', label: 'Orchestrator',      prompt: 'You are the Lead Agent (Orchestrator). Your job is to analyze the user request and delegate sub-tasks to specialized agents using the format "//CALL:AgentName task description". You can call multiple agents. Always summarize their work at the end.' },
 ];
 
 const FEATURED_REPOS = [
@@ -169,7 +170,7 @@ function bindAll() {
     });
 
     // Agents
-    on('btn-add-agent','click',()=>openModal('agent-modal'));
+    on('btn-add-agent','click',()=>{ populateAgentModelSelect('ollama'); openModal('agent-modal'); });
     on('btn-save-agent','click',saveAgent);
     on('agent-provider','change',(e)=>populateAgentModelSelect(e.target.value));
 
@@ -365,13 +366,20 @@ function runAgent(agent) {
         const prov = agent.provider || state.currentProvider;
         const model = agent.model || q('#model-select').value;
         
-        const msgs=[...(agent.prompt?[{role:'system',content:agent.prompt}]:[]),...state.history];
-        log(`${agent.name} [${prov}] → ${model}`,'info');
+        // Inject orchestration context for Lead agents
+        let sysPrompt = agent.prompt || '';
+        if (agent.role === 'lead') {
+            const others = state.agents.filter(a => a.id !== agent.id).map(a => a.name).join(', ');
+            sysPrompt += `\n\n[ORCHESTRATION CONTEXT]: You can delegate tasks to these available agents: ${others}. Use "//CALL:AgentName task" to invoke them.`;
+        }
+
+        const msgs = [...(sysPrompt ? [{ role: 'system', content: sysPrompt }] : []), ...state.history];
+        log(`${agent.name} [${prov}] → ${model}`, 'info');
         
-        if(prov==='ollama') ipc.send('chat',{agentId:agent.id,host:state.settings.ollamaHost,model,messages:msgs});
-        else if(prov==='openai')    ipc.send('openai-chat',{agentId:agent.id,model,messages:msgs,apiKey:state.settings.openai});
-        else if(prov==='anthropic') ipc.send('anthropic-chat',{agentId:agent.id,model,messages:msgs,apiKey:state.settings.anthropic});
-        else if(prov==='gemini')    ipc.send('gemini-chat',{agentId:agent.id,model,messages:msgs,apiKey:state.settings.gemini});
+        if (prov === 'ollama') ipc.send('chat', { agentId: agent.id, host: state.settings.ollamaHost, model, messages: msgs });
+        else if (prov === 'openai')    ipc.send('openai-chat', { agentId: agent.id, model, messages: msgs, apiKey: state.settings.openai });
+        else if (prov === 'anthropic') ipc.send('anthropic-chat', { agentId: agent.id, model, messages: msgs, apiKey: state.settings.anthropic });
+        else if (prov === 'gemini')    ipc.send('gemini-chat', { agentId: agent.id, model, messages: msgs, apiKey: state.settings.gemini });
         
         const onChunk=(_,d)=>{ if(d.agentId!==agent.id)return; full+=d.content; bubble.innerHTML=md(full); scrollChat(); };
         const onDone=(_,d)=>{ if(d.agentId!==agent.id)return; cleanup(); if(full)state.history.push({role:'assistant',content:full}); if(agent.role==='lead')tryDelegate(agent,full); log(`${agent.name} done (${full.length} chars)`,'success'); done=true; resolve(); };
