@@ -198,13 +198,17 @@ ipcMain.on('exec-command', (event, { command }) => {
 
 // ── File system ───────────────────────────────────────────────────
 ipcMain.on('list-dir', (event, p) => {
+    let targetPath = p;
+    if (!path.isAbsolute(p)) {
+        targetPath = path.join(os.homedir(), p);
+    }
     try {
-        const items = fs.readdirSync(p, { withFileTypes: true })
+        const items = fs.readdirSync(targetPath, { withFileTypes: true })
             .filter(f => !f.name.startsWith('.'))
             .map(f => ({ name: f.name, isDir: f.isDirectory() }))
             .sort((a, b) => b.isDir - a.isDir || a.name.localeCompare(b.name));
-        event.reply('dir-contents', { path: p, items });
-    } catch(e) { event.reply('dir-contents', { path: p, items: [], error: e.message }); }
+        event.reply('dir-contents', { path: targetPath, items });
+    } catch(e) { event.reply('dir-contents', { path: targetPath, items: [], error: e.message }); }
 });
 ipcMain.on('read-file', (event, p) => {
     try { event.reply('file-content', { path: p, content: fs.readFileSync(p, 'utf8') }); }
@@ -217,6 +221,18 @@ ipcMain.on('write-file', (event, { filePath, content }) => {
 ipcMain.on('open-folder-dialog', async event => {
     const r = await dialog.showOpenDialog(mainWindow, { properties: ['openDirectory'] });
     if (!r.canceled && r.filePaths.length) event.reply('folder-selected', r.filePaths[0]);
+});
+
+// ── Workspaces ───────────────────────────────────────────────────
+ipcMain.on('get-workspaces', event => {
+    const dir = path.join(os.homedir(), 'OllamaX-Projects');
+    if (!fs.existsSync(dir)) return event.reply('workspaces-list', []);
+    try {
+        const items = fs.readdirSync(dir, { withFileTypes: true })
+            .filter(f => f.isDirectory() && !f.name.startsWith('.'))
+            .map(f => f.name);
+        event.reply('workspaces-list', items);
+    } catch { event.reply('workspaces-list', []); }
 });
 
 // ── Hardware stats ────────────────────────────────────────────────

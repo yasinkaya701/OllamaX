@@ -59,7 +59,13 @@ window.addEventListener('DOMContentLoaded', () => {
     bindAll();
     populateModelSelect('ollama');
     updateApiDots();
-    if (ipc) { bindIPC(); ipc.send('get-models', state.settings.ollamaHost); ipc.send('get-stats'); setInterval(()=>ipc.send('get-stats'), 6000); }
+    if (ipc) { 
+        bindIPC(); 
+        ipc.send('get-models', state.settings.ollamaHost); 
+        ipc.send('get-stats'); 
+        ipc.send('get-workspaces');
+        setInterval(()=>ipc.send('get-stats'), 6000); 
+    }
     log('OllamaX Ultra v4 ready', 'success');
 });
 
@@ -209,6 +215,9 @@ function bindAll() {
 
     // Console toggle
     on('console-toggle','click',()=>q('#system-console').classList.toggle('collapsed'));
+
+    // Workspace refresh
+    on('btn-refresh-workspace','click',()=>ipc&&ipc.send('get-workspaces'));
 }
 
 // ── IPC LISTENERS ────────────────────────────────────────────────
@@ -254,7 +263,23 @@ function bindIPC() {
         log(`${data.items.length} repos found`,'success');
     });
     ipc.on('exec-output',(_,d)=>log(d.data.trimEnd(),d.type==='stderr'?'warn':'info'));
-    ipc.on('git-done',(_,d)=>{log(d.success?`✅ Cloned to: ${d.dir}`:'❌ Clone failed',d.success?'success':'error');});
+    ipc.on('git-done', (_, d) => {
+        log(d.success ? `✅ Cloned to: ${d.dir}` : '❌ Clone failed', d.success ? 'success' : 'error');
+        if (d.success) {
+            state.currentDir = d.dir;
+            showToolsTab('files');
+            q('#tools-panel').classList.remove('hidden');
+            ipc.send('get-workspaces'); // Refresh workspace list
+            
+            // Suggest analysis
+            setTimeout(() => {
+                addUserBubble(`Analyze the project at ${d.dir}`);
+                state.history.push({ role: 'user', content: `The project at ${d.dir} has been cloned. Please analyze its structure and tell me how to run or use it.` });
+                const lead = state.agents.find(a => a.role === 'lead') || state.agents[0];
+                runAgent(lead);
+            }, 1000);
+        }
+    });
     ipc.on('dir-contents',(_,{path:p,items})=>{
         state.currentDir=p; q('#file-breadcrumb').textContent=p;
         const tree=q('#file-tree'); tree.innerHTML='';
@@ -274,6 +299,22 @@ function bindIPC() {
         if(d.status){status.textContent=d.status;}
     });
     ipc.on('pull-done',(_,d)=>{ q('#pull-progress').classList.add('hidden'); ipc.send('get-models',state.settings.ollamaHost); log(`Pull done: ${d.model}`,'success'); });
+    
+    ipc.on('workspaces-list', (_, items) => {
+        const list = q('#workspace-list'); list.innerHTML = '';
+        if (!items.length) { list.innerHTML = '<div class="empty-note">No projects yet.</div>'; return; }
+        items.forEach(name => {
+            const d = document.createElement('div'); d.className = 'ws-item';
+            d.innerHTML = `<span class="ws-icon">📂</span><span class="ws-name">${esc(name)}</span>`;
+            d.addEventListener('click', () => {
+                const fp = `OllamaX-Projects/${name}`; 
+                ipc.send('list-dir', fp);
+                showToolsTab('files');
+                q('#tools-panel').classList.remove('hidden');
+            });
+            list.appendChild(d);
+        });
+    });
 }
 
 // ── GITHUB SEARCH ────────────────────────────────────────────────
