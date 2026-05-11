@@ -42,7 +42,7 @@
   },
   "keywords": [],
   "author": "Yasin Kaya",
-  "license": "MIT",
+  "license": "Proprietary",
   "devDependencies": {
     "electron": "^36.2.1",
     "electron-builder": "^24.13.3",

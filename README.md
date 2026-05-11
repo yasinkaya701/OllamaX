@@ -105,10 +105,50 @@ Kendi `.exe` veya `.app` dosyanızı oluşturmak isterseniz:
 
 ---
 
+## 🔑 API Anahtarları Nasıl Alınır?
+
+Uygulamayı tam kapasite kullanmak için AI servislerinden API anahtarı almanız gerekir. İşte seçenekleriniz:
+
+### 1. Google Gemini (🎁 Önerilen - Ücretsiz Seçenek)
+En cömert ücretsiz tarifeye sahiptir.
+- **Nasıl Alınır?** [Google AI Studio](https://aistudio.google.com/apikey) adresine gidin.
+- **Ücret:** "Free Tier" seçeneği ile (belirli limitler dahilinde) **tamamen ücretsizdir.**
+- **Kurulum:** Aldığınız anahtarı uygulamada `Tools > APIs > Gemini` kısmına yapıştırın.
+
+### 2. OpenAI (GPT-4o)
+Dünyanın en popüler modeli, ancak genellikle ücretlidir.
+- **Nasıl Alınır?** [OpenAI Platform](https://platform.openai.com/api-keys) adresine gidin.
+- **Ücret:** Yeni hesaplara bazen 5$ kredi tanımlanır, ancak genellikle hesabınıza minimum 5$ yüklemeniz gerekir (Kullandıkça Öde).
+- **Kurulum:** `Tools > APIs > OpenAI` kısmına yapıştırın.
+
+### 3. Anthropic (Claude 3.5 Sonnet)
+Kodlama ve mantık yürütmede en iyisidir.
+- **Nasıl Alınır?** [Anthropic Console](https://console.anthropic.com/) adresine gidin.
+- **Ücret:** Genellikle ücretlidir (Kullandıkça Öde). Bazı durumlarda başlangıç kredisi verilebilir.
+- **Kurulum:** `Tools > APIs > Anthropic` kısmına yapıştırın.
+
+---
+
+### 🗃️ API Anahtarları Nereye Girilir?
+1. Uygulamanın sağ üst köşesindeki **Tools (⚙️)** butonuna basın.
+2. Açılan panelde en üstteki **🔑 APIs** sekmesine tıklayın.
+3. İlgili kutucuğa anahtarınızı yapıştırın.
+4. Alt kısımdaki **💾 Save API Keys** butonuna basmayı unutmayın!
+
+---
+
 ## 🔐 Güvenlik ve Gizlilik
 - API anahtarlarınız asla uzak sunuculara gönderilmez, sadece sizin yerel makinenizde saklanır.
 - CSP (Content Security Policy) ile XSS saldırılarına karşı tam koruma sağlanmıştır.
 - Zero-Trust mimarisi ile terminal komutları denetlenir.
+
+---
+
+## 📄 Lisans
+
+Copyright © 2026 **Yasin Kaya**. Tüm Hakları Saklıdır.
+
+Bu yazılımın izinsiz kopyalanması, dağıtılması veya ticari amaçla kullanılması kesinlikle yasaktır. Bu proje Yasin Kaya'nın özel mülkiyetindedir.
 
 ---
 
