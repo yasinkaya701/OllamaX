@@ -13,6 +13,7 @@ app.whenReady().then(() => {
         width: 1500, height: 920, minWidth: 900, minHeight: 600,
         backgroundColor: '#0d1117',
         titleBarStyle: 'hiddenInset',
+        icon: path.join(__dirname, 'assets', 'icon.png'),
         webPreferences: { nodeIntegration: true, contextIsolation: false, webSecurity: false }
     });
     mainWindow.loadFile('index.html');
