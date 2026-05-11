@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OllamaX Ultra — AI Agent Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ═══════════ LEFT SIDEBAR ═══════════ -->
+<aside id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="logo">
+      <div class="logo-hex">⬡</div>
+      <div>
+        <div class="logo-title">OllamaX Ultra</div>
+        <div class="logo-sub">AI Agent Studio</div>
+      </div>
+    </div>
+    <button id="btn-hide-sidebar" class="icon-btn">‹</button>
+  </div>
+
+  <!-- AGENT SECTION -->
+  <div class="sidebar-section">
+    <div class="sec-header">
+      <span class="sec-label">Agents</span>
+      <button id="btn-add-agent" class="sec-action">＋ Add</button>
+    </div>
+    <div id="agent-list"></div>
+  </div>
+
+  <!-- PROMPT TEMPLATES -->
+  <div class="sidebar-section">
+    <div class="sec-header">
+      <span class="sec-label">Prompt Templates</span>
+    </div>
+    <div id="template-list" class="template-list"></div>
+  </div>
+
+  <!-- QUICK REPOS -->
+  <div class="sidebar-section">
+    <div class="sec-header">
+      <span class="sec-label">Featured Repos</span>
+    </div>
+    <div id="repo-chips" class="repo-chips"></div>
+  </div>
+
+  <!-- HARDWARE -->
+  <div class="sidebar-bottom">
+    <div class="hw-panel">
+      <div class="hw-row">
+        <span class="hw-icon">💾</span>
+        <div class="hw-bar-wrap">
+          <div class="hw-bar-track"><div id="ram-bar" class="hw-bar-fill"></div></div>
+        </div>
+        <span id="ram-text" class="hw-val">-- GB</span>
+      </div>
+      <div id="cpu-text" class="cpu-label"></div>
+    </div>
+    <button id="btn-settings" class="settings-btn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </button>
+  </div>
+</aside>
+
+<button id="btn-show-sidebar" class="show-sidebar hidden">›</button>
+
+<!-- ═══════════ CHAT CENTER ═══════════ -->
+<main class="chat-main">
+
+  <header class="topbar">
+    <div class="tb-left">
+      <span id="status-pill" class="status-pill ready">● Ready</span>
+    </div>
+    <div class="tb-center">
+      <div class="model-picker-wrap">
+        <div id="provider-tabs" class="provider-tabs">
+          <button class="prov-btn active" data-provider="ollama">Ollama</button>
+          <button class="prov-btn" data-provider="openai">OpenAI</button>
+          <button class="prov-btn" data-provider="anthropic">Anthropic</button>
+          <button class="prov-btn" data-provider="gemini">Gemini</button>
+        </div>
+        <select id="model-select" class="model-sel"></select>
+      </div>
+    </div>
+    <div class="tb-right">
+      <button id="btn-toggle-tools" class="ghost-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Tools
+      </button>
+      <button id="btn-clear-chat" class="ghost-btn">Clear</button>
+    </div>
+  </header>
+
+  <div class="chat-area" id="chat-area">
+    <div class="welcome-screen">
+      <div class="welcome-hex">⬡</div>
+      <h1>OllamaX Ultra</h1>
+      <p>Professional AI Agent Studio · Local & Cloud Models</p>
+      <div class="welcome-features">
+        <div class="wf-item"><span>🤖</span><span>Multi-Agent Orchestration</span></div>
+        <div class="wf-item"><span>⚡</span><span>Local Ollama + Cloud APIs</span></div>
+        <div class="wf-item"><span>📁</span><span>File System Access</span></div>
+        <div class="wf-item"><span>🔍</span><span>GitHub Integration</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-zone">
+    <div id="prompt-suggestion" class="prompt-suggestion hidden"></div>
+    <div class="input-card">
+      <textarea id="msg-input" class="msg-ta" rows="1" placeholder="Message your agents… (Enter to send, Shift+Enter for newline)"></textarea>
+      <div class="input-actions">
+        <button id="btn-attach" class="input-icon-btn" title="Attach file">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        </button>
+        <button id="btn-send" class="send-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="input-footer">
+      <span id="char-count" class="char-count">0</span>
+      <span class="input-hint">Using <strong id="current-model-label">—</strong></span>
+    </div>
+  </div>
+
+  <div id="system-console" class="sys-console collapsed">
+    <button id="console-toggle" class="con-toggle">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+      System Console
+      <span id="log-count" class="log-badge">0</span>
+    </button>
+    <div id="console-output" class="con-output"></div>
+  </div>
+
+</main>
+
+<!-- ═══════════ RIGHT TOOLS PANEL ═══════════ -->
+<aside id="tools-panel" class="tools-panel hidden">
+
+  <div class="tools-header">
+    <div class="tools-tabs">
+      <button class="ttab active" data-ttab="apis">🔑 APIs</button>
+      <button class="ttab" data-ttab="github">⚙ GitHub</button>
+      <button class="ttab" data-ttab="files">📁 Files</button>
+      <button class="ttab" data-ttab="models">📦 Models</button>
+    </div>
+  </div>
+
+  <!-- API KEYS TAB -->
+  <div class="ttab-pane active" id="ttab-apis">
+    <div class="api-provider-card" id="api-openai">
+      <div class="api-prov-header">
+        <div class="api-prov-name">
+          <span class="api-prov-dot" id="dot-openai"></span>
+          OpenAI
+        </div>
+        <span class="api-prov-badge openai">GPT</span>
+      </div>
+      <input id="openai-key" type="password" class="api-key-input" placeholder="sk-…">
+      <div class="api-models-list">
+        <div class="api-model-row" data-model="gpt-4o" data-provider="openai">gpt-4o <span class="model-tag">Latest</span></div>
+        <div class="api-model-row" data-model="gpt-4o-mini" data-provider="openai">gpt-4o-mini <span class="model-tag">Fast</span></div>
+        <div class="api-model-row" data-model="gpt-4-turbo" data-provider="openai">gpt-4-turbo <span class="model-tag">Powerful</span></div>
+        <div class="api-model-row" data-model="gpt-3.5-turbo" data-provider="openai">gpt-3.5-turbo <span class="model-tag">Economy</span></div>
+        <div class="api-model-row" data-model="o1-mini" data-provider="openai">o1-mini <span class="model-tag">Reasoning</span></div>
+        <div class="api-model-row" data-model="o1-preview" data-provider="openai">o1-preview <span class="model-tag">Reasoning</span></div>
+        <div class="api-model-row" data-model="o3-mini" data-provider="openai">o3-mini <span class="model-tag">New</span></div>
+      </div>
+    </div>
+
+    <div class="api-provider-card" id="api-anthropic">
+      <div class="api-prov-header">
+        <div class="api-prov-name">
+          <span class="api-prov-dot" id="dot-anthropic"></span>
+          Anthropic
+        </div>
+        <span class="api-prov-badge anthropic">Claude</span>
+      </div>
+      <input id="anthropic-key" type="password" class="api-key-input" placeholder="sk-ant-…">
+      <div class="api-models-list">
+        <div class="api-model-row" data-model="claude-3-5-sonnet-20241022" data-provider="anthropic">claude-3.5-sonnet <span class="model-tag">Best</span></div>
+        <div class="api-model-row" data-model="claude-3-5-haiku-20241022" data-provider="anthropic">claude-3.5-haiku <span class="model-tag">Fast</span></div>
+        <div class="api-model-row" data-model="claude-3-opus-20240229" data-provider="anthropic">claude-3-opus <span class="model-tag">Powerful</span></div>
+        <div class="api-model-row" data-model="claude-3-haiku-20240307" data-provider="anthropic">claude-3-haiku <span class="model-tag">Economy</span></div>
+      </div>
+    </div>
+
+    <div class="api-provider-card" id="api-gemini">
+      <div class="api-prov-header">
+        <div class="api-prov-name">
+          <span class="api-prov-dot" id="dot-gemini"></span>
+          Google Gemini
+        </div>
+        <span class="api-prov-badge gemini">Gemini</span>
+      </div>
+      <input id="gemini-key" type="password" class="api-key-input" placeholder="AIza…">
+      <div class="api-models-list">
+        <div class="api-model-row" data-model="gemini-2.0-flash-exp" data-provider="gemini">gemini-2.0-flash <span class="model-tag">Latest</span></div>
+        <div class="api-model-row" data-model="gemini-1.5-pro" data-provider="gemini">gemini-1.5-pro <span class="model-tag">Powerful</span></div>
+        <div class="api-model-row" data-model="gemini-1.5-flash" data-provider="gemini">gemini-1.5-flash <span class="model-tag">Fast</span></div>
+        <div class="api-model-row" data-model="gemini-1.5-flash-8b" data-provider="gemini">gemini-1.5-flash-8b <span class="model-tag">Economy</span></div>
+        <div class="api-model-row" data-model="gemini-pro" data-provider="gemini">gemini-pro <span class="model-tag">Stable</span></div>
+      </div>
+    </div>
+
+    <div class="save-keys-row">
+      <button id="btn-save-keys" class="primary-btn full-w">💾 Save API Keys</button>
+    </div>
+    <p class="keys-note">Keys stored locally, never sent externally.</p>
+  </div>
+
+  <!-- GITHUB TAB -->
+  <div class="ttab-pane" id="ttab-github">
+    <div class="search-row">
+      <input id="github-search-input" class="text-input" placeholder="Search GitHub repos…">
+      <button id="btn-github-search" class="small-btn">Search</button>
+    </div>
+    <div id="github-results-list" class="github-list">
+      <div class="empty-note">Search or pick a featured repo.</div>
+    </div>
+  </div>
+
+  <!-- FILES TAB -->
+  <div class="ttab-pane" id="ttab-files">
+    <div class="fp-header">
+      <button id="btn-go-parent" class="icon-btn" title="Up">↑</button>
+      <button id="btn-open-folder" class="small-btn">📂 Open Folder</button>
+    </div>
+    <div id="file-breadcrumb" class="breadcrumb"></div>
+    <div id="file-tree" class="file-tree"><div class="empty-note">Open a folder.</div></div>
+    <div id="file-preview" class="file-preview hidden">
+      <div class="fp-prev-hdr">
+        <span id="preview-filename"></span>
+        <button id="btn-close-preview" class="icon-btn">✕</button>
+      </div>
+      <pre id="preview-content" class="prev-content"></pre>
+    </div>
+  </div>
+
+  <!-- LOCAL MODELS TAB -->
+  <div class="ttab-pane" id="ttab-models">
+    <div class="search-row">
+      <input id="pull-model-input" class="text-input" placeholder="Model name (e.g. llama3.2:1b)">
+      <button id="btn-pull-model" class="small-btn">⬇ Pull</button>
+    </div>
+    <div id="pull-progress" class="pull-progress hidden">
+      <div class="pull-bar-wrap"><div id="pull-bar" class="pull-bar"></div></div>
+      <div id="pull-status" class="pull-status"></div>
+    </div>
+    <div class="sec-label" style="margin-top:10px">Installed Models</div>
+    <div id="local-models-list" class="model-list"><div class="empty-note">Loading…</div></div>
+  </div>
+
+</aside>
+
+<!-- ═══════════ MODAL: ADD AGENT ═══════════ -->
+<div id="agent-modal" class="modal hidden">
+  <div class="modal-bg"></div>
+  <div class="modal-box">
+    <div class="modal-hdr"><h3>New Agent</h3><button class="modal-x">✕</button></div>
+    <div class="form-g">
+      <label>Name <span class="req">*</span></label>
+      <input id="agent-name" class="text-input" placeholder="e.g. Code Expert">
+    </div>
+    <div class="form-g">
+      <label>Provider <span class="req">*</span></label>
+      <select id="agent-provider" class="text-input">
+        <option value="ollama">Ollama (Local)</option>
+        <option value="openai">OpenAI</option>
+        <option value="anthropic">Anthropic</option>
+        <option value="gemini">Google Gemini</option>
+      </select>
+    </div>
+    <div class="form-g">
+      <label>Model <span class="req">*</span></label>
+      <select id="agent-model-select" class="text-input">
+        <option value="">Select a provider first</option>
+      </select>
+      <div class="form-hint">Choose the intelligence engine for this agent.</div>
+    </div>
+    <div class="form-g">
+      <label>System Prompt <span class="opt">(optional)</span></label>
+      <textarea id="agent-prompt" class="text-input ta-md" placeholder="Describe the agent's role and behavior…"></textarea>
+      <div class="template-pills" id="prompt-pills"></div>
+    </div>
+    <div class="form-g">
+      <label>Role</label>
+      <select id="agent-role" class="text-input">
+        <option value="sub">Sub Agent</option>
+        <option value="lead">⭐ Lead Agent (Orchestrator)</option>
+      </select>
+    </div>
+    <div class="modal-ftr">
+      <button class="ghost-btn modal-x-btn">Cancel</button>
+      <button id="btn-save-agent" class="primary-btn">Create Agent</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL: SETTINGS ═══════════ -->
+<div id="settings-modal" class="modal hidden">
+  <div class="modal-bg"></div>
+  <div class="modal-box">
+    <div class="modal-hdr"><h3>Settings</h3><button class="modal-x">✕</button></div>
+    <div class="form-g">
+      <label>Ollama Host</label>
+      <input id="ollama-host" class="text-input" placeholder="localhost:11434">
+    </div>
+    <div class="modal-ftr">
+      <button class="ghost-btn modal-x-btn">Cancel</button>
+      <button id="btn-save-settings" class="primary-btn">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
