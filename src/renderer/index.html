@@ -98,6 +98,8 @@
       </div>
     </div>
     <div class="tb-right">
+      <button type="button" id="btn-toggle-ghost" class="ghost-btn" title="Ghost Mode (Transparency)">👻</button>
+      <button type="button" id="btn-toggle-quests" class="ghost-btn" title="Quest Log (Task Tracker)">📜</button>
       <button type="button" id="btn-export-json" class="ghost-btn" title="Sohbeti JSON olarak dışa aktar">JSON</button>
       <button type="button" id="btn-export-md" class="ghost-btn" title="Sohbeti Markdown olarak dışa aktar">MD</button>
       <button type="button" id="btn-toggle-tools" class="ghost-btn" aria-expanded="false" aria-controls="tools-panel" title="Sağ panel: API, GitHub, dosyalar">
@@ -320,6 +322,20 @@
       <button class="ghost-btn modal-x-btn">İptal</button>
       <button id="btn-save-settings" class="primary-btn">Kaydet</button>
     </div>
+  </div>
+</div>
+
+<div id="quest-log" class="quest-log hidden">
+  <div class="ql-hdr">
+    <span>📜 Quest Log</span>
+    <button id="btn-close-quests" class="icon-btn">✕</button>
+  </div>
+  <div class="ql-input-row">
+    <input id="quest-input" type="text" placeholder="New task..." class="text-input">
+    <button id="btn-add-quest" class="small-btn">＋</button>
+  </div>
+  <div id="quest-list" class="ql-list">
+    <div class="empty-note">No active quests.</div>
   </div>
 </div>
 

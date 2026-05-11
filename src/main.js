@@ -101,6 +101,14 @@ function isLikelyOpenAIChatModel(id) {
 
 ipcMain.handle('get-model-catalog', () => readModelCatalog());
 
+ipcMain.handle('set-window-opacity', (event, opacity) => {
+  if (mainWindow) {
+    mainWindow.setOpacity(opacity);
+    return { ok: true };
+  }
+  return { ok: false };
+});
+
 ipcMain.handle('normalize-ollama-host', (_e, input) => {
   const h = normalizeOllamaHost(input);
   if (!h) return { ok: false, error: 'Geçersiz Ollama adresi (örn. localhost:11434 veya 192.168.1.5:11434).' };

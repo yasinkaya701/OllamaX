@@ -1095,6 +1095,67 @@ function bindAll() {
       /* ignore */
     }
   });
+
+  // GHOST MODE LOGIC
+  on('btn-toggle-ghost', 'click', async () => {
+    const isActive = document.body.classList.toggle('ghost-active');
+    if (api) {
+      // Electron üzerinden pencere saydamlığını ayarla
+      await api.invoke('set-window-opacity', isActive ? 0.45 : 1.0);
+    }
+    toast(isActive ? 'Hayalet Modu: Aktif' : 'Hayalet Modu: Kapalı', 'info');
+  });
+
+  // QUEST LOG LOGIC
+  on('btn-toggle-quests', 'click', () => {
+    q('#quest-log')?.classList.toggle('hidden');
+  });
+  on('btn-close-quests', 'click', () => {
+    q('#quest-log')?.classList.add('hidden');
+  });
+  on('btn-add-quest', 'click', () => {
+    const inp = q('#quest-input');
+    const text = inp.value.trim();
+    if (!text) return;
+    addQuest(text);
+    inp.value = '';
+  });
+  q('#quest-input')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const text = e.target.value.trim();
+      if (text) {
+        addQuest(text);
+        e.target.value = '';
+      }
+    }
+  });
+}
+
+function addQuest(text) {
+  const list = q('#quest-list');
+  if (list.querySelector('.empty-note')) list.innerHTML = '';
+  
+  const id = 'q-' + Date.now();
+  const div = document.createElement('div');
+  div.className = 'quest-item';
+  div.innerHTML = `
+    <input type="checkbox" class="qi-check" id="${id}">
+    <span class="qi-text">${esc(text)}</span>
+    <button class="del-x" style="opacity:1">✕</button>
+  `;
+  
+  div.querySelector('.qi-check').addEventListener('change', (e) => {
+    div.querySelector('.qi-text').classList.toggle('done', e.target.checked);
+    log(`Quest updated: ${text}`, 'info');
+  });
+  
+  div.querySelector('.del-x').addEventListener('click', () => {
+    div.remove();
+    if (!list.children.length) list.innerHTML = '<div class="empty-note">No active quests.</div>';
+  });
+  
+  list.appendChild(div);
+  log(`New Quest: ${text}`, 'success');
 }
 
 function bindIPC() {

@@ -701,3 +701,75 @@ details[open] .acc-chev::after{transform:rotate(90deg);}
 .md-table th{background:var(--surface3);font-weight:600;color:var(--accent);}
 .md-table tr:nth-child(even) td{background:rgba(255,255,255,.02);}
 .md-table tr:hover td{background:rgba(88,166,255,.04);}
+
+/* ─── QUEST LOG (Task Tracker) ─────────────────────────── */
+.quest-log {
+  position: fixed;
+  top: 60px;
+  right: 340px;
+  width: 280px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  animation: slideInRight 0.3s ease;
+}
+.ql-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--accent);
+}
+.ql-input-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.ql-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.quest-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--surface);
+  border-radius: 6px;
+  border: 1px solid var(--border2);
+}
+.qi-text {
+  font-size: 11px;
+  flex: 1;
+}
+.qi-text.done {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+@keyframes slideInRight {
+  from { transform: translateX(20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* ─── GHOST MODE (Visual) ─────────────────────────────── */
+body.ghost-active .app-layout {
+  filter: saturate(0.8);
+}
+body.ghost-active .chat-area {
+  background: transparent !important;
+}
+body.ghost-active .topbar, 
+body.ghost-active .sidebar, 
+body.ghost-active .tools-panel {
+  opacity: 0.85;
+}
