@@ -4,12 +4,29 @@
   "description": "OllamaX Ultra - Local AI Agent Studio",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac"
+  },
+  "build": {
+    "appId": "com.ollamax.ultra",
+    "productName": "OllamaX-Ultra",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "portable"
+    },
+    "mac": {
+      "target": "dmg"
+    }
   },
   "keywords": [],
   "author": "Yasin Kaya",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^36.2.1"
+    "electron": "^36.2.1",
+    "electron-builder": "^24.13.3"
   }
 }
