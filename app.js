@@ -194,7 +194,16 @@ function bindAll() {
 
     // Files
     on('btn-open-folder','click',()=>ipc&&ipc.send('open-folder-dialog'));
-    on('btn-go-parent','click',()=>{ if(state.currentDir&&ipc){const p=state.currentDir.split('/').slice(0,-1).join('/')||'/';ipc.send('list-dir',p);} });
+    on('btn-attach','click',()=>ipc&&ipc.send('open-folder-dialog'));
+    on('btn-go-parent','click',()=>{
+        if(state.currentDir&&ipc){
+            const sep = state.currentDir.includes('\\') ? '\\' : '/';
+            const parts = state.currentDir.split(sep).filter(Boolean);
+            parts.pop();
+            const parent = (sep==='/' ? '/' : '') + parts.join(sep) || sep;
+            ipc.send('list-dir', parent);
+        }
+    });
     on('btn-close-preview','click',()=>q('#file-preview').classList.add('hidden'));
 
     // Models pull
@@ -246,22 +255,7 @@ function bindIPC() {
         bar.style.background=d.percent>85?'var(--red)':d.percent>65?'var(--orange)':'var(--green)';
         if(d.cpu) q('#cpu-text').textContent=d.cpu.length>35?d.cpu.slice(0,33)+'…':d.cpu;
     });
-    ipc.on('github-results',(_,data)=>{
-        const list=q('#github-results-list'); list.innerHTML='';
-        if(!data.items?.length){list.innerHTML='<div class="empty-note">No results.</div>';return;}
-        data.items.forEach(repo=>{
-            const d=document.createElement('div'); d.className='repo-card';
-            d.innerHTML=`<div class="rc-name">${esc(repo.full_name)}</div><div class="rc-meta">⭐ ${(repo.stargazers_count||0).toLocaleString()} · ${repo.language||'?'}</div><div class="rc-desc">${esc((repo.description||'').slice(0,90))}</div><button class="clone-btn" data-url="${repo.clone_url}">⬇ Clone</button>`;
-            d.querySelector('.clone-btn').addEventListener('click',e=>{
-                const url=e.currentTarget.dataset.url;
-                ipc.send('git-clone',{url});
-                e.currentTarget.textContent='⏳ Cloning…'; e.currentTarget.disabled=true;
-                log(`git clone ${url}`,'info');
-            });
-            list.appendChild(d);
-        });
-        log(`${data.items.length} repos found`,'success');
-    });
+    ipc.on('github-results', (_, data) => renderGithubResults(data));
     ipc.on('exec-output',(_,d)=>log(d.data.trimEnd(),d.type==='stderr'?'warn':'info'));
     ipc.on('git-done', (_, d) => {
         log(d.success ? `✅ Cloned to: ${d.dir}` : '❌ Clone failed', d.success ? 'success' : 'error');
@@ -319,22 +313,38 @@ function bindIPC() {
 
 // ── GITHUB SEARCH ────────────────────────────────────────────────
 function runGithubSearch() {
-    const v=q('#github-search-input').value.trim();
-    if(!v||!ipc)return;
-    q('#github-results-list').innerHTML='<div class="empty-note">Searching…</div>';
-    ipc.send('github-search',{query:v});
+    const v = q('#github-search-input').value.trim();
+    if (!v) return;
+    q('#github-results-list').innerHTML = '<div class="empty-note">Searching…</div>';
+    if (ipc) { ipc.send('github-search', { query: v }); return; }
+    // Fallback: fetch directly from renderer
+    fetch(`https://api.github.com/search/repositories?q=${encodeURIComponent(v)}&sort=stars&per_page=10`, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
+        .then(r => r.json()).then(data => renderGithubResults(data))
+        .catch(() => { q('#github-results-list').innerHTML = '<div class="empty-note">Search failed.</div>'; });
+}
+
+function renderGithubResults(data) {
+    const list = q('#github-results-list'); list.innerHTML = '';
+    if (!data.items?.length) { list.innerHTML = '<div class="empty-note">No results.</div>'; return; }
+    data.items.forEach(repo => {
+        const d = document.createElement('div'); d.className = 'repo-card';
+        d.innerHTML = `<div class="rc-name">${esc(repo.full_name)}</div><div class="rc-meta">⭐ ${(repo.stargazers_count||0).toLocaleString()} · ${repo.language||'?'}</div><div class="rc-desc">${esc((repo.description||'').slice(0,90))}</div><button class="clone-btn" data-url="${repo.clone_url}">⬇ Clone</button>`;
+        d.querySelector('.clone-btn').addEventListener('click', e => {
+            const url = e.currentTarget.dataset.url;
+            if (ipc) { ipc.send('git-clone', { url }); e.currentTarget.textContent = '⏳ Cloning…'; e.currentTarget.disabled = true; log(`git clone ${url}`, 'info'); }
+            else { log('Electron IPC not available for cloning.', 'error'); }
+        });
+        list.appendChild(d);
+    });
+    log(`${data.items.length} repos found`, 'success');
 }
 
 // ── AGENT CRUD ───────────────────────────────────────────────────
 function populateAgentModelSelect(provider) {
     const sel = q('#agent-model-select'); sel.innerHTML = '';
-    const models = MODEL_LISTS[provider] || [];
-    if (!models.length) { 
-        if(provider === 'ollama') {
-            MODEL_LISTS.ollama.forEach(m => sel.add(new Option(m, m)));
-        } else {
-            sel.add(new Option('No models available', ''));
-        }
+    const models = provider === 'ollama' ? MODEL_LISTS.ollama : (MODEL_LISTS[provider] || []);
+    if (!models.length) {
+        sel.add(new Option(provider === 'ollama' ? '— No local models (pull one first) —' : '— No models —', ''));
     } else {
         models.forEach(m => sel.add(new Option(m, m)));
     }
@@ -356,10 +366,11 @@ function saveAgent() {
         active: true
     });
     save(); renderAgentList(); closeModal('agent-modal');
-    q('#agent-name').value=''; q('#agent-prompt').value='ollama'; // reset provider to default
-    populateAgentModelSelect('ollama'); 
-    q('#agent-prompt').value='';
-    log(`Agent added: ${name} (${provider}/${model})`,'success');
+    q('#agent-name').value = '';
+    q('#agent-prompt').value = '';
+    q('#agent-provider').value = 'ollama';
+    populateAgentModelSelect('ollama');
+    log(`Agent added: ${name} (${provider}/${model})`, 'success');
 }
 
 // ── SETTINGS ─────────────────────────────────────────────────────
@@ -376,10 +387,10 @@ function saveSettings() {
     log('Settings saved','success');
 }
 function updateApiDots() {
-    const set=(id,has)=>{ const el=q('#'+id); if(el){el.style.background=has?'var(--green)':'var(--text-3)';el.title=has?'Key set':'No key';} };
-    set('dot-openai',!!state.settings.openai);
-    set('dot-anthropic',!!state.settings.anthropic);
-    set('dot-gemini',!!state.settings.gemini);
+    const set = (id, has) => { const el = q('#'+id); if (el) { el.style.background = has ? 'var(--green)' : 'var(--text3)'; el.title = has ? 'Key saved ✓' : 'No key set'; el.style.transition = 'background 0.4s'; } };
+    set('dot-openai',    !!state.settings.openai);
+    set('dot-anthropic', !!state.settings.anthropic);
+    set('dot-gemini',    !!state.settings.gemini);
 }
 
 // ── CHAT ─────────────────────────────────────────────────────────
@@ -399,8 +410,8 @@ async function sendMessage() {
 
 function runAgent(agent) {
     return new Promise(resolve=>{
-        if(!ipc){addAIBubble('⚠️ Electron required.',agent.name);resolve();return;}
-        const bubble=addAIBubble('',agent.name);
+        if(!ipc){addAIBubble('⚠️ Electron required.',agent.name,agent);resolve();return;}
+        const bubble=addAIBubble('',agent.name,agent);
         let full='', done=false;
         
         // Agent's own settings take priority
@@ -456,14 +467,23 @@ function addUserBubble(text) {
     const area=q('#chat-area'), w=el('div','msg-wrap msg-user'), b=el('div','bubble user-bub');
     b.textContent=text; w.appendChild(b); area.appendChild(w); scrollChat();
 }
-function addAIBubble(text, name) {
-    const area=q('#chat-area'), w=el('div','msg-wrap msg-ai');
-    if(name){const l=el('div','agent-lbl');l.textContent=name;w.appendChild(l);}
-    const b=el('div','bubble ai-bub');
-    b.innerHTML=text?md(text):'<span class="dots">●●●</span>';
+function addAIBubble(text, name, agent) {
+    const area = q('#chat-area'), w = el('div', 'msg-wrap msg-ai');
+    if (name) {
+        const l = el('div', 'agent-lbl');
+        const prov = agent?.provider || '';
+        const provBadge = prov && prov !== 'ollama' ? ` <span class="prov-badge prov-${prov}">${prov.toUpperCase()}</span>` : '';
+        l.innerHTML = esc(name) + provBadge;
+        w.appendChild(l);
+    }
+    const b = el('div', 'bubble ai-bub');
+    b.innerHTML = text ? md(text) : '<span class="dots">●●●</span>';
     w.appendChild(b); area.appendChild(w); scrollChat(); return b;
 }
-function clearChat(){q('#chat-area').innerHTML='<div class="welcome-screen"><div class="welcome-hex">⬡</div><h1>OllamaX Ultra</h1><p>Professional AI Agent Studio</p></div>';state.history=[];}
+function clearChat(){
+    q('#chat-area').innerHTML='<div class="welcome-screen"><img src="assets/logo.png" class="welcome-logo" alt="OllamaX"><h1>OllamaX Ultra</h1><p>Professional AI Agent Studio</p></div>';
+    state.history=[];
+}
 
 // ── MARKDOWN ─────────────────────────────────────────────────────
 function md(raw) {
