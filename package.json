@@ -1,13 +1,21 @@
 {
   "name": "ollamax",
-  "version": "2.0.0",
+  "version": "2.5.0",
   "description": "OllamaX Ultra - Local AI Agent Studio",
-  "main": "main.js",
+  "main": "src/main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "node scripts/start-electron.js",
     "build": "electron-builder",
     "build:win": "electron-builder --win",
-    "build:mac": "electron-builder --mac"
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
+    "test": "jest",
+    "lint": "eslint \"src/**/*.js\"",
+    "format": "prettier --write \"src/**/*.js\"",
+    "rebuild-pty": "npx --yes @electron/rebuild -f -w node-pty"
+  },
+  "optionalDependencies": {
+    "node-pty": "^1.0.0"
   },
   "build": {
     "appId": "com.ollamax.ultra",
@@ -15,11 +23,21 @@
     "directories": {
       "output": "dist"
     },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "docs/**/*.md",
+      "package.json"
+    ],
     "win": {
       "target": "portable"
     },
     "mac": {
       "target": "dmg"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "category": "Development"
     }
   },
   "keywords": [],
@@ -27,6 +45,9 @@
   "license": "MIT",
   "devDependencies": {
     "electron": "^36.2.1",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.3.3"
   }
 }

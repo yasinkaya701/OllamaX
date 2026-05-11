@@ -4,13 +4,16 @@ const OLLAMA_HOST = 'localhost';
 const OLLAMA_PORT = 11434;
 
 const server = http.createServer((req, res) => {
-    // CORS Headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    const origin = req.headers.origin;
+    if (origin && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Vary', 'Origin');
+    }
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, DELETE');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     if (req.method === 'OPTIONS') {
-        res.writeHead(200);
+        res.writeHead(204);
         res.end();
         return;
     }
@@ -41,5 +44,5 @@ const server = http.createServer((req, res) => {
     });
 });
 
-console.log("Native CORS Proxy running on port 11435...");
-server.listen(11435);
+console.log('Ollama CORS proxy (localhost only) on 127.0.0.1:11435 → Ollama :11434');
+server.listen(11435, '127.0.0.1');

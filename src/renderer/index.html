@@ -1,30 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' blob:; base-uri 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'; connect-src 'self' https://api.github.com http://localhost:* http://127.0.0.1:* https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com;">
 <title>OllamaX Ultra — AI Agent Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.5.0/css/xterm.min.css">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<!-- ═══════════ LEFT SIDEBAR ═══════════ -->
-<aside id="sidebar" class="sidebar">
+<a href="#msg-input" class="skip-link">Sohbet kutusuna atla</a>
 
+<div id="error-banner" class="error-banner hidden" role="alert"></div>
+<div id="toast-stack" class="toast-stack" aria-live="polite"></div>
+
+<div class="app-layout">
+<aside id="sidebar" class="sidebar">
   <div class="sidebar-header">
     <div class="logo">
-      <img src="assets/logo.png" class="logo-img" alt="OllamaX">
+      <img src="../../assets/logo.png" class="logo-img" alt="OllamaX">
       <div>
         <div class="logo-title">OllamaX Ultra</div>
         <div class="logo-sub">AI Agent Studio</div>
       </div>
     </div>
-    <button id="btn-hide-sidebar" class="icon-btn">‹</button>
+    <button type="button" id="btn-hide-sidebar" class="icon-btn" aria-label="Kenar çubuğunu daralt">‹</button>
   </div>
-
-  <!-- AGENT SECTION -->
   <div class="sidebar-section">
     <div class="sec-header">
       <span class="sec-label">Agents</span>
@@ -32,16 +37,10 @@
     </div>
     <div id="agent-list"></div>
   </div>
-
-  <!-- PROMPT TEMPLATES -->
   <div class="sidebar-section">
-    <div class="sec-header">
-      <span class="sec-label">Prompt Templates</span>
-    </div>
+    <div class="sec-header"><span class="sec-label">Prompt Templates</span></div>
     <div id="template-list" class="template-list"></div>
   </div>
-
-  <!-- PROJECTS WORKSPACE -->
   <div class="sidebar-section">
     <div class="sec-header">
       <span class="sec-label">Project Workspace</span>
@@ -49,16 +48,15 @@
     </div>
     <div id="workspace-list" class="workspace-list"></div>
   </div>
-
-  <!-- QUICK REPOS -->
-  <div class="sidebar-section">
-    <div class="sec-header">
-      <span class="sec-label">Featured Repos</span>
-    </div>
+  <details class="sidebar-section acc-sec" id="acc-featured">
+    <summary class="sec-header acc-sum"><span class="sec-label">Featured Repos</span><span class="acc-chev" aria-hidden="true"></span></summary>
     <div id="repo-chips" class="repo-chips"></div>
+  </details>
+  <div class="sidebar-section">
+    <div class="sec-header"><span class="sec-label">Ekip ön ayarı</span></div>
+    <select id="team-preset-select" class="text-input team-select"><option value="">— Ekip seçin —</option></select>
+    <button type="button" id="btn-load-team" class="small-btn full-w team-load-btn">Ekip yükle</button>
   </div>
-
-  <!-- HARDWARE -->
   <div class="sidebar-bottom">
     <div class="hw-panel">
       <div class="hw-row">
@@ -77,53 +75,69 @@
   </div>
 </aside>
 
-<button id="btn-show-sidebar" class="show-sidebar hidden">›</button>
+<button type="button" id="btn-show-sidebar" class="show-sidebar hidden" aria-label="Kenar çubuğunu aç">›</button>
 
-<!-- ═══════════ CHAT CENTER ═══════════ -->
-<main class="chat-main">
-
+<div class="main-work">
+<main class="chat-main" id="main-chat">
   <header class="topbar">
     <div class="tb-left">
-      <span id="status-pill" class="status-pill ready">● Ready</span>
+      <span id="status-pill" class="status-pill ready" title="İstek durumu">● Hazır</span>
     </div>
     <div class="tb-center">
       <div class="model-picker-wrap">
         <div id="provider-tabs" class="provider-tabs">
-          <button class="prov-btn active" data-provider="ollama">Ollama</button>
-          <button class="prov-btn" data-provider="openai">OpenAI</button>
-          <button class="prov-btn" data-provider="anthropic">Anthropic</button>
-          <button class="prov-btn" data-provider="gemini">Gemini</button>
+          <button type="button" class="prov-btn active" data-provider="ollama" title="Yerel Ollama">Ollama</button>
+          <button type="button" class="prov-btn" data-provider="openai" title="OpenAI API">OpenAI</button>
+          <button type="button" class="prov-btn" data-provider="anthropic" title="Anthropic Claude">Anthropic</button>
+          <button type="button" class="prov-btn" data-provider="gemini" title="Google Gemini">Gemini</button>
         </div>
-        <select id="model-select" class="model-sel"></select>
+        <div class="model-row-tools">
+          <select id="model-select" class="model-sel"></select>
+          <button type="button" id="btn-sync-cloud-models" class="small-btn" title="Bulut sağlayıcıdan model listesini çek">↻ API</button>
+        </div>
       </div>
     </div>
     <div class="tb-right">
-      <button id="btn-toggle-tools" class="ghost-btn">
+      <button type="button" id="btn-export-json" class="ghost-btn" title="Sohbeti JSON olarak dışa aktar">JSON</button>
+      <button type="button" id="btn-export-md" class="ghost-btn" title="Sohbeti Markdown olarak dışa aktar">MD</button>
+      <button type="button" id="btn-toggle-tools" class="ghost-btn" aria-expanded="false" aria-controls="tools-panel" title="Sağ panel: API, GitHub, dosyalar">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         Tools
       </button>
-      <button id="btn-clear-chat" class="ghost-btn">Clear</button>
+      <button type="button" id="btn-clear-chat" class="ghost-btn" title="Sohbet geçmişini temizle">Temizle</button>
     </div>
   </header>
 
+  <div class="connection-bar" id="connection-bar" role="status" aria-live="polite">
+    <span class="conn-item"><span class="conn-dot" id="conn-ollama-dot"></span><span id="conn-ollama-label">Ollama: kontrol…</span></span>
+    <span class="conn-sep">·</span>
+    <span class="conn-item" id="conn-backend-meta">Backend v—</span>
+    <span class="conn-sep">·</span>
+    <button type="button" class="conn-refresh" id="btn-health-refresh" title="Bağlantıyı yeniden kontrol et">Yenile</button>
+    <span class="conn-sep">·</span>
+    <button type="button" class="conn-refresh" id="btn-open-userdata" title="Oturum dosyalarının klasörü">Veri klasörü</button>
+  </div>
+
   <div class="chat-area" id="chat-area">
     <div class="welcome-screen">
-      <img src="assets/logo.png" class="welcome-logo" alt="OllamaX">
+      <img src="../../assets/logo.png" class="welcome-logo" alt="OllamaX">
       <h1>OllamaX Ultra</h1>
-      <p>Professional AI Agent Studio · Local & Cloud Models</p>
+      <p class="welcome-lead">Yerel Ollama ve bulut modelleri · Çoklu ajan ve proje çalışma alanı</p>
+      <p class="welcome-sub">Aşağıdan yazın; API anahtarları ve dosyalar için sağdaki <strong>Araçlar</strong> panelini açın (<kbd>⌘</kbd><kbd>L</kbd> / <kbd>Ctrl</kbd>+<kbd>L</kbd>).</p>
       <div class="welcome-features">
         <div class="wf-item"><span>🤖</span><span>Multi-Agent Orchestration</span></div>
         <div class="wf-item"><span>⚡</span><span>Local Ollama + Cloud APIs</span></div>
         <div class="wf-item"><span>📁</span><span>File System Access</span></div>
         <div class="wf-item"><span>🔍</span><span>GitHub Integration</span></div>
       </div>
+      <p class="kbd-hint"><kbd>⌘</kbd><kbd>K</kbd> sohbet · <kbd>⌘</kbd><kbd>L</kbd> araçlar · <kbd>⌘</kbd><kbd>,</kbd> ayarlar <span class="kbd-win">(Windows: <kbd>Ctrl</kbd>)</span></p>
     </div>
   </div>
 
   <div class="input-zone">
     <div id="prompt-suggestion" class="prompt-suggestion hidden"></div>
     <div class="input-card">
-      <textarea id="msg-input" class="msg-ta" rows="1" placeholder="Message your agents… (Enter to send, Shift+Enter for newline)"></textarea>
+      <textarea id="msg-input" class="msg-ta" rows="1" placeholder="Ajanlara yazın… (Enter gönder, Shift+Enter satır)" autocomplete="off" aria-label="Sohbet mesajı"></textarea>
       <div class="input-actions">
         <button id="btn-attach" class="input-icon-btn" title="Attach file">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
@@ -135,7 +149,7 @@
     </div>
     <div class="input-footer">
       <span id="char-count" class="char-count">0</span>
-      <span class="input-hint">Using <strong id="current-model-label">—</strong></span>
+      <span class="input-hint">Model: <strong id="current-model-label">—</strong></span>
     </div>
   </div>
 
@@ -148,95 +162,71 @@
     <div id="console-output" class="con-output"></div>
   </div>
 
+  <div id="terminal-dock" class="terminal-dock collapsed hidden">
+    <div class="term-dock-toolbar">
+      <span class="term-dock-title">Terminal (PTY)</span>
+      <button type="button" id="btn-terminal-collapse" class="small-btn" title="Daralt">▼</button>
+    </div>
+    <div id="terminal-mount" class="terminal-mount"></div>
+  </div>
 </main>
 
-<!-- ═══════════ RIGHT TOOLS PANEL ═══════════ -->
-<aside id="tools-panel" class="tools-panel hidden">
+<aside id="agent-strip" class="agent-strip" aria-label="Aktif ajanlar">
+  <div class="strip-hdr"><span class="strip-title">Ajanlar</span></div>
+  <div id="agent-strip-list" class="strip-list"></div>
+</aside>
+</div>
 
+<aside id="tools-panel" class="tools-panel hidden" aria-label="Araçlar paneli">
   <div class="tools-header">
     <div class="tools-tabs">
       <button class="ttab active" data-ttab="apis">🔑 APIs</button>
       <button class="ttab" data-ttab="github">⚙ GitHub</button>
       <button class="ttab" data-ttab="files">📁 Files</button>
       <button class="ttab" data-ttab="models">📦 Models</button>
+      <button class="ttab" data-ttab="terminal">⌨ Terminal</button>
     </div>
   </div>
-
-  <!-- API KEYS TAB -->
   <div class="ttab-pane active" id="ttab-apis">
     <div class="api-provider-card" id="api-openai">
       <div class="api-prov-header">
-        <div class="api-prov-name">
-          <span class="api-prov-dot" id="dot-openai"></span>
-          OpenAI
-        </div>
+        <div class="api-prov-name"><span class="api-prov-dot" id="dot-openai"></span>OpenAI</div>
         <span class="api-prov-badge openai">GPT</span>
       </div>
       <input id="openai-key" type="password" class="api-key-input" placeholder="sk-…">
-      <div class="api-models-list">
-        <div class="api-model-row" data-model="gpt-4o" data-provider="openai">gpt-4o <span class="model-tag">Latest</span></div>
-        <div class="api-model-row" data-model="gpt-4o-mini" data-provider="openai">gpt-4o-mini <span class="model-tag">Fast</span></div>
-        <div class="api-model-row" data-model="gpt-4-turbo" data-provider="openai">gpt-4-turbo <span class="model-tag">Powerful</span></div>
-        <div class="api-model-row" data-model="gpt-3.5-turbo" data-provider="openai">gpt-3.5-turbo <span class="model-tag">Economy</span></div>
-        <div class="api-model-row" data-model="o1-mini" data-provider="openai">o1-mini <span class="model-tag">Reasoning</span></div>
-        <div class="api-model-row" data-model="o1-preview" data-provider="openai">o1-preview <span class="model-tag">Reasoning</span></div>
-        <div class="api-model-row" data-model="o3-mini" data-provider="openai">o3-mini <span class="model-tag">New</span></div>
-      </div>
+      <div class="api-models-list" id="openai-model-rows"></div>
     </div>
-
     <div class="api-provider-card" id="api-anthropic">
       <div class="api-prov-header">
-        <div class="api-prov-name">
-          <span class="api-prov-dot" id="dot-anthropic"></span>
-          Anthropic
-        </div>
+        <div class="api-prov-name"><span class="api-prov-dot" id="dot-anthropic"></span>Anthropic</div>
         <span class="api-prov-badge anthropic">Claude</span>
       </div>
       <input id="anthropic-key" type="password" class="api-key-input" placeholder="sk-ant-…">
-      <div class="api-models-list">
-        <div class="api-model-row" data-model="claude-3-5-sonnet-20241022" data-provider="anthropic">claude-3.5-sonnet <span class="model-tag">Best</span></div>
-        <div class="api-model-row" data-model="claude-3-5-haiku-20241022" data-provider="anthropic">claude-3.5-haiku <span class="model-tag">Fast</span></div>
-        <div class="api-model-row" data-model="claude-3-opus-20240229" data-provider="anthropic">claude-3-opus <span class="model-tag">Powerful</span></div>
-        <div class="api-model-row" data-model="claude-3-haiku-20240307" data-provider="anthropic">claude-3-haiku <span class="model-tag">Economy</span></div>
-      </div>
+      <div class="api-models-list" id="anthropic-model-rows"></div>
     </div>
-
     <div class="api-provider-card" id="api-gemini">
       <div class="api-prov-header">
-        <div class="api-prov-name">
-          <span class="api-prov-dot" id="dot-gemini"></span>
-          Google Gemini
-        </div>
+        <div class="api-prov-name"><span class="api-prov-dot" id="dot-gemini"></span>Google Gemini</div>
         <span class="api-prov-badge gemini">Gemini</span>
       </div>
       <input id="gemini-key" type="password" class="api-key-input" placeholder="AIza…">
-      <div class="api-models-list">
-        <div class="api-model-row" data-model="gemini-2.0-flash-exp" data-provider="gemini">gemini-2.0-flash <span class="model-tag">Latest</span></div>
-        <div class="api-model-row" data-model="gemini-1.5-pro" data-provider="gemini">gemini-1.5-pro <span class="model-tag">Powerful</span></div>
-        <div class="api-model-row" data-model="gemini-1.5-flash" data-provider="gemini">gemini-1.5-flash <span class="model-tag">Fast</span></div>
-        <div class="api-model-row" data-model="gemini-1.5-flash-8b" data-provider="gemini">gemini-1.5-flash-8b <span class="model-tag">Economy</span></div>
-        <div class="api-model-row" data-model="gemini-pro" data-provider="gemini">gemini-pro <span class="model-tag">Stable</span></div>
-      </div>
+      <div class="api-models-list" id="gemini-model-rows"></div>
     </div>
-
     <div class="save-keys-row">
       <button id="btn-save-keys" class="primary-btn full-w">💾 Save API Keys</button>
     </div>
-    <p class="keys-note">Keys stored locally, never sent externally.</p>
+    <p class="keys-note">Anahtarlar yerelde saklanır (tarayıcı + uygulama veri klasörü). <strong>Kaydet</strong> sonrası model listeleri otomatik güncellenir; üst bardan <strong>↻ API</strong> ile tekrar çekebilirsiniz.</p>
   </div>
-
-  <!-- GITHUB TAB -->
   <div class="ttab-pane" id="ttab-github">
     <div class="search-row">
       <input id="github-search-input" class="text-input" placeholder="Search GitHub repos…">
       <button id="btn-github-search" class="small-btn">Search</button>
     </div>
-    <div id="github-results-list" class="github-list">
-      <div class="empty-note">Search or pick a featured repo.</div>
-    </div>
+    <details class="acc-sec acc-github" id="acc-github-results" open>
+      <summary class="acc-sum github-acc-sum"><span>Arama sonuçları</span><span class="acc-chev" aria-hidden="true"></span></summary>
+      <div id="github-results-list" class="github-list"><div class="empty-note">Search or pick a featured repo.</div></div>
+    </details>
   </div>
-
-  <!-- FILES TAB -->
   <div class="ttab-pane" id="ttab-files">
     <div class="fp-header">
       <button id="btn-go-parent" class="icon-btn" title="Up">↑</button>
@@ -252,8 +242,6 @@
       <pre id="preview-content" class="prev-content"></pre>
     </div>
   </div>
-
-  <!-- LOCAL MODELS TAB -->
   <div class="ttab-pane" id="ttab-models">
     <div class="search-row">
       <input id="pull-model-input" class="text-input" placeholder="Model name (e.g. llama3.2:1b)">
@@ -263,13 +251,18 @@
       <div class="pull-bar-wrap"><div id="pull-bar" class="pull-bar"></div></div>
       <div id="pull-status" class="pull-status"></div>
     </div>
+    <div id="ram-model-advisor" class="ram-advisor" hidden></div>
     <div class="sec-label" style="margin-top:10px">Installed Models</div>
     <div id="local-models-list" class="model-list"><div class="empty-note">Loading…</div></div>
   </div>
-
+  <div class="ttab-pane" id="ttab-terminal">
+    <p class="keys-note">Çalışma klasörü: açık dosya klasörü veya <code>OllamaX-Projects</code> altı. <kbd>Ctrl</kbd>+<kbd>`</kbd> ile panel.</p>
+    <button type="button" id="btn-terminal-open" class="primary-btn full-w">Terminali başlat</button>
+    <button type="button" id="btn-terminal-close" class="ghost-btn full-w" style="margin-top:8px">Oturumu kapat</button>
+  </div>
 </aside>
+</div>
 
-<!-- ═══════════ MODAL: ADD AGENT ═══════════ -->
 <div id="agent-modal" class="modal hidden">
   <div class="modal-bg"></div>
   <div class="modal-box">
@@ -289,10 +282,13 @@
     </div>
     <div class="form-g">
       <label>Model <span class="req">*</span></label>
-      <select id="agent-model-select" class="text-input">
-        <option value="">Select a provider first</option>
-      </select>
+      <select id="agent-model-select" class="text-input"><option value="">Select a provider first</option></select>
       <div class="form-hint">Choose the intelligence engine for this agent.</div>
+    </div>
+    <div class="form-g" id="agent-ollama-machine-wrap">
+      <label>Ollama makinesi</label>
+      <select id="agent-ollama-machine" class="text-input"></select>
+      <div class="form-hint">Ayarlar → birden fazla Ollama sunucusu tanımlayabilirsiniz.</div>
     </div>
     <div class="form-g">
       <label>System Prompt <span class="opt">(optional)</span></label>
@@ -313,22 +309,25 @@
   </div>
 </div>
 
-<!-- ═══════════ MODAL: SETTINGS ═══════════ -->
 <div id="settings-modal" class="modal hidden">
   <div class="modal-bg"></div>
-  <div class="modal-box">
-    <div class="modal-hdr"><h3>Settings</h3><button class="modal-x">✕</button></div>
-    <div class="form-g">
-      <label>Ollama Host</label>
-      <input id="ollama-host" class="text-input" placeholder="localhost:11434">
-    </div>
+  <div class="modal-box modal-box-wide">
+    <div class="modal-hdr"><h3>Ayarlar — Ollama makineleri</h3><button class="modal-x">✕</button></div>
+    <p class="settings-lead">Her satır bir <strong>host:port</strong> (örn. <code>localhost:11434</code> veya LAN’daki başka bir PC). Varsayılan makine, üst çubuktaki model listesi ve sağlık pingi için kullanılır.</p>
+    <div id="ollama-machines-list" class="ollama-machines-list"></div>
+    <button type="button" id="btn-add-ollama-machine" class="small-btn full-w machine-add-btn">＋ Makine ekle</button>
     <div class="modal-ftr">
-      <button class="ghost-btn modal-x-btn">Cancel</button>
-      <button id="btn-save-settings" class="primary-btn">Save</button>
+      <button class="ghost-btn modal-x-btn">İptal</button>
+      <button id="btn-save-settings" class="primary-btn">Kaydet</button>
     </div>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.5.0/lib/xterm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.10.0/lib/xterm-addon-fit.js"></script>
+<script src="lib/delegate-parse.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

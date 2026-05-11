@@ -1,0 +1,72 @@
+{
+  "presets": [
+    {
+      "id": "mobile_app",
+      "label": "Mobil uygulama ekibi",
+      "agents": [
+        {
+          "name": "Ürün / UX",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "small",
+          "prompt": "Ürün keşfi, kullanıcı akışları ve wireframe önerileri. Kısa ve net çıktı ver."
+        },
+        {
+          "name": "Tasarım",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "small",
+          "prompt": "UI/UX, design tokens, erişilebilirlik ve görsel tutarlılık odaklı öneriler."
+        },
+        {
+          "name": "iOS",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "medium",
+          "prompt": "Swift / SwiftUI, App Store ve iOS mimarisi. Kod örnekleri üret."
+        },
+        {
+          "name": "Android",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "medium",
+          "prompt": "Kotlin / Jetpack Compose, Play Console ve Android mimarisi."
+        },
+        {
+          "name": "Tech Lead",
+          "role": "lead",
+          "provider": "ollama",
+          "modelHint": "large",
+          "prompt": "Orkestratör: mobil backlog’u parçala, //CALL:AgentName ile alt ajanlara görev ver, sonunda özet rapor yaz."
+        }
+      ]
+    },
+    {
+      "id": "backend_api",
+      "label": "Backend & API",
+      "agents": [
+        {
+          "name": "API Tasarım",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "medium",
+          "prompt": "REST/GraphQL, OpenAPI, idempotency ve hata sözleşmeleri."
+        },
+        {
+          "name": "Güvenlik",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "small",
+          "prompt": "AuthZ/AuthN, OWASP, secret yönetimi ve tehdit modeli özetleri."
+        },
+        {
+          "name": "Lead Backend",
+          "role": "lead",
+          "provider": "ollama",
+          "modelHint": "large",
+          "prompt": "Orkestratör: //CALL:AgentName ile görev dağıt, entegrasyon risklerini listele."
+        }
+      ]
+    }
+  ]
+}
