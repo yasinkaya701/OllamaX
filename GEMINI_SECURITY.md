@@ -201,3 +201,38 @@ Gelecekte OllamaX Ultra Pro, sadece modelleri çalıştırmakla kalmamalı; **DS
 
 ---
 *Bu derinlemesine teknik araştırma, OllamaX Ultra Pro'nun siber-mekanik üstünlüğünü korumak için hazırlanmıştır.*
+
+---
+
+## 🏗️ 15. Teknik Altyapı Analizi ve Yol Haritası (Infrastructure Roadmap)
+
+### 📊 Mevcut Altyapı Durumu (Current State)
+OllamaX Ultra Pro, şu an **"Monolitik ve Yalın"** bir mimari üzerine kuruludur. Vanilla JS ve Electron IPC kullanımı, uygulamaya muazzam bir hız ve düşük kaynak tüketimi sağlar. Ancak projenin "Ultra" vizyonu için bu altyapının **"Modüler ve Ölçeklenebilir"** bir yapıya evrilmesi gerekmektedir.
+
+### 🛠️ Yapılması Gereken Teknik İyileştirmeler (To-Do List)
+
+#### 1. Mimarinin Modülerleştirilmesi (ESM Migration)
+*   **Durum:** `app.js` ve `main.js` dosyaları şu an tüm mantığı içinde barındıran devasa dosyalardır.
+*   **Eylem:** Kodun `AgentManager.js`, `FileManager.js`, `ApiBridge.js` ve `UIController.js` gibi küçük, bağımsız modüllere (ES Modules) bölünmesi. Bu, hata ayıklamayı ve yeni özellik eklemeyi %200 kolaylaştırır.
+
+#### 2. Kalıcı Veri Yönetimi (Database Layer)
+*   **Durum:** Sohbet geçmişi ve ayarlar `localStorage` üzerinde sınırlı bir alanda tutuluyor.
+*   **Eylem:** `SQLite` veya `PouchDB` gibi yerel bir veri tabanına geçiş. Bu sayede binlerce mesajlık geçmiş, hızlı arama (search) ve yerel RAG (hafıza) desteği stabil hale gelir.
+
+#### 3. Güvenli Anahtar Saklama (Secret Management)
+*   **Durum:** API anahtarları düz metin olarak saklanıyor.
+*   **Eylem:** Electron'un `safeStorage` API'sini kullanarak anahtarları işletim sistemi seviyesinde (Keychain/Credential Manager) şifrelemek.
+
+#### 4. Arka Plan İşlemleri (Worker Threads)
+*   **Durum:** Ağır dosya analizleri veya büyük JSON parsing işlemleri ana arayüzü (UI Thread) anlık dondurabilir.
+*   **Eylem:** Yoğun CPU gerektiren işlerin `Web Worker` veya Electron'un `UtilityProcess` katmanına taşınarak arayüzün her zaman 60 FPS kalmasını sağlamak.
+
+#### 5. Gelişmiş Hata Yakalama (Global Error Boundary)
+*   **Durum:** Bir hata oluştuğunda sadece konsola log düşüyor.
+*   **Eylem:** Merkezi bir hata yakalama sistemi kurarak, çökmeleri kullanıcıya şık bir "Kurtarma Ekranı" ile bildirmek ve otomatik restart mekanizması eklemek.
+
+### 🎯 Vizyon: "Siber-Çekirdek" Mimarisi
+Hedefimiz, OllamaX Ultra Pro'yu sadece bir uygulama değil; eklentilerle genişleyebilen, kendi veri tabanını yöneten ve her türlü donanımda (Raspberry Pi'den en güçlü Workstation'lara kadar) aynı performansı veren bir **"AI İşletim Sistemi Çekirdeği"**ne dönüştürmektir.
+
+---
+*Bu yol haritası, OllamaX Ultra Pro'nun teknik mükemmeliyete ulaşması için bir pusula görevi görmektedir.*
