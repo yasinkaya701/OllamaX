@@ -54,4 +54,35 @@ OllamaX Ultra Pro, modern bir AI stüdyosunun gerektirdiği tüm özelliklere (m
 4.  **[Düşük]** Kod blokları için "Kopyala" butonu ve markdown iyileştirmelerini uygula.
 
 ---
-*Bu rapor OllamaX Ultra Pro'nun endüstriyel standartlara ulaşması için Gemini AI tarafından hazırlanmıştır.*
+
+## 🔍 5. İleri Düzey Teknik Analiz (Deep Dive)
+
+### 📦 Bağımlılık ve Paketleme (Build Config)
+*   **İkon Yönetimi:** `package.json` içerisinde Windows (`.ico`) ve Mac (`.icns`) ikon yolları belirtilmemiştir. Paketleme sırasında varsayılan Electron ikonu görünme riski vardır.
+*   **Bağımlılık Denetimi:** Kullanılan dış modeller için IPC tünelleri (OpenAI/Anthropic) doğrudan `fetch` kullanıyor. Büyük veri akışlarında (streaming) `buffer` yönetimi yapılmazsa bellekte anlık şişmeler görülebilir.
+
+### 🛡️ IPC Kanal Güvenliği (Payload Limits)
+*   **Mesaj Boyutu:** Renderer'dan Main process'e gönderilen mesaj dizileri (`messages`) için bir boyut sınırı yoktur. Çok büyük dosya içerikleri (örn: 50MB log) mesaj geçmişine eklenirse IPC kanalı kilitlenebilir.
+*   **Middleware İhtiyacı:** Gelen verilerin JSON şemasına uygunluğunu kontrol eden bir doğrulama katmanı (Validation Layer) eklenmesi önerilir.
+
+---
+
+## 🧩 6. Uç Durumlar ve UX Denetimi (Edge Cases)
+
+### 🤖 Delegasyon Hataları
+*   **Var Olmayan Ajan:** Eğer Lead Agent, sistemde tanımlı olmayan bir ajanı çağırırsa (`//CALL:HayaletAjan`), kod şu an sessizce durur. Kullanıcıya "Ajan Bulunamadı" uyarısı verilmelidir.
+*   **Sonsuz Döngü:** İki ajan birbirini sürekli çağıracak şekilde konfigüre edilirse (`Lead -> Sub -> Lead`), uygulama sonsuz döngüye girer. Bir `max_delegation_depth` (Örn: 5 katman) sınırı getirilmelidir.
+
+### 🎨 UI/UX Akıcılığı
+*   **Input Debouncing:** `msg-input` üzerindeki `input` event'i her tuş basımında DOM'u yeniden hesaplıyor. Hızlı yazımlarda jank (takılma) önlemek için `requestAnimationFrame` senkronizasyonu önerilir.
+*   **Hata Durumları:** İnternet kesildiğinde veya model yanıtı 30 saniyeyi geçtiğinde gösterilen "Yükleniyor" animasyonu sonsuza dek dönebilir. Bir `Timeout` mekanizması ile "Zaman Aşımı" uyarısı eklenmelidir.
+
+---
+
+## 🏆 7. Final Tavsiyeler (The "Elite" Upgrade)
+1.  **Kod Blokları:** `md()` fonksiyonuna `Copy` butonu ekleyerek yazılımcı deneyimini %50 artırabilirsin.
+2.  **Modeller:** `Ollama` modellerinin "Parameter Size" bilgisini (7B, 13B vb.) arayüzde model isminin yanına eklemek teknik bir derinlik katar.
+3.  **Güvenlik:** `main.js` içinde `shell.openExternal` kullanımını kısıtlayarak sadece bilinen (whitelist) URL'lerin açılmasına izin ver.
+
+---
+*Raporun bu bölümü, OllamaX Ultra Pro'yu ticari bir ürün kalitesine taşımak için hazırlanmıştır.*
