@@ -61,7 +61,7 @@ function readableRoots() {
   return roots;
 }
 
-function resolveReadablePath(requestedPath) {
+function resolveReadablePath(requestedPath, extraRoots) {
   if (requestedPath == null || typeof requestedPath !== 'string') return null;
   let target;
   try {
@@ -69,7 +69,7 @@ function resolveReadablePath(requestedPath) {
   } catch {
     return null;
   }
-  for (const root of readableRoots()) {
+  for (const root of [...(Array.isArray(extraRoots) ? extraRoots : []), ...readableRoots()]) {
     try {
       if (pathIsUnderRoot(root, target)) return target;
     } catch {

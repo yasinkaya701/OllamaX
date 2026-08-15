@@ -20,6 +20,9 @@ const {
   isAllowedGitCloneUrl,
   safeCloneRepoName,
 } = require('./main-security');
+const { registerIpcV3Handlers } = require('./ipc-v3-handlers');
+const { registerIpcBridge } = require('./ipc-bridge');
+const configStore = require('./config/config-store');
 
 const isWin = process.platform === 'win32';
 
@@ -372,6 +375,7 @@ function buildAppMenu() {
 app.whenReady().then(() => {
   buildAppMenu();
   createWindow();
+  registerV3Surface();
 });
 
 app.on('window-all-closed', () => {
@@ -380,6 +384,20 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
+
+// ROADMAP Faz 1-6: ipc:3:* uç noktaları + geriye uyumlu köprü
+function registerV3Surface() {
+  try {
+    configStore.setApp(app);
+    configStore.readConfig(); // dizinleri oluştur, eski config'i taşı
+    if (mainWindow) {
+      registerIpcV3Handlers(mainWindow);
+      registerIpcBridge();
+    }
+  } catch (err) {
+    console.error('[OllamaX] ipc-v3 başlatma hatası:', err?.message || err);
+  }
+}
 
 function attachStreamTimeout(req) {
   const t = setTimeout(() => {

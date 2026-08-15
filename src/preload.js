@@ -5,12 +5,15 @@ const SEND = new Set([
   'github-search', 'git-clone', 'list-dir', 'read-file',
   'open-folder-dialog', 'get-workspaces', 'get-stats',
   'terminal-input', 'terminal-resize', 'terminal-close',
+  'tool-approval-response', // AgentLoop onay köprüsü (F2.4)
 ]);
 
 const ON = new Set([
   'models-list', 'chat-chunk', 'chat-done', 'stats', 'github-results', 'exec-output',
   'git-done', 'dir-contents', 'folder-selected', 'file-content', 'pull-progress',
   'pull-done', 'workspaces-list', 'terminal-data',
+  'tool-approval-request', // AgentLoop: write/exec araç onayı (F2.4)
+  'event:token', 'event:thinking', 'event:tool-call', 'event:tool-result', // EventChannel akışı
 ]);
 
 const INVOKE = new Set([
@@ -41,7 +44,9 @@ contextBridge.exposeInMainWorld('ollamaxApi', {
     return () => ipcRenderer.removeListener(channel, wrapped);
   },
   invoke(channel, ...args) {
-    if (!INVOKE.has(channel)) return Promise.reject(new Error(`Blocked invoke: ${channel}`));
+    // ipc:3:* ad alanı ipc-v3-handlers.js'te tanımlı uç noktalardır (Faz 1-6)
+    const allowed = INVOKE.has(channel) || (typeof channel === 'string' && channel.startsWith('ipc:3:'));
+    if (!allowed) return Promise.reject(new Error(`Blocked invoke: ${channel}`));
     return ipcRenderer.invoke(channel, ...args);
   },
 });

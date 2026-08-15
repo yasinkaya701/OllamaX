@@ -4,56 +4,56 @@ const api = typeof window !== 'undefined' && window.ollamaxApi ? window.ollamaxA
 const PROMPT_TEMPLATES = [
   {
     id: 'research',
-    icon: '🔬',
+    cssClass: 'icon-sci',
     label: 'Deep Research Specialist',
     prompt:
       'ROLE: Principal Research Scientist. OBJECTIVE: Systematic, multi-step knowledge extraction. WORKFLOW: (1) DECONSTRUCT: Identify core entities and unknowns. (2) ANALYZE: Cross-verify data across multiple logical paths. (3) CHALLENGE: Actively look for counter-arguments or bias. (4) SYNTHESIZE: Formulate a structured report. MANDATORY OUTPUT FORMAT: ### 1. Scope & Entities | ### 2. Technical Findings | ### 3. Conflicting Evidence | ### 4. Definitive Conclusion | ### 5. Confidence Score (0-100%). CONSTRAINT: Use academic tone; flag any speculative content as [HYPOTHESIS].',
   },
   {
     id: 'coding',
-    icon: '💻',
+    cssClass: 'icon-code',
     label: 'Senior Software Engineer (L7)',
     prompt:
       'ROLE: Staff/Principal Engineer. OBJECTIVE: Industrial-grade, production-ready code implementation. STANDARDS: SOLID, DRY, YAGNI, and Security-First (OWASP). WORKFLOW: (1) ANALYSIS: Identify complexity (Big O) and constraints. (2) ARCHITECTURE: Define interfaces and data flow. (3) IMPLEMENTATION: High-performance, clean code with error boundaries. (4) TESTING: Include unit/integration test logic. MANDATORY: Every function must have JSDoc/Docstring. Every critical block must have inline comments explaining "WHY", not "WHAT".',
   },
   {
     id: 'security',
-    icon: '🛡️',
+    icon: '', cssClass: 'icon-shield',
     label: 'Red Team / Security Auditor',
     prompt:
       'ROLE: Senior Penetration Tester & Security Auditor. OBJECTIVE: Full-spectrum vulnerability discovery and remediation. METHODOLOGY: MITRE ATT&CK & OWASP. ANALYSIS: (1) RECON: Map attack vectors. (2) VULN: Identify specific injection, logic, or config flaws. (3) EXPLOIT: Walkthrough the attack chain step-by-step. (4) REMEDIATION: Provide immediate fix + architectural hardening. CONSTRAINT: Never suggest "trusting user input". Always assume zero-trust environment.',
   },
   {
     id: 'architect',
-    icon: '🏗️',
+    icon: '', cssClass: 'icon-build',
     label: 'Cloud Solutions Architect',
     prompt:
       'ROLE: Principal Cloud/Systems Architect. OBJECTIVE: Designing scalable, resilient, distributed systems. SCOPE: AWS/GCP/Azure, K8s, Microservices. OUTPUT REQUIREMENTS: (1) COMPONENT DIAGRAM (Text-based/Mermaid). (2) DATA PERSISTENCE: Explain choice of SQL/NoSQL/Vector DB. (3) SCALABILITY: Define Horizontal/Vertical scaling paths. (4) SECURITY: IAM, TLS, and Network Isolation. (5) COST/PERF: Analyze trade-offs.',
   },
   {
     id: 'prompt_eng',
-    icon: '🪄',
+    cssClass: 'icon-wand',
     label: 'Meta-Prompt Architect',
     prompt:
       'ROLE: Expert Prompt Engineer. OBJECTIVE: Creating high-precision, zero-leakage system instructions. TECHNIQUE: Use Chain-of-Thought, Delimiters, and Negative Constraints. WORKFLOW: (1) GOAL: Define the primary AI task. (2) CONTEXT: Provide required baseline knowledge. (3) STYLE: Define tone and formatting rules. (4) REFINEMENT: Test for potential jailbreaks or drifts. OUTPUT: Deliver a "Copy-Paste Ready" System Prompt block inside triple backticks.',
   },
   {
     id: 'pm',
-    icon: '📋',
+    cssClass: 'icon-clipboard',
     label: 'Technical Product Manager',
     prompt:
       'ROLE: Senior Product Manager (Tech). OBJECTIVE: Converting raw ideas into executable, high-value backlogs. FRAMEWORK: Agile/Scrum. OUTPUT: (1) PRD (Product Requirements Document) snippet. (2) USER STORIES: "As a [X], I want [Y], so that [Z]". (3) SUCCESS METRICS: Define KPIs (Conversion, Retention, LTV). (4) BACKLOG: Prioritized list using RICE (Reach, Impact, Confidence, Effort).',
   },
   {
     id: 'review',
-    icon: '🔍',
+    cssClass: 'icon-search',
     label: 'Principal Code Auditor',
     prompt:
       'ROLE: Principal Engineer (Code Quality). OBJECTIVE: Enforcing maintainability and reducing technical debt. CHECKLIST: (1) COGNITIVE LOAD: Is it too complex? (2) SIDE EFFECTS: Does it mutate state unexpectedly? (3) LEAKS: Resource/Memory leak check. (4) TESTS: Is the code testable? FORMAT: Structure feedback by [CRITICAL], [IMPROVEMENT], [STYLE], and [KUDOS].',
   },
   {
     id: 'lead',
-    icon: '⭐',
+    cssClass: 'icon-star',
     label: 'Agentic Orchestrator (Lead)',
     prompt:
       'ROLE: Strategic Mission Commander. OBJECTIVE: Orchestrating a swarm of specialized agents to solve complex requests. MANDATORY STEPS: (1) MISSION DECONSTRUCTION: Break the request into atomic tasks. (2) AGENT MAPPING: Select the best agent for each task. (3) DELEGATION: Use //CALL:AgentName or //CALL_PARALLEL:AgentName. (4) STATE SYNC: Ensure sub-agents have required context. (5) FINAL INTEGRATION: Merge all outputs into a single, cohesive, high-fidelity solution. Do not stop until the mission objective is 100% met.',
@@ -61,19 +61,51 @@ const PROMPT_TEMPLATES = [
 ];
 
 const FEATURED_REPOS = [
-  { q: 'karpathy/nanoGPT', label: 'nanoGPT', icon: '🧠', desc: 'Minimal GPT training from scratch' },
-  { q: 'ollama/ollama', label: 'Ollama', icon: '🦙', desc: 'Run LLMs locally' },
-  { q: 'ggerganov/llama.cpp', label: 'llama.cpp', icon: '⚡', desc: 'LLM inference in C/C++' },
-  { q: 'langchain-ai/langchain', label: 'LangChain', icon: '🔗', desc: 'LLM application framework' },
-  { q: 'openai/whisper', label: 'Whisper', icon: '🎤', desc: 'Speech recognition by OpenAI' },
-  { q: 'huggingface/transformers', label: 'Transformers', icon: '🤗', desc: 'State-of-the-art ML models' },
-  { q: 'AUTOMATIC1111 stable-diffusion', label: 'Stable Diffusion', icon: '🎨', desc: 'Image generation AI' },
-  { q: 'microsoft autogen', label: 'AutoGen', icon: '🤖', desc: 'Multi-agent conversation framework' },
-  { q: 'openai/openai-cookbook', label: 'OpenAI Cookbook', icon: '📖', desc: 'OpenAI API examples & guides' },
-  { q: 'comfyanonymous ComfyUI', label: 'ComfyUI', icon: '🎛️', desc: 'Node-based Stable Diffusion UI' },
-  { q: 'continuedev/continue', label: 'Continue', icon: '🔧', desc: 'Open-source AI code assistant' },
-  { q: 'lobehub/lobe-chat', label: 'LobeChat', icon: '💬', desc: 'Modern ChatGPT/Claude UI' },
+  { q: 'karpathy/nanoGPT', label: 'nanoGPT', icon: '', cssClass: 'icon-brain', desc: 'Minimal GPT training from scratch' },
+  { q: 'ollama/ollama', label: 'Ollama', icon: '', cssClass: 'icon-llama', desc: 'Run LLMs locally' },
+  { q: 'ggerganov/llama.cpp', label: 'llama.cpp', cssClass: 'icon-zap', desc: 'LLM inference in C/C++' },
+  { q: 'langchain-ai/langchain', label: 'LangChain', icon: '', cssClass: 'icon-link', desc: 'LLM application framework' },
+  { q: 'openai/whisper', label: 'Whisper', icon: '', cssClass: 'icon-mic', desc: 'Speech recognition by OpenAI' },
+  { q: 'huggingface/transformers', label: 'Transformers', icon: '', cssClass: 'icon-hug', desc: 'State-of-the-art ML models' },
+  { q: 'AUTOMATIC1111 stable-diffusion', label: 'Stable Diffusion', icon: '', cssClass: 'icon-palette', desc: 'Image generation AI' },
+  { q: 'microsoft autogen', label: 'AutoGen', icon: '', cssClass: 'icon-bot', desc: 'Multi-agent conversation framework' },
+  { q: 'openai/openai-cookbook', label: 'OpenAI Cookbook', icon: '', cssClass: 'icon-book', desc: 'OpenAI API examples & guides' },
+  { q: 'comfyanonymous ComfyUI', label: 'ComfyUI', icon: '', cssClass: 'icon-dial', desc: 'Node-based Stable Diffusion UI' },
+  { q: 'continuedev/continue', label: 'Continue', icon: '', cssClass: 'icon-wrench', desc: 'Open-source AI code assistant' },
+  { q: 'lobehub/lobe-chat', label: 'LobeChat', icon: '', cssClass: 'icon-chat', desc: 'Modern ChatGPT/Claude UI' },
 ];
+
+/* --- v3.0 ikon sistemi (AI slop temizliği: emoji yerine SVG) --- */
+const ICON_SVGS = {
+  'icon-flask': '<path d="M10 2v6.292a4 4 0 0 0-1.17 2.12L6.6 16a3 3 0 0 0 2.87 4h5.06a3 3 0 0 0 2.87-4l-2.23-5.59A4 4 0 0 0 14 8.29V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/>',
+  'icon-code': '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+  'icon-shield': '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  'icon-build': '<path d="M2 20h20"/><path d="M5 20V8l7-5 7 5v12"/><path d="M9 20v-5h6v5"/><path d="M9 12h.01M15 12h.01"/>',
+  'icon-wand': '<path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8l1.4 1.4"/><path d="M17.8 6.2l1.4-1.4"/><path d="M12.2 11.8l-1.4 1.4"/><path d="M12.2 6.2L10.8 4.8"/><path d="M15 9l-9 9-3 1 1-3 9-9z"/>',
+  'icon-clipboard': '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h4"/>',
+  'icon-search': '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+  'icon-star': '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+  'icon-brain': '<path d="M12 5a3 3 0 1 0-5.99.22 3 3 0 0 0-3.3 3.6A3 3 0 0 0 4 15a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3 3 3 0 0 0-1.31-2.48 3 3 0 0 0-2.7-3.3A3 3 0 0 0 12 5z"/><path d="M12 5v17"/>',
+  'icon-llama': '<path d="M7 10c0-3 2-5 5-5h4v6"/><path d="M6 22V9"/><path d="M10 22v-8h4v8"/><path d="M4 4h2M7 2h2"/>',
+  'icon-link': '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  'icon-mic': '<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>',
+  'icon-hug': '<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/><path d="M12 8v8"/>',
+  'icon-palette': '<circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 1 0 0 20 4 4 0 0 0 4-4c0-1.5-1-2.5-2-3-.5-.25-1-.5-1-1.5s1-2 2-2h2a3 3 0 0 0 3-3 10 10 0 0 0-8-6z"/>',
+  'icon-bot': '<rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/>',
+  'icon-book': '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+  'icon-dial': '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="3" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21"/><line x1="3" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21" y2="12"/>',
+  'icon-wrench': '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+  'icon-chat': '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  'icon-folder': '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+  'icon-file': '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',
+  'icon-folder-open': '<path d="M6 14l1.5-2.9A2 2 0 0 1 9.2 10h13a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>',
+  'icon-zap': '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+};
+function iconSvg(cls) {
+  const path = ICON_SVGS[cls];
+  if (!path) return '';
+  return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+}
 
 const MODEL_LISTS = { ollama: [], openai: [], anthropic: [], gemini: [] };
 
@@ -796,7 +828,7 @@ function renderTemplates() {
   PROMPT_TEMPLATES.forEach((t) => {
     const d = document.createElement('div');
     d.className = 'tmpl-item';
-    d.innerHTML = `<span class="tmpl-icon">${t.icon}</span><span class="tmpl-label">${t.label}</span>`;
+    d.innerHTML = `<span class="tmpl-icon">${iconSvg(t.cssClass || "")}</span><span class="tmpl-label">${t.label}</span>`;
     d.addEventListener('click', () => {
       q('#agent-prompt').value = t.prompt;
       openModal('agent-modal');
@@ -808,7 +840,7 @@ function renderTemplates() {
   PROMPT_TEMPLATES.forEach((t) => {
     const b = document.createElement('button');
     b.className = 'tmpl-pill';
-    b.textContent = `${t.icon} ${t.label}`;
+    b.textContent = t.label;
     b.addEventListener('click', () => {
       q('#agent-prompt').value = t.prompt;
     });
@@ -822,7 +854,7 @@ function renderFeaturedRepos() {
   FEATURED_REPOS.forEach((r) => {
     const b = document.createElement('button');
     b.className = 'repo-chip';
-    b.innerHTML = `<span class="chip-icon">${r.icon}</span><div><div class="chip-name">${r.label}</div><div class="chip-desc">${r.desc}</div></div>`;
+    b.innerHTML = `<span class="chip-icon">${iconSvg(r.cssClass || "")}</span><div><div class="chip-name">${r.label}</div><div class="chip-desc">${r.desc}</div></div>`;
     b.addEventListener('click', () => {
       q('#github-search-input').value = r.q;
       showToolsTab('github');
@@ -1239,7 +1271,7 @@ function bindIPC() {
     items.forEach((it) => {
       const d = document.createElement('div');
       d.className = `file-item${it.isDir ? ' is-dir' : ''}`;
-      d.innerHTML = `<span>${it.isDir ? '📁' : '📄'}</span><span class="fi-name">${esc(it.name)}</span>`;
+      d.innerHTML = `<span class="fi-icon">${iconSvg(it.isDir ? "icon-folder" : "icon-file")}</span><span class="fi-name">${esc(it.name)}</span>`;
       d.addEventListener('click', () => {
         const fp = `${p.replace(/[/\\]$/, '')}${p.includes('\\') ? '\\' : '/'}${it.name}`;
         it.isDir ? api.send('list-dir', fp) : api.send('read-file', fp);
@@ -1285,7 +1317,7 @@ function bindIPC() {
     items.forEach((name) => {
       const d = document.createElement('div');
       d.className = 'ws-item';
-      d.innerHTML = `<span class="ws-icon">📂</span><span class="ws-name">${esc(name)}</span>`;
+      d.innerHTML = `<span class="ws-icon">${iconSvg('icon-folder-open')}</span><span class="ws-name">${esc(name)}</span>`;
       d.addEventListener('click', () => {
         const fp = `OllamaX-Projects/${name}`;
         api.send('list-dir', fp);
@@ -1331,14 +1363,14 @@ function renderGithubResults(data) {
     nameEl.textContent = repo.full_name || '';
     const metaEl = document.createElement('div');
     metaEl.className = 'rc-meta';
-    metaEl.textContent = `⭐ ${(repo.stargazers_count || 0).toLocaleString()} · ${repo.language || '?'}`;
+    metaEl.textContent = `${(repo.stargazers_count || 0).toLocaleString()} yıldız · ${repo.language || '?'}`;
     const descEl = document.createElement('div');
     descEl.className = 'rc-desc';
     descEl.textContent = (repo.description || '').slice(0, 90);
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'clone-btn';
-    btn.textContent = '⬇ Klonla';
+    btn.textContent = 'Klonla';
     btn.addEventListener('click', () => {
       if (!cloneUrl.startsWith('https://')) {
         toast('Geçersiz klon adresi', 'error');
@@ -1562,7 +1594,7 @@ async function runSingleDelegationJob(job) {
     toast(`"${job.name}" adlı ajan yok`, 'warn');
     return;
   }
-  log(`⭐ ${job.lead.name} → ${target.name}${job.parallel ? ' (paralel)' : ''}`, 'info');
+  log(`${job.lead.name} → ${target.name}${job.parallel ? ' (paralel)' : ''}`, 'info');
   const area = q('#chat-area');
   const tag = el('div', 'delegation-tag');
   tag.innerHTML = `<span>⚡</span> <strong>${esc(target.name)}</strong>${job.parallel ? ' <span class="par-badge">PAR</span>' : ''}`;

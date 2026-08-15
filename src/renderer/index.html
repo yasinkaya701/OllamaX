@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob:; base-uri 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'; connect-src 'self' https://api.github.com http://localhost:* http://127.0.0.1:* https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com;">
-<title>OllamaX Ultra — AI Agent Studio</title>
+<title>OllamaX — AI Agent Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css">
@@ -60,7 +60,7 @@
   <div class="sidebar-bottom">
     <div class="hw-panel">
       <div class="hw-row">
-        <span class="hw-icon">💾</span>
+        <span class="hw-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></span>
         <div class="hw-bar-wrap">
           <div class="hw-bar-track"><div id="ram-bar" class="hw-bar-fill"></div></div>
         </div>
@@ -98,8 +98,8 @@
       </div>
     </div>
     <div class="tb-right">
-      <button type="button" id="btn-toggle-ghost" class="ghost-btn" title="Ghost Mode (Transparency)">👻</button>
-      <button type="button" id="btn-toggle-quests" class="ghost-btn" title="Quest Log (Task Tracker)">📜</button>
+      <button type="button" id="btn-toggle-ghost" class="ghost-btn" title="Ghost Mode (Transparency)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg></button>
+      <button type="button" id="btn-toggle-quests" class="ghost-btn" title="Quest Log (Task Tracker)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button>
       <button type="button" id="btn-export-json" class="ghost-btn" title="Sohbeti JSON olarak dışa aktar">JSON</button>
       <button type="button" id="btn-export-md" class="ghost-btn" title="Sohbeti Markdown olarak dışa aktar">MD</button>
       <button type="button" id="btn-toggle-tools" class="ghost-btn" aria-expanded="false" aria-controls="tools-panel" title="Sağ panel: API, GitHub, dosyalar">
@@ -127,10 +127,10 @@
       <p class="welcome-lead">Yerel Ollama ve bulut modelleri · Çoklu ajan ve proje çalışma alanı</p>
       <p class="welcome-sub">Aşağıdan yazın; API anahtarları ve dosyalar için sağdaki <strong>Araçlar</strong> panelini açın (<kbd>⌘</kbd><kbd>L</kbd> / <kbd>Ctrl</kbd>+<kbd>L</kbd>).</p>
       <div class="welcome-features">
-        <div class="wf-item"><span>🤖</span><span>Multi-Agent Orchestration</span></div>
-        <div class="wf-item"><span>⚡</span><span>Local Ollama + Cloud APIs</span></div>
-        <div class="wf-item"><span>📁</span><span>File System Access</span></div>
-        <div class="wf-item"><span>🔍</span><span>GitHub Integration</span></div>
+        <div class="wf-item"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg></span><span>Multi-Agent Orchestration</span></div>
+        <div class="wf-item"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span>Local Ollama + Cloud APIs</span></div>
+        <div class="wf-item"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span><span>File System Access</span></div>
+        <div class="wf-item"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><span>GitHub Integration</span></div>
       </div>
       <p class="kbd-hint"><kbd>⌘</kbd><kbd>K</kbd> sohbet · <kbd>⌘</kbd><kbd>L</kbd> araçlar · <kbd>⌘</kbd><kbd>,</kbd> ayarlar <span class="kbd-win">(Windows: <kbd>Ctrl</kbd>)</span></p>
     </div>
@@ -182,11 +182,11 @@
 <aside id="tools-panel" class="tools-panel hidden" aria-label="Araçlar paneli">
   <div class="tools-header">
     <div class="tools-tabs">
-      <button class="ttab active" data-ttab="apis">🔑 APIs</button>
-      <button class="ttab" data-ttab="github">⚙ GitHub</button>
-      <button class="ttab" data-ttab="files">📁 Files</button>
-      <button class="ttab" data-ttab="models">📦 Models</button>
-      <button class="ttab" data-ttab="terminal">⌨ Terminal</button>
+      <button class="ttab active" data-ttab="apis"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg> APIs</button>
+      <button class="ttab" data-ttab="github"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> GitHub</button>
+      <button class="ttab" data-ttab="files"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> Files</button>
+      <button class="ttab" data-ttab="models"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg> Models</button>
+      <button class="ttab" data-ttab="terminal"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01"/><path d="M10 8h.01"/><path d="M14 8h.01"/><path d="M18 8h.01"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/><path d="M7 16h10"/></svg> Terminal</button>
     </div>
   </div>
   <div class="ttab-pane active" id="ttab-apis">
@@ -215,7 +215,7 @@
       <div class="api-models-list" id="gemini-model-rows"></div>
     </div>
     <div class="save-keys-row">
-      <button id="btn-save-keys" class="primary-btn full-w">💾 Save API Keys</button>
+      <button id="btn-save-keys" class="primary-btn full-w"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save API Keys</button>
     </div>
     <p class="keys-note">Anahtarlar yerelde saklanır (tarayıcı + uygulama veri klasörü). <strong>Kaydet</strong> sonrası model listeleri otomatik güncellenir; üst bardan <strong>↻ API</strong> ile tekrar çekebilirsiniz.</p>
   </div>
@@ -232,7 +232,7 @@
   <div class="ttab-pane" id="ttab-files">
     <div class="fp-header">
       <button id="btn-go-parent" class="icon-btn" title="Up">↑</button>
-      <button id="btn-open-folder" class="small-btn">📂 Open Folder</button>
+      <button id="btn-open-folder" class="small-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg> Open Folder</button>
     </div>
     <div id="file-breadcrumb" class="breadcrumb"></div>
     <div id="file-tree" class="file-tree"><div class="empty-note">Open a folder.</div></div>
@@ -247,7 +247,7 @@
   <div class="ttab-pane" id="ttab-models">
     <div class="search-row">
       <input id="pull-model-input" class="text-input" placeholder="Model name (e.g. llama3.2:1b)">
-      <button id="btn-pull-model" class="small-btn">⬇ Pull</button>
+      <button id="btn-pull-model" class="small-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg> Pull</button>
     </div>
     <div id="pull-progress" class="pull-progress hidden">
       <div class="pull-bar-wrap"><div id="pull-bar" class="pull-bar"></div></div>
@@ -301,7 +301,7 @@
       <label>Role</label>
       <select id="agent-role" class="text-input">
         <option value="sub">Sub Agent</option>
-        <option value="lead">⭐ Lead Agent (Orchestrator)</option>
+        <option value="lead"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Lead Agent (Orchestrator)</option>
       </select>
     </div>
     <div class="modal-ftr">
@@ -327,7 +327,7 @@
 
 <div id="quest-log" class="quest-log hidden">
   <div class="ql-hdr">
-    <span>📜 Quest Log</span>
+    <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg> Quest Log</span>
     <button id="btn-close-quests" class="icon-btn">✕</button>
   </div>
   <div class="ql-input-row">
@@ -344,6 +344,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xterm@5.5.0/lib/xterm.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.10.0/lib/xterm-addon-fit.js"></script>
 <script src="lib/delegate-parse.js"></script>
+<script src="v3-ui.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
