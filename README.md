@@ -1,11 +1,11 @@
 <div align="center">
 
-<img src="assets/preview.png" alt="OllamaX Ultra Preview" width="800">
+<img src="assets/preview.png" alt="Krevyx Ultra Preview" width="800">
 
-# 🤖 OllamaX Ultra Pro
+# 🤖 Krevyx Ultra Pro
 ### Industrial-Grade AI Operating System & Agent Studio
 
-**OllamaX Ultra**, yerel gücü (Ollama) ve bulut zekasını (OpenAI, Claude, Gemini) hibrit bir mimaride birleştiren, çoklu ajan orkestrasyonuna odaklanmış profesyonel bir yapay zeka işletim sistemidir.
+**Krevyx Ultra**, yerel gücü (Ollama) ve bulut zekasını (OpenAI, Claude, Gemini) hibrit bir mimaride birleştiren, çoklu ajan orkestrasyonuna odaklanmış profesyonel bir yapay zeka işletim sistemidir.
 
 [Özellikler](#-özellikler) • [Kurulum Rehberi](#-kurulum-rehberi) • [Windows](#-windows-kurulum) • [macOS](#-macos-kurulum) • [Kullanım](#-kullanım-kılavuzu)
 
@@ -26,7 +26,7 @@
 
 ## 🚀 Kurulum Rehberi
 
-Aşağıdaki adımları sırasıyla takip ederek OllamaX Ultra'yı 5 dakika içinde çalıştırabilirsiniz.
+Aşağıdaki adımları sırasıyla takip ederek Krevyx Ultra'yı 5 dakika içinde çalıştırabilirsiniz.
 
 ### 📋 Önkoşullar
 Uygulamayı çalıştırmak için bilgisayarınızda şunların kurulu olması gerekir:
@@ -48,7 +48,7 @@ GitHub sayfasındaki yeşil **"Code"** butonuna basın ve **"Download ZIP"** dey
 
 #### 3. Klasöre Gidin ve Kurun
 ```cmd
-cd Desktop\OllamaX
+cd Desktop\Krevyx
 npm install
 ```
 *Bu aşamada bağımlılıklar internetten indirilecektir.*
@@ -73,8 +73,8 @@ brew install node git
 
 #### 2. Klonlayın ve Çalıştırın
 ```bash
-git clone https://github.com/yasinkaya701/OllamaX.git
-cd OllamaX
+git clone https://github.com/yasinkaya701/Krevyx.git
+cd Krevyx
 npm install
 npm start
 ```

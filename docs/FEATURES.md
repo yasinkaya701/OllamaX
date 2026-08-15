@@ -1,6 +1,6 @@
-# OllamaX v3.0 — Feature Guide
+# Krevyx v3.0 — Feature Guide
 
-OllamaX v3.0 turns the local Ollama client into a complete AI agent studio.
+Krevyx v3.0 turns the local Ollama client into a complete AI agent studio.
 The only setup required is entering your API tokens in **Ayarlar**; everything
 else works out of the box with local Ollama models.
 

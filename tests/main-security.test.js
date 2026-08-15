@@ -40,7 +40,7 @@ describe('main-security', () => {
 
   test('resolveReadablePath allows only under homedir', () => {
     const home = os.homedir();
-    expect(resolveReadablePath(path.join(home, 'OllamaX-Projects'))).toBe(path.resolve(path.join(home, 'OllamaX-Projects')));
+    expect(resolveReadablePath(path.join(home, 'krevyx-Projects'))).toBe(path.resolve(path.join(home, 'krevyx-Projects')));
     expect(resolveReadablePath('/etc/passwd')).toBeNull();
   });
 

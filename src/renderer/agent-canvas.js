@@ -1,5 +1,5 @@
 /**
- * agent-canvas.js — OllamaX v3.2 ajan deneyimi (Plan Bölüm 2.2–2.5)
+ * agent-canvas.js — Krevyx v3.2 ajan deneyimi (Plan Bölüm 2.2–2.5)
  *
  * Agent Canvas: plan bandı, çalışma bandı, bağlam bandı.
  * Araç çağrısı kartları, onay modları (tek tek / oturum / kalıcı),
@@ -10,8 +10,8 @@
  */
 'use strict';
 (function initAgentCanvas() {
-  if (!window.ollamaxApi) return;
-  const api = window.ollamaxApi;
+  if (!window.krevyxApi) return;
+  const api = window.krevyxApi;
 
   function $(sel, root = document) {
     return root ? root.querySelector(sel) : null;
@@ -24,7 +24,7 @@
     return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
-  const STORAGE_KEY = 'ollamax_canvas_v1';
+  const STORAGE_KEY = 'Krevyx_canvas_v1';
   let state = {
     status: 'idle',
     goal: '',
@@ -248,7 +248,7 @@
   /* Olay bağlayıcıları                                                   */
   /* ------------------------------------------------------------------ */
   function bind() {
-    const api_ = window.ollamaxApi;
+    const api_ = window.krevyxApi;
     api_.on('event:plan', (d) => {
       if (!d) return;
       state.goal = d.goal || state.goal;
@@ -342,7 +342,7 @@
   }
 
   function decideApproval(approved) {
-    const api_ = window.ollamaxApi;
+    const api_ = window.krevyxApi;
     const remember = $('#ac-approval-remember')?.checked || false;
     api_.send('tool-approval-response', {
       approved,
@@ -420,12 +420,12 @@
     refresh: refreshAll,
   };
 
-  window.OllamaX = window.OllamaX || {};
-  window.OllamaX.agentCanvas = AgentCanvas;
+  window.Krevyx = window.Krevyx || {};
+  window.Krevyx.agentCanvas = AgentCanvas;
 
   // Komut paleti kayıt
-  if (window.OllamaX?.palette) {
-    window.OllamaX.palette.register({ group: 'actions', label: 'Ajan canvas\'ını aç/kapat', run: () => {
+  if (window.Krevyx?.palette) {
+    window.Krevyx.palette.register({ group: 'actions', label: 'Ajan canvas\'ını aç/kapat', run: () => {
       state._userCollapsed = !state._userCollapsed;
       setCanvasVisible(!state._userCollapsed);
     } });
@@ -442,7 +442,7 @@
     // Lead olmayan senaryoda hedef verildiğinde canvas üzerinden plan bekletilir
     return true;
   }
-  window.OllamaX.tryGoalSlash = tryGoalSlash;
+  window.Krevyx.tryGoalSlash = tryGoalSlash;
 
   bind();
 })();

@@ -1,7 +1,7 @@
 /**
  * plugins/loader.js — Eklenti yükleme ve sandbox (F5.1, ADR-003)
  *
- * Eklenti yapısı: userData/ollamax/plugins/{id}/
+ * Eklenti yapısı: userData/Krevyx/plugins/{id}/
  *   manifest.json + index.js (+ opsiyonel assets)
  *
  * Sandbox kuralları:

@@ -1,5 +1,5 @@
 /**
- * workspace-layout.js — OllamaX v3.1 çok bölgeli çalışma alanı (Plan Bölüm 1.2)
+ * workspace-layout.js — Krevyx v3.1 çok bölgeli çalışma alanı (Plan Bölüm 1.2)
  *
  * 4 bölge: sol (araç çubuğu + panel), ana alan, sağ (bağlam panelleri), alt panel.
  * Boyutlar localStorage'da persist edilir; sürükleyle yeniden boyut,
@@ -9,7 +9,7 @@
 (function initWorkspaceLayout() {
   if (typeof window === 'undefined') return;
 
-  const STORAGE_KEY = 'ollamax_ws_layout_v1';
+  const STORAGE_KEY = 'Krevyx_ws_layout_v1';
   const DEFAULTS = { leftWidth: 260, rightWidth: 280, altHeight: 220, density: 'comfortable', leftCollapsed: false, rightCollapsed: false, altVisible: true };
   const MIN_WIDTH = 200;
 
@@ -29,7 +29,7 @@
 
   function save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(layout));
-    window.dispatchEvent(new CustomEvent('ollamax-layout-changed', { detail: layout }));
+    window.dispatchEvent(new CustomEvent('krevyx-layout-changed', { detail: layout }));
   }
 
   function clamp(v, min, max) {
@@ -129,8 +129,8 @@
     refresh: apply,
   };
 
-  window.OllamaX = window.OllamaX || {};
-  window.OllamaX.layout = Layout;
+  window.Krevyx = window.Krevyx || {};
+  window.Krevyx.layout = Layout;
 
   window.addEventListener('DOMContentLoaded', () => {
     apply();

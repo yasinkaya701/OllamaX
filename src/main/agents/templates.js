@@ -3,7 +3,7 @@
  *
  * Şablonlar iki kaynaktan gelir:
  *  - Gömülü: src/shared/agent-templates/ altında JSON paketler (Türkçe + EN)
- *  - Kullanıcı: userData/ollamax/agents/custom-templates/ altında override
+ *  - Kullanıcı: userData/Krevyx/agents/custom-templates/ altında override
  *
  * Prompt'lar değişken destekler:
  *  {{workspace_root}}, {{os}}, {{date}}, {{workspace_alias}}, {{model}}
@@ -40,7 +40,7 @@ function interpolatePrompt(prompt, ctx) {
 }
 
 function templateDir() {
-  return path.join(configStore.ollamaxRoot(), 'agents', 'custom-templates');
+  return path.join(configStore.krevyxRoot(), 'agents', 'custom-templates');
 }
 
 function bundledTemplateDir() {

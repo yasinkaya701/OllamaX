@@ -1,7 +1,7 @@
 const electron = require('electron');
 if (typeof electron !== 'object' || electron == null || typeof electron.ipcMain !== 'object') {
   // Ortamda ELECTRON_RUN_AS_NODE=1 iken veya düz `node` ile çalıştırılınca oluşur.
-  console.error('\n[OllamaX] Electron ana süreci gerekli. Proje kökünde: npm start\n');
+  console.error('\n[Krevyx] Electron ana süreci gerekli. Proje kökünde: npm start\n');
   process.exit(1);
 }
 const { app, BrowserWindow, ipcMain, dialog, shell, Menu } = electron;
@@ -73,9 +73,9 @@ function createWindow() {
   mainWindow.loadFile(htmlPath);
   try {
     const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
-    mainWindow.setTitle(`OllamaX Ultra v${pkg.version || app.getVersion()}`);
+    mainWindow.setTitle(`Krevyx Ultra v${pkg.version || app.getVersion()}`);
   } catch {
-    mainWindow.setTitle('OllamaX Ultra');
+    mainWindow.setTitle('Krevyx Ultra');
   }
 }
 
@@ -515,7 +515,7 @@ function registerV3Surface() {
       registerProviderChatHandlers();
     }
   } catch (err) {
-    console.error('[OllamaX] ipc-v3 başlatma hatası:', err?.message || err);
+    console.error('[Krevyx] ipc-v3 başlatma hatası:', err?.message || err);
   }
 }
 
@@ -873,7 +873,7 @@ ipcMain.on('github-search', (event, { query }) => {
   const opts = {
     hostname: 'api.github.com',
     path: `/search/repositories?q=${encodeURIComponent(query)}&sort=stars&per_page=10`,
-    headers: { 'User-Agent': 'OllamaX-Ultra/3.0', Accept: 'application/vnd.github.v3+json' },
+    headers: { 'User-Agent': 'krevyx-Ultra/3.0', Accept: 'application/vnd.github.v3+json' },
     timeout: API_TIMEOUT_MS,
   };
   const req = https.request(opts, (res) => {
@@ -912,7 +912,7 @@ ipcMain.on('git-clone', (event, { url }) => {
     event.reply('git-done', { success: false, dir: '', url: String(url || '') });
     return;
   }
-  const dir = path.join(os.homedir(), 'OllamaX-Projects');
+  const dir = path.join(os.homedir(), 'krevyx-Projects');
   const target = path.join(dir, name);
   fs.mkdirSync(dir, { recursive: true });
   event.reply('exec-output', { type: 'info', data: `📥 Cloning ${url}...\n` });
@@ -936,7 +936,7 @@ ipcMain.on('list-dir', (event, p) => {
     event.reply('dir-contents', {
       path: String(p),
       items: [],
-      error: 'Erişim reddedildi: yalnızca ana klasörünüz, OllamaX-Projects veya dosya gezgininde seçtiğiniz klasör.',
+      error: 'Erişim reddedildi: yalnızca ana klasörünüz, krevyx-Projects veya dosya gezgininde seçtiğiniz klasör.',
     });
     return;
   }
@@ -986,7 +986,7 @@ ipcMain.on('open-folder-dialog', async (event) => {
 });
 
 ipcMain.on('get-workspaces', (event) => {
-  const dir = path.join(os.homedir(), 'OllamaX-Projects');
+  const dir = path.join(os.homedir(), 'krevyx-Projects');
   if (!fs.existsSync(dir)) return event.reply('workspaces-list', []);
   try {
     const items = fs
@@ -1058,7 +1058,7 @@ ipcMain.handle('scan-project', async (_e, rootPath) => {
   const root = resolveReadablePath(rootPath);
   if (!root) return { ok: false, error: 'Erişim reddedildi' };
   const lines = [
-    '# INITIAL — proje özeti (OllamaX Ultra)',
+    '# INITIAL — proje özeti (Krevyx Ultra)',
     '',
     `_Oluşturulma: ${new Date().toISOString()}_`,
     '',
@@ -1138,7 +1138,7 @@ ipcMain.handle('terminal-create', async (event, { cwd } = {}) => {
     return { ok: false, error: 'node-pty yok. Kur: npm install; sonra: npm run rebuild-pty' };
   }
   const win = BrowserWindow.fromWebContents(event.sender);
-  const raw = cwd && String(cwd).trim() ? cwd : path.join(os.homedir(), 'OllamaX-Projects');
+  const raw = cwd && String(cwd).trim() ? cwd : path.join(os.homedir(), 'krevyx-Projects');
   const base = resolveReadablePath(raw);
   if (!base) return { ok: false, error: 'Çalışma dizini izin dışı' };
   const id = `t-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;

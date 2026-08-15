@@ -1,5 +1,5 @@
 /**
- * config-migrations.js — OllamaX konfigürasyon şema geçişleri (ADR-006)
+ * config-migrations.js — Krevyx konfigürasyon şema geçişleri (ADR-006)
  *
  * v2 (chat-session.json tek JSON dump) -> v3 (şema-sürümlü config + sessions dizini)
  * Migration'lar ileri (up) ve geri (down) yönde çalışır; her geçiş geri

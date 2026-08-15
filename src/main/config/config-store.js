@@ -2,7 +2,7 @@
  * config-store.js — Şema-sürümlü konfigürasyon depolama (F1.2)
  *
  * Veri düzeni:
- *   userData/ollamax/
+ *   userData/Krevyx/
  *     config.json            — settings, providers, agents, workspaces (şema v3)
  *     sessions/{sessionId}.json — sohbet oturum mesajları
  *     legacy-sessions.json   — v2 geçmişinden taşınan oturumlar
@@ -36,44 +36,44 @@ function setApp(electronApp) {
 }
 
 function userDataDir() {
-  if (!app) return path.join(os.homedir(), '.ollamax');
+  if (!app) return path.join(os.homedir(), '.Krevyx');
   return app.getPath('userData');
 }
 
-function ollamaxRoot() {
-  return path.join(userDataDir(), 'ollamax');
+function krevyxRoot() {
+  return path.join(userDataDir(), 'Krevyx');
 }
 
 function configPath() {
-  return path.join(ollamaxRoot(), 'config.json');
+  return path.join(krevyxRoot(), 'config.json');
 }
 
 function sessionsDir() {
-  return path.join(ollamaxRoot(), 'sessions');
+  return path.join(krevyxRoot(), 'sessions');
 }
 
 function checkpointsDir() {
-  return path.join(ollamaxRoot(), 'checkpoints');
+  return path.join(krevyxRoot(), 'checkpoints');
 }
 
 function memoryDir() {
-  return path.join(ollamaxRoot(), 'memory');
+  return path.join(krevyxRoot(), 'memory');
 }
 
 function generatedDir() {
-  return path.join(ollamaxRoot(), 'generated');
+  return path.join(krevyxRoot(), 'generated');
 }
 
 function pluginsDir() {
-  return path.join(ollamaxRoot(), 'plugins');
+  return path.join(krevyxRoot(), 'plugins');
 }
 
 function auditLogPath() {
-  return path.join(ollamaxRoot(), 'audit.jsonl');
+  return path.join(krevyxRoot(), 'audit.jsonl');
 }
 
 function legacySessionsPath() {
-  return path.join(ollamaxRoot(), 'legacy-sessions.json');
+  return path.join(krevyxRoot(), 'legacy-sessions.json');
 }
 
 function sessionPath(sessionId) {
@@ -100,7 +100,7 @@ function stripEnv(value) {
 }
 
 function ensureDirs() {
-  for (const dir of [ollamaxRoot(), sessionsDir(), checkpointsDir(), memoryDir(), generatedDir(), pluginsDir()]) {
+  for (const dir of [krevyxRoot(), sessionsDir(), checkpointsDir(), memoryDir(), generatedDir(), pluginsDir()]) {
     if (!fs.existsSync(dir)) {
       try {
         fs.mkdirSync(dir, { recursive: true });
@@ -316,7 +316,7 @@ function deleteSession(sessionId) {
 module.exports = {
   setApp,
   userDataDir,
-  ollamaxRoot,
+  krevyxRoot,
   configPath,
   sessionsDir,
   checkpointsDir,

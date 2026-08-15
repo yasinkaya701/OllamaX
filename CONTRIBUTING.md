@@ -1,4 +1,4 @@
-# Contributing to OllamaX Ultra
+# Contributing to Krevyx Ultra
 
 ## Development
 
@@ -15,7 +15,7 @@
 ## Project layout
 
 - `src/main.js` — Electron main process (IPC, HTTP to Ollama / cloud APIs, persistence).
-- `src/preload.js` — Context-isolated bridge (`window.ollamaxApi`).
+- `src/preload.js` — Context-isolated bridge (`window.krevyxApi`).
 - `src/renderer/` — UI (`index.html`, `app.js`, `styles.css`, `lib/`).
 
 ## Security

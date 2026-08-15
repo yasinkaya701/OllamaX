@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.12.0-rebrand — 2026-08-16
+
+### Marka Yenilemesi (OllamaX → Krevyx)
+
+- Uygulama tamamen **Krevyx** markasına taşındı: paket adı, Electron `appId`/`productName`, pencere ve tray başlıkları, tema tanımları, API namespace'leri ve testler dahil tüm kaynak dosyalar.
+- Tüm `OllamaX` kod referansları (camelCase identifier'lar dahil) `Krevyx` / `krevyx` olarak yeniden adlandırıldı; case-duyarlı eşlemeler korundu.
+- **133/133 test yeşil**, ESLint v9 uyarısız.
+
 ## 3.12.0 — 2026-08-16
 
 ### Orkestrasyon (F3)
@@ -113,8 +121,8 @@
 
 ### Security & architecture
 
-- Renderer: `contextIsolation`, no `nodeIntegration`; strict preload whitelist (`ollamaxApi`).
-- **`src/main-security.js`:** Ollama `host:port` doğrulama (SSRF / kontrol karakteri engeli), dosya gezgininde **yalnızca ana dizin + OllamaX-Projects + kullanıcının seçtiği klasör**, `read-file` **2 MB** önizleme sınırı, `open-path` aynı köklerle sınırlı.
+- Renderer: `contextIsolation`, no `nodeIntegration`; strict preload whitelist (`krevyxApi`).
+- **`src/main-security.js`:** Ollama `host:port` doğrulama (SSRF / kontrol karakteri engeli), dosya gezgininde **yalnızca ana dizin + krevyx-Projects + kullanıcının seçtiği klasör**, `read-file` **2 MB** önizleme sınırı, `open-path` aynı köklerle sınırlı.
 - **`git-clone`:** yalnızca izin verilen HTTPS host’lar; `git` `shell: false`.
 - **`normalize-ollama-host` IPC**; kalıcı ayarlarda yalnızca izin verilen `settings` anahtarları; oturum kaydı **15 MB** üst sınırı.
 - **Kaldırıldı:** `exec-command`, `write-file` (ön yüzden rastgele komut / yazma yok).

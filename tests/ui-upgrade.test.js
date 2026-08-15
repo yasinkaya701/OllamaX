@@ -32,7 +32,7 @@ function loadScript(name) {
 beforeEach(() => {
   document.head.innerHTML = '';
   document.body.innerHTML = '';
-  delete window.OllamaX;
+  delete window.Krevyx;
 });
 
 describe('theme-registry', () => {
@@ -41,50 +41,50 @@ describe('theme-registry', () => {
   });
 
   test('varsayılan tema dark olmalı ve apply değişmeli', () => {
-    expect(window.OllamaX.theme.current()).toBe('dark');
-    window.OllamaX.theme.apply('light');
-    expect(window.OllamaX.theme.current()).toBe('light');
+    expect(window.Krevyx.theme.current()).toBe('dark');
+    window.Krevyx.theme.apply('light');
+    expect(window.Krevyx.theme.current()).toBe('light');
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');
-    window.OllamaX.theme.apply('dark');
+    window.Krevyx.theme.apply('dark');
   });
 
   test('applyAccent accent CSS değişkenini set etmeli', () => {
-    window.OllamaX.theme.applyAccent('#ff6600');
+    window.Krevyx.theme.applyAccent('#ff6600');
     expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#ff6600');
   });
 
   test('toggle dark↔light arasında geçiş yapmalı', () => {
-    window.OllamaX.theme.toggle();
-    expect(window.OllamaX.theme.current()).toBe('light');
-    window.OllamaX.theme.toggle();
-    expect(window.OllamaX.theme.current()).toBe('dark');
+    window.Krevyx.theme.toggle();
+    expect(window.Krevyx.theme.current()).toBe('light');
+    window.Krevyx.theme.toggle();
+    expect(window.Krevyx.theme.current()).toBe('dark');
   });
 
   test('custom tema register/apply/remove çalışmalı', () => {
-    window.OllamaX.theme.register({
+    window.Krevyx.theme.register({
       name: 'ocean',
       vars: { '--bg': '#001122' },
     });
-    window.OllamaX.theme.apply('custom:ocean');
-    expect(window.OllamaX.theme.current()).toBe('custom:ocean');
+    window.Krevyx.theme.apply('custom:ocean');
+    expect(window.Krevyx.theme.current()).toBe('custom:ocean');
     expect(document.documentElement.style.getPropertyValue('--bg')).toBe('#001122');
-    window.OllamaX.theme.remove('ocean');
-    window.OllamaX.theme.apply('dark');
-    expect(window.OllamaX.theme.listCustom().map((t) => t.name)).not.toContain('ocean');
+    window.Krevyx.theme.remove('ocean');
+    window.Krevyx.theme.apply('dark');
+    expect(window.Krevyx.theme.listCustom().map((t) => t.name)).not.toContain('ocean');
   });
 
   test('geçersiz tema ismi uygulanmamalı', () => {
-    const before = window.OllamaX.theme.current();
-    window.OllamaX.theme.apply('olmayan-tema');
+    const before = window.Krevyx.theme.current();
+    window.Krevyx.theme.apply('olmayan-tema');
     // Geçersiz tema adı 'dark' olarak normalize edilir (plan: güvenlikli fallback)
-    expect(window.OllamaX.theme.current()).toBe('dark');
-    window.OllamaX.theme.apply(before);
+    expect(window.Krevyx.theme.current()).toBe('dark');
+    window.Krevyx.theme.apply(before);
   });
 
   test('onChange listener tema değişiminde tetiklenmeli', () => {
     const fn = jest.fn();
-    window.OllamaX.theme.onChange(fn);
-    window.OllamaX.theme.apply('light');
+    window.Krevyx.theme.onChange(fn);
+    window.Krevyx.theme.apply('light');
     expect(fn).toHaveBeenCalledWith(expect.objectContaining({ theme: 'light' }));
   });
 });
@@ -96,7 +96,7 @@ describe('keymap', () => {
   });
 
   test('varsayılan harita komutları içermeli', () => {
-    const map = window.OllamaX.keymap.list();
+    const map = window.Krevyx.keymap.list();
     expect(map.some((c) => c.command === 'composer.focus')).toBe(true);
     expect(map.some((c) => c.command === 'palette.open')).toBe(true);
     expect(map.some((c) => c.command === 'theme.toggle')).toBe(true);
@@ -104,24 +104,24 @@ describe('keymap', () => {
 
   test('on/execute komut işleyiciyi çağırmalı', () => {
     const fn = jest.fn();
-    window.OllamaX.keymap.on('composer.focus', fn);
-    window.OllamaX.keymap.execute('composer.focus');
+    window.Krevyx.keymap.on('composer.focus', fn);
+    window.Krevyx.keymap.execute('composer.focus');
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
   test('kayıtlı olmayan komut hata fırlatmamalı', () => {
-    expect(() => window.OllamaX.keymap.execute('olmayan')).not.toThrow();
+    expect(() => window.Krevyx.keymap.execute('olmayan')).not.toThrow();
   });
 
   test('loadOverrides/savesOverrides override zinciri oluşturmalı', () => {
-    window.OllamaX.keymap.saveOverrides({ 'CmdOrCtrl+Shift+F': 'composer.focus' });
-    const eff = window.OllamaX.keymap.effective();
+    window.Krevyx.keymap.saveOverrides({ 'CmdOrCtrl+Shift+F': 'composer.focus' });
+    const eff = window.Krevyx.keymap.effective();
     expect(eff.map['CmdOrCtrl+Shift+F']).toBe('composer.focus');
   });
 
   test('efektif keymap override sonrası çakışma raporu dönmeli', () => {
-    window.OllamaX.keymap.saveOverrides({ 'CmdOrCtrl+Shift+F': 'composer.focus' });
-    const eff = window.OllamaX.keymap.effective();
+    window.Krevyx.keymap.saveOverrides({ 'CmdOrCtrl+Shift+F': 'composer.focus' });
+    const eff = window.Krevyx.keymap.effective();
     // 'composer.focus' komutunun artık birden fazla kombinasyonu var (default + override)
     expect(eff.conflicts.some((c) => c.command === 'composer.focus')).toBe(true);
   });
@@ -136,31 +136,31 @@ describe('command-palette', () => {
   });
 
   test('fuzzy skorlama sıralı eşleşme gerektirmeli', () => {
-    const s = window.OllamaX.palette._fuzzyScore('oa', 'OllamaX');
+    const s = window.Krevyx.palette._fuzzyScore('kv', 'Krevyx');
     expect(s).toBeTruthy();
-    const s2 = window.OllamaX.palette._fuzzyScore('ao', 'OllamaX');
+    const s2 = window.Krevyx.palette._fuzzyScore('vk', 'Krevyx');
     expect(s2).toBeNull();
   });
 
   test('boş sorgu tüm öğeleri döndürmeli', () => {
-    window.OllamaX.palette.register({ group: 'actions', label: 'Test komutu', run: jest.fn() });
-    expect(window.OllamaX.palette._fuzzyScore('', 'Test komutu')).toBeNull();
+    window.Krevyx.palette.register({ group: 'actions', label: 'Test komutu', run: jest.fn() });
+    expect(window.Krevyx.palette._fuzzyScore('', 'Test komutu')).toBeNull();
   });
 
   test('register/unregister kanala öğe ekleyip çıkarmalı', () => {
     const fn = jest.fn();
-    window.OllamaX.palette.register({ group: 'actions', label: 'Benzersiz komut', run: fn });
-    window.OllamaX.palette.unregister('Benzersiz komut');
+    window.Krevyx.palette.register({ group: 'actions', label: 'Benzersiz komut', run: fn });
+    window.Krevyx.palette.unregister('Benzersiz komut');
     // Unregister sonrası listede kalan öğe boş string sorguda bu komutu vermemeli
-    window.OllamaX.palette.register({ group: 'actions', label: 'Başka komut', run: jest.fn() });
-    const labels = window.OllamaX.palette.entries().map((e) => e.label);
+    window.Krevyx.palette.register({ group: 'actions', label: 'Başka komut', run: jest.fn() });
+    const labels = window.Krevyx.palette.entries().map((e) => e.label);
     expect(labels).not.toContain('Benzersiz komut');
   });
 
   test('open overlayi DOMa eklemeli ve Enter ilk ogreyi calistirmali', async () => {
     const fn = jest.fn();
-    window.OllamaX.palette.register({ group: 'actions', label: 'Tıklatılabilir komut', run: fn });
-    window.OllamaX.palette.open();
+    window.Krevyx.palette.register({ group: 'actions', label: 'Tıklatılabilir komut', run: fn });
+    window.Krevyx.palette.open();
     expect(document.querySelector('.cmd-overlay')).toBeTruthy();
     const input = document.querySelector('.cmd-input');
     input.value = 'tıklat';
@@ -175,8 +175,8 @@ describe('command-palette', () => {
   });
 
   test('Escape paleti kapatmalı', () => {
-    window.OllamaX.palette.register({ group: 'actions', label: 'Kapanan komut', run: jest.fn() });
-    window.OllamaX.palette.open();
+    window.Krevyx.palette.register({ group: 'actions', label: 'Kapanan komut', run: jest.fn() });
+    window.Krevyx.palette.open();
     document.querySelector('.cmd-overlay').dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
     );
@@ -193,7 +193,7 @@ describe('workspace-layout', () => {
   });
 
   test('varsayılan genişlikleri CSS değişkenlerine yazmalı', () => {
-    window.OllamaX.layout.refresh();
+    window.Krevyx.layout.refresh();
     const root = document.documentElement;
     expect(root.style.getPropertyValue('--ws-left')).toBe('260px');
     expect(root.style.getPropertyValue('--ws-right')).toBe('280px');
@@ -201,22 +201,22 @@ describe('workspace-layout', () => {
 
   test('set/get persist ve event üretmeli', () => {
     const fn = jest.fn();
-    window.addEventListener('ollamax-layout-changed', fn);
-    window.OllamaX.layout.set({ leftWidth: 300 });
-    expect(window.OllamaX.layout.get().leftWidth).toBe(300);
+    window.addEventListener('krevyx-layout-changed', fn);
+    window.Krevyx.layout.set({ leftWidth: 300 });
+    expect(window.Krevyx.layout.get().leftWidth).toBe(300);
     expect(fn).toHaveBeenCalled();
-    expect(localStorage.getItem('ollamax_ws_layout_v1')).toContain('300');
+    expect(localStorage.getItem('Krevyx_ws_layout_v1')).toContain('300');
   });
 
   test('toggleLeft workspace-v3 sınıfını değiştirmeli', () => {
-    window.OllamaX.layout.toggleLeft();
+    window.Krevyx.layout.toggleLeft();
     expect(document.querySelector('.workspace-v3').classList.contains('left-collapsed')).toBe(true);
-    window.OllamaX.layout.toggleLeft();
+    window.Krevyx.layout.toggleLeft();
     expect(document.querySelector('.workspace-v3').classList.contains('left-collapsed')).toBe(false);
   });
 
   test('setDensity data-density özniteliğini set etmeli', () => {
-    window.OllamaX.layout.setDensity('compact');
+    window.Krevyx.layout.setDensity('compact');
     expect(document.documentElement.getAttribute('data-density')).toBe('compact');
   });
 });
@@ -231,7 +231,7 @@ describe('virtual-list', () => {
     root.style.height = '300px';
     root.style.overflow = 'auto';
     document.body.appendChild(root);
-    const vl = new window.OllamaX.VirtualList(root, {
+    const vl = new window.Krevyx.VirtualList(root, {
       rowHeight: 30,
       render: (item) => {
         const d = document.createElement('div');
@@ -256,7 +256,7 @@ describe('virtual-list', () => {
     root.style.height = '300px';
     root.style.overflow = 'auto';
     document.body.appendChild(root);
-    const vl = new window.OllamaX.VirtualList(root, {
+    const vl = new window.Krevyx.VirtualList(root, {
       rowHeight: 30,
       render: (item) => document.createTextNode(item),
     });
@@ -283,7 +283,7 @@ describe('perf StreamBatcher', () => {
 
   test('delta parçalarını birleştirip tek flush ile iletmeli', () => {
     const onFlush = jest.fn();
-    const b = new window.OllamaX.perf.StreamBatcher(onFlush);
+    const b = new window.Krevyx.perf.StreamBatcher(onFlush);
     b.push('s1', 'mer');
     b.push('s1', 'haba');
     b.push('s1', '');
@@ -294,7 +294,7 @@ describe('perf StreamBatcher', () => {
 
   test('farklı anahtarları ayrı flush etmeli', () => {
     const onFlush = jest.fn();
-    const b = new window.OllamaX.perf.StreamBatcher(onFlush);
+    const b = new window.Krevyx.perf.StreamBatcher(onFlush);
     b.push('a', 'x');
     b.push('b', 'y');
     jest.advanceTimersByTime(20);
@@ -303,23 +303,23 @@ describe('perf StreamBatcher', () => {
   });
 
   test('mark/measure ölçüm günlüğünü doldurmalı', () => {
-    window.OllamaX.perf.mark('test.a');
-    window.OllamaX.perf.measure('test.fn', () => 42);
-    expect(window.OllamaX.perf.recent('test').length).toBeGreaterThanOrEqual(2);
+    window.Krevyx.perf.mark('test.a');
+    window.Krevyx.perf.measure('test.fn', () => 42);
+    expect(window.Krevyx.perf.recent('test').length).toBeGreaterThanOrEqual(2);
   });
 
   test('renderWhenVisible görünür elemanda render etmeli', () => {
     const target = document.createElement('div');
     document.body.appendChild(target);
     const fn = jest.fn();
-    window.OllamaX.perf.renderWhenVisible(target, fn);
+    window.Krevyx.perf.renderWhenVisible(target, fn);
     expect(fn).toHaveBeenCalled();
   });
 });
 
 describe('agent-canvas (bağımsız yardımcıları)', () => {
-  test('modül yüklenmesi window.ollamaxApi olmadan hata vermemeli', () => {
-    delete window.ollamaxApi;
+  test('modül yüklenmesi window.krevyxApi olmadan hata vermemeli', () => {
+    delete window.krevyxApi;
     expect(() => loadScript('agent-canvas.js')).not.toThrow();
   });
 });
@@ -331,8 +331,8 @@ describe('onboarding-tour (bağımsız yardımcılar)', () => {
 });
 
 describe('orchestrator-view (bağımsız yardımcılar)', () => {
-  test('modül yüklenmesi window.ollamaxApi olmadan hata vermemeli', () => {
-    delete window.ollamaxApi;
+  test('modül yüklenmesi window.krevyxApi olmadan hata vermemeli', () => {
+    delete window.krevyxApi;
     expect(() => loadScript('orchestrator-view.js')).not.toThrow();
   });
 });

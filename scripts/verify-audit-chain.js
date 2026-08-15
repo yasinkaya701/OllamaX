@@ -1,5 +1,5 @@
 'use strict';
-/* OllamaX v3.0 — denetim zinciri doğrulama CLI aracı.
+/* Krevyx v3.0 — denetim zinciri doğrulama CLI aracı.
  * Kullanım: npm run audit:verify [audit.jsonl yolu] */
 const auditLog = require('../src/main/audit-log');
 

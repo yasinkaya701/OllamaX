@@ -25,11 +25,11 @@ const configStore = require('../src/main/config/config-store');
 
 let tmpDir;
 beforeAll(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ollamax-modules-'));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'krevyx-modules-'));
   configStore.setApp({ getPath: () => tmpDir });
   // Workspace klasörü oluşturup config'e işle (executor sandbox kökü için)
-  // userDataDir() = app.getPath('userData') => tmpDir; ollamaxRoot() => tmpDir/ollamax
-  fs.mkdirSync(path.join(tmpDir, 'ollamax'), { recursive: true });
+  // userDataDir() = app.getPath('userData') => tmpDir; krevyxRoot() => tmpDir/Krevyx
+  fs.mkdirSync(path.join(tmpDir, 'Krevyx'), { recursive: true });
   configStore.updateConfig((c) => ({
     ...c,
     workspaces: [{ path: path.join(tmpDir, 'workspace'), alias: 'ws' }],

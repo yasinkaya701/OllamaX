@@ -91,7 +91,7 @@ async function run() {
 
   await t('Composer görev paneli bağlam eklenince görünür ve görev kaydı oluşur', async () =>
     await evalJs(async () => {
-      const api = window.OllamaX?.api || window.ollamaxApi;
+      const api = window.Krevyx?.api || window.krevyxApi;
       if (!window.composerAddTask) return 'fn-yok';
       const task = window.composerAddTask('CDP test görevi', []);
       window.composerUpdateTask?.(task, 'running');
@@ -105,9 +105,9 @@ async function run() {
     await evalJs(async () => {
       const chip = document.querySelector('#settings-profile-chips .theme-chip');
       if (!chip) return 'profil-cipi-yok';
-      await window.OllamaX.loadRichProfiles?.();
-      if (!window.OllamaX.getProfileInfo?.('precise')?.markdown) return 'md-yok';
-      const show = window.OllamaX.showProfileDetail;
+      await window.Krevyx.loadRichProfiles?.();
+      if (!window.Krevyx.getProfileInfo?.('precise')?.markdown) return 'md-yok';
+      const show = window.Krevyx.showProfileDetail;
       if (!show) return false;
       show('precise');
       return !document.getElementById('profile-detail-panel').classList.contains('hidden');

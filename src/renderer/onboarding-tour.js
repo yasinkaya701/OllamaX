@@ -1,20 +1,20 @@
 /**
- * onboarding-tour.js — OllamaX v3.1 ilk kullanım turu (Plan Bölüm 1.6)
+ * onboarding-tour.js — Krevyx v3.1 ilk kullanım turu (Plan Bölüm 1.6)
  *
  * İlk açılışta 4 ekranlık yönlendirme: hoş geldin, bağlantı, araçlar,
- * ajan özellikleri. localStorage bayrağı (ollamax_onboarding_v1) ile
+ * ajan özellikleri. localStorage bayrağı (Krevyx_onboarding_v1) ile
  * bir kez gösterilir; Ayarlar'dan yeniden oynatılabilir.
  */
 'use strict';
 (function initOnboardingTour() {
   if (typeof window === 'undefined') return;
 
-  const FLAG = 'ollamax_onboarding_v1';
+  const FLAG = 'Krevyx_onboarding_v1';
 
   const STEPS = [
     {
       label: 'Hoş geldin',
-      title: 'OllamaX Ultra\'ya hoş geldin',
+      title: 'Krevyx Ultra\'ya hoş geldin',
       body: 'Yerel Ollama modelleri ve bulut sağlayıcıları (OpenAI, Anthropic, Gemini) tek bir ajan stüdyosunda. API anahtarlarını sağdaki <strong>Araçlar</strong> panelinden girmen yeterli — yerel Ollama anahtar gerektirmez.',
     },
     {
@@ -99,8 +99,8 @@
     wasShown: () => localStorage.getItem(FLAG) === '1',
   };
 
-  window.OllamaX = window.OllamaX || {};
-  window.OllamaX.onboarding = Tour;
+  window.Krevyx = window.Krevyx || {};
+  window.Krevyx.onboarding = Tour;
 
   document.addEventListener('DOMContentLoaded', () => {
     if (Tour.wasShown()) return;

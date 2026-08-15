@@ -43,7 +43,7 @@ Sen uzman bir prompt mühendisisin. Kullanıcının ham, günlük dile yazılmı
 
 ## ÇALIŞMA KURALLARI
 - Çıktı SADECE Markdown prompt bloğu olmalı; açıklama kısa tut (1-2 cümle + nasıl kullanılacağı).
-- Prompt'u OllamaX ajan rollerine KOPYALANABİLECEK şekilde yaz (kopyala-yapıştır uyumlu).
+- Prompt'u Krevyx ajan rollerine KOPYALANABİLECEK şekilde yaz (kopyala-yapıştır uyumlu).
 - Fikir belirsizse en yaygın yorumla üret ama [köşeli parantez] içinde doldurulması gereken alanlar bırak.
 - Türkçe fikir Türkçe prompt üretir; İngilizce fikir İngilizce prompt üretir.
 
@@ -81,7 +81,7 @@ Sen uzman bir prompt mühendisisin. Var olan bir sistem prompt'unu daha net, yap
   }
 
   function lastHistory(role) {
-    const st = ((window.OllamaX?.state || window.state) && (window.OllamaX?.state || window.state).history) || [];
+    const st = ((window.Krevyx?.state || window.state) && (window.Krevyx?.state || window.state).history) || [];
     for (let i = st.length - 1; i >= 0; i--) if (st[i].role === role) return st[i];
     return null;
   }
@@ -91,7 +91,7 @@ Sen uzman bir prompt mühendisisin. Var olan bir sistem prompt'unu daha net, yap
     const arg = extractSlash('summarize', raw);
     if (arg === null) return false;
     const n = Number(/^\d+$/.test(arg) ? arg : '1') || 1;
-    const history = ((window.OllamaX?.state || window.state) && (window.OllamaX?.state || window.state).history) || [];
+    const history = ((window.Krevyx?.state || window.state) && (window.Krevyx?.state || window.state).history) || [];
     const answers = history.filter((h) => h.role === 'assistant').slice(-n);
     if (!answers.length) {
       showBubble('Özetlenecek yanıt bulunamadı. Önce bir model yanıtı alın.', 'Prompt Builder');
@@ -154,7 +154,7 @@ Sen uzman bir prompt mühendisisin. Var olan bir sistem prompt'unu daha net, yap
   function sendToolMessage(tool, userText) {
     return new Promise((resolve) => {
       const api = window.api;
-      const state = window.OllamaX?.state || window.state;
+      const state = window.Krevyx?.state || window.state;
       const q = window.q;
       if (!api || !api.send) { resolve(); return; }
       const area = q('#chat-area');
@@ -178,7 +178,7 @@ Sen uzman bir prompt mühendisisin. Var olan bir sistem prompt'unu daha net, yap
       state._activeStreams[agentId] = {
         onChunk(d) {
           full += d.content;
-          const mdFn = window.OllamaX?.md || window.md;
+          const mdFn = window.Krevyx?.md || window.md;
           if (typeof mdFn === 'function') bubble.innerHTML = mdFn(full);
           else bubble.textContent = full;
           if (area) area.scrollTop = area.scrollHeight;
@@ -201,8 +201,8 @@ Sen uzman bir prompt mühendisisin. Var olan bir sistem prompt'unu daha net, yap
 
   const SLASH_HANDLERS = [tryPrompt, trySummarize, tryExtract, tryTranslate];
 
-  window.OllamaX = window.OllamaX || {};
-  window.OllamaX.promptBuilder = {
+  window.Krevyx = window.Krevyx || {};
+  window.Krevyx.promptBuilder = {
     PROMPT_BUILDER_PROMPT,
     IMPROVER_PROMPT,
     trySlash(raw) {

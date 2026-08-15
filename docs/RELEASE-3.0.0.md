@@ -1,4 +1,4 @@
-# OllamaX v3.0.0 — Launch Summary
+# Krevyx v3.0.0 — Launch Summary
 
 ## Branch & Commit
 All v3.0 work is pushed to the GitHub repository branch:

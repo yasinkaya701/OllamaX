@@ -3,7 +3,7 @@
  * serve-ui-test.js — UI interaktif testi için statik sunucu.
  * index.html'i diskten okuyup:
  *  - CSP'den gereksiz kısıtlamaları gevşetir (testte sorun çıkmasın diye değil; mock için yeterli)
- *  - <head> sonuna mock ollamaxApi (electron IPC taklidi) enjekte eder
+ *  - <head> sonuna mock krevyxApi (electron IPC taklidi) enjekte eder
  *  - script src'leri aynı dizinden servis edilir
  * ile tarayıcıda tüm UI'ı gerçek Electron olmadan test etmeyi mümkün kılar.
  *
@@ -31,7 +31,7 @@ const fakeData = {
     { name: 'gemma3:4b', size: '3.1 GB', family: 'gemma', status: 'ready', modified: '2026-08-02' },
   ],
   sessions: [
-    { id: 's1', title: 'OllamaX v3.0 geçişi', createdAt: Date.now() - 3600000 * 5 },
+    { id: 's1', title: 'Krevyx v3.0 geçişi', createdAt: Date.now() - 3600000 * 5 },
     { id: 's2', title: 'Arayüz modernizasyonu', createdAt: Date.now() - 3600000 * 2 },
   ],
   memoryItems: [
@@ -46,14 +46,14 @@ const fakeData = {
   ],
   audit: [
     { time: Date.now() - 60000, type: 'config.set', detail: 'theme=dark' },
-    { time: Date.now() - 300000, type: 'session.create', detail: 'OllamaX v3.0 geçişi' },
+    { time: Date.now() - 300000, type: 'session.create', detail: 'Krevyx v3.0 geçişi' },
   ],
   agents: [],
   queue: [],
   settings: {
     apiBase: 'http://localhost:11434',
     temperature: 0.7,
-    systemPrompt: 'Sen OllamaX AI asistanısın.',
+    systemPrompt: 'Sen Krevyx AI asistanısın.',
   },
   featuredRepos: { categories: [
     { id: 'ai-foundations', label: 'AI Foundations', repos: [
@@ -78,7 +78,7 @@ let sessionCounter = 3;
 function makeMockApi() {
   return `
 <script>
-// MOCK ollamaxApi — Electron preload/contextBridge taklidi (yalnızca UI testi için)
+// MOCK krevyxApi — Electron preload/contextBridge taklidi (yalnızca UI testi için)
 window.__uiTestMode = true;
 const __mock = window.__mockData = ${JSON.stringify(fakeData)};
 
@@ -87,7 +87,7 @@ const __listeners = {};
 function emit(evt, data) { (__listeners[evt] || []).forEach((f) => { try { f(data); } catch (e) { console.warn('mock emit fail', e); } }); }
 
 // Stream taklidi: /chat çağrısında karakter karakter token üretir
-const __demoReply = 'Merhaba! Ben OllamaX v3.2.0 test modunda çalışıyorum. Yerel Ollama bağlantısı bu modda taklit ediliyor; tüm paneller (Oturumlar, Bellek, İş Akışları, Eklentiler, Denetim) gerçek veri ile dolduruldu. Komut paletini Ctrl/Cmd+K ile açabilir, Agent Canvas bölümlerini /goal ile test edebilirsiniz.';
+const __demoReply = 'Merhaba! Ben Krevyx v3.2.0 test modunda çalışıyorum. Yerel Ollama bağlantısı bu modda taklit ediliyor; tüm paneller (Oturumlar, Bellek, İş Akışları, Eklentiler, Denetim) gerçek veri ile dolduruldu. Komut paletini Ctrl/Cmd+K ile açabilir, Agent Canvas bölümlerini /goal ile test edebilirsiniz.';
 
 const api = {
   onEvent: (evt, fn) => { (__listeners[evt] = __listeners[evt] || []).push(fn); },
@@ -107,7 +107,7 @@ function __invokeResult(ch, args) {
   }
   if (method === 'get-model-catalog') return { openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-5'], anthropic: ['claude-sonnet-4-5', 'claude-haiku-4'], gemini: ['gemini-2.5-pro', 'gemini-2.5-flash'] };
   if (method === 'normalize-ollama-host') return { ok: true, host: args || 'http://localhost:11434' };
-  if (method === 'app-health') return { ok: true, ollama: 'mock', userData: '/home/ubuntu/.ollamax' };
+  if (method === 'app-health') return { ok: true, ollama: 'mock', userData: '/home/ubuntu/.Krevyx' };
   if (method === 'get-stats') return { ok: true, tokensUsed: 12450, sessions: __mock.sessions.length };
   if (method === 'get-workspaces') return { ok: true, workspaces: [] };
   if (method === 'persist-load') return { ok: true, settings: __mock.settings };
@@ -139,14 +139,14 @@ function __invokeResult(ch, args) {
     }, 400);
     return { ok: true };
   }
-  // Genel invoke kanalları (v3 modülleri 'ollamaxApi.invoke(ch, method, args)' çağırır)
+  // Genel invoke kanalları (v3 modülleri 'krevyxApi.invoke(ch, method, args)' çağırır)
   return __invokeByChannel(ch, args);
 }
 
 function __invokeByChannel(ch, args) {
   args = args || {};
   if (String(ch).startsWith('ipc:3:')) return __v3Handle(String(ch).slice(6), args);
-  if (ch === 'ollama' || ch === 'ollamax' || ch === 'events') {
+  if (ch === 'ollama' || ch === 'Krevyx' || ch === 'events') {
     if (method === 'models') return __mock.models;
     if (method === 'generate' || method === 'chat') {
       // Stream simülasyonu
@@ -161,7 +161,7 @@ function __invokeByChannel(ch, args) {
       }, 400);
       return { ok: true };
     }
-    if (method === 'version') return { ollama: '0.6.0', ollamax: '3.2.0' };
+    if (method === 'version') return { ollama: '0.6.0', Krevyx: '3.2.0' };
     if (method === 'status') return { ok: true, ollama: 'mock' };
   }
   if (ch === 'sessions' || ch === 'sessions.v3') {
@@ -274,9 +274,9 @@ window.__mockIpc = { on: (c, fn) => { emit(c, fn); }, off: () => {} };
 // EventChannel akış anahtarları ön kayıt (renderer'ın dinlediği kanallar)
 ['stream:token', 'stream:done', 'stream:error', 'agent:started', 'agent:done', 'agents:changed', 'sessions:changed', 'memory:changed', 'config:changed', 'audit:entry'].forEach((e) => { api.onEvent(e, () => {}); });
 
-window.ollamaxApi = api;
-window.ollamaxPlatform = 'linux';
-console.log('[ui-test-server] mock ollamaxApi yüklendi');
+window.krevyxApi = api;
+window.krevyxPlatform = 'linux';
+console.log('[ui-test-server] mock krevyxApi yüklendi');
 </script>`;
 }
 
@@ -306,5 +306,5 @@ const server = http.createServer((req, res) => {
   } catch { res.writeHead(404); res.end('not found'); }
 });
 
-server.listen(PORT, () => console.log(`[ui-test-server] http://localhost:${PORT} — mock ollamaxApi aktif`));
+server.listen(PORT, () => console.log(`[ui-test-server] http://localhost:${PORT} — mock krevyxApi aktif`));
 console.log(`[ui-test-server] başlatılıyor... port ${PORT}`);

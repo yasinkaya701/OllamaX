@@ -74,16 +74,16 @@ async function run() {
 
   /* 1) UI: modül yüklendi mi */
   await t('Prompt builder modülü yüklendi', async () =>
-    await evalJs(() => typeof window.OllamaX?.promptBuilder === 'object' && typeof window.OllamaX.promptBuilder.trySlash === 'function'));
+    await evalJs(() => typeof window.Krevyx?.promptBuilder === 'object' && typeof window.Krevyx.promptBuilder.trySlash === 'function'));
 
   /* 2) Regex mantığı: trySlash doğru komutları yakalıyor, yabancılara dokunmuyor */
   await t('Sohbet alanı temizlendi', async () =>
-    await evalJs(() => { window.OllamaX.clearChat(); return true; }));
+    await evalJs(() => { window.Krevyx.clearChat(); return true; }));
   await t('trySlash komut eşleşme mantığı (unit)', async () =>
     await evalJs(() => {
-      const pb = window.OllamaX.promptBuilder;
+      const pb = window.Krevyx.promptBuilder;
       let out = true;
-      window.OllamaX.clearChat();
+      window.Krevyx.clearChat();
       out = out && pb.trySlash('/prompt bir seo ajanı yap') === true;
       out = out && pb.trySlash('/improve') === true;
       out = out && pb.trySlash('/summarize') === true;
@@ -94,17 +94,17 @@ async function run() {
       return out;
     }));
 
-  /* 3) UI: window.OllamaX.state/md/save erişilebilir */
-  await t('window.OllamaX.state/md/save erişimi', async () =>
-    await evalJs(() => typeof window.OllamaX.state === 'object' && typeof window.OllamaX.md === 'function' && typeof window.OllamaX.save === 'function'));
+  /* 3) UI: window.Krevyx.state/md/save erişilebilir */
+  await t('window.Krevyx.state/md/save erişimi', async () =>
+    await evalJs(() => typeof window.Krevyx.state === 'object' && typeof window.Krevyx.md === 'function' && typeof window.Krevyx.save === 'function'));
 
   /* 4) Komut tüketimi: her slash komutu kendi AI balonunu oluşturur; /prompt için "çalıştı…" kullanıcı balonu oluşur */
   await t('Komut tüketimi öncesinde sohbet temizlendi', async () =>
-    await evalJs(() => { window.OllamaX.clearChat(); return true; }));
+    await evalJs(() => { window.Krevyx.clearChat(); return true; }));
   await t('Komut tüketimi: 5 komut 5 AI balonu üretti, normal mesajlar tüketildi', async () =>
     await evalJs(() => {
-      const pb = window.OllamaX.promptBuilder;
-      window.OllamaX.clearChat();
+      const pb = window.Krevyx.promptBuilder;
+      window.Krevyx.clearChat();
       pb.trySlash('/prompt bir seo ajanı yap');
       pb.trySlash('/improve');
       pb.trySlash('/summarize');

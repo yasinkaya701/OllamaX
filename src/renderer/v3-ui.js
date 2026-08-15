@@ -1,5 +1,5 @@
 /**
- * v3-ui.js — OllamaX v3.0 arayüz katmanı (Faz 1–6 entegrasyonu)
+ * v3-ui.js — Krevyx v3.0 arayüz katmanı (Faz 1–6 entegrasyonu)
  *
  * Eski app.js'i değiştirmeden çalışır; bu dosya DOM'a yeni panelleri
  * enjekte eder ve ipc:3:* uç noktalarını render'a bağlar.
@@ -18,8 +18,8 @@
 'use strict';
 
 (function initV3Ui() {
-  if (!window.ollamaxApi) return;
-  const api = window.ollamaxApi;
+  if (!window.krevyxApi) return;
+  const api = window.krevyxApi;
 
   /* ------------------------------------------------------------------ */
   /* Küçük yardımcılar                                                   */
@@ -438,8 +438,8 @@
   /* ------------------------------------------------------------------ */
   function bindEventStream() {
     // V3.1: Token akışını raf başına tek güncellemede batch'le (plan 1.8.2)
-    const batcher = window.OllamaX?.perf?.StreamBatcher
-      ? new window.OllamaX.perf.StreamBatcher((sessionId, chunk) => appendToAgentBubble(sessionId, 'token', chunk))
+    const batcher = window.Krevyx?.perf?.StreamBatcher
+      ? new window.Krevyx.perf.StreamBatcher((sessionId, chunk) => appendToAgentBubble(sessionId, 'token', chunk))
       : null;
     api.on('event:token', (d) => {
       if (!d || !d.sessionId) return;
@@ -605,7 +605,7 @@
     pane.appendChild(h('div', { className: 'sec-label' }, 'Sub-agent orkestrasyonu'));
     const root = h('div', { id: 'orchestrator-root', className: 'task-timeline' });
     pane.appendChild(root);
-    if (window.OllamaX?.orchestrator) window.OllamaX.orchestrator.render(root);
+    if (window.Krevyx?.orchestrator) window.Krevyx.orchestrator.render(root);
   }
 
   /* ------------------------------------------------------------------ */
@@ -677,26 +677,26 @@
       renderAuditPanel();
       renderToolExecutionPanel();
       renderOrchestratorPanel();
-      if (window.OllamaX?.agentConsole?.render) window.OllamaX.agentConsole.render();
+      if (window.Krevyx?.agentConsole?.render) window.Krevyx.agentConsole.render();
     }
 
     // 5. Streaming bağla
     bindEventStream();
 
     // 6. V3.1: Temayı persist edilmiş konfigürasyondan uygula
-    if (window.OllamaX?.theme) {
-      const cfg = window.OllamaX.theme.getThemeConfig();
-      if (cfg.theme && cfg.theme !== 'dark') window.OllamaX.theme.apply(cfg.theme);
-      if (cfg.accent) window.OllamaX.theme.applyAccent(cfg.accent);
+    if (window.Krevyx?.theme) {
+      const cfg = window.Krevyx.theme.getThemeConfig();
+      if (cfg.theme && cfg.theme !== 'dark') window.Krevyx.theme.apply(cfg.theme);
+      if (cfg.accent) window.Krevyx.theme.applyAccent(cfg.accent);
     }
 
     // 7. V3.1: Komut paletine kanallarını kaydet
-    if (window.OllamaX?.palette) {
-      const p = window.OllamaX.palette;
+    if (window.Krevyx?.palette) {
+      const p = window.Krevyx.palette;
       p.register({ group: 'actions', label: 'Sohbet kutusuna odaklan', run: () => $('#msg-input')?.focus() });
       p.register({ group: 'actions', label: 'Araçlar panelini aç/kapat', run: () => $('#tools-panel')?.classList.toggle('hidden') });
       p.register({ group: 'actions', label: 'Ayarları aç', run: () => { if (typeof openModal === 'function') openModal('settings-modal'); } });
-      p.register({ group: 'actions', label: 'Temayı değiştir (koyu/açık)', run: () => window.OllamaX?.theme?.toggle() });
+      p.register({ group: 'actions', label: 'Temayı değiştir (koyu/açık)', run: () => window.Krevyx?.theme?.toggle() });
       p.register({ group: 'actions', label: 'Bellekte ara', run: () => { const t = $('[data-ttab="memory"]'); if (t) t.click(); $('#memory-search-input')?.focus(); } });
       p.register({ group: 'actions', label: 'Oturumu kaydet', run: async () => { await v3.invoke('session-save', { title: `Oturum ${new Date().toLocaleString('tr-TR')}` }); toast('Oturum kaydedildi', 'info'); refreshSessions(); } });
       p.register({ group: 'actions', label: 'Terminali aç/kapat', run: () => { const dock = $('#terminal-dock'); if (dock) dock.classList.toggle('collapsed'); } });

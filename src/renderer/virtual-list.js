@@ -1,5 +1,5 @@
 /**
- * virtual-list.js — OllamaX v3.1 sanal liste (Plan Bölüm 1.8.1)
+ * virtual-list.js — Krevyx v3.1 sanal liste (Plan Bölüm 1.8.1)
  *
  * Bağımlılıksız, çerçevesiz, yalnızca görünür satırları DOM'a işleyen
  * pencereleme katmanı. Binlerce öğeli denetim günlüğü / bellek / görev
@@ -139,6 +139,6 @@ class VirtualList {
 }
 
 if (typeof window !== 'undefined') {
-  window.OllamaX = window.OllamaX || {};
-  window.OllamaX.VirtualList = VirtualList;
+  window.Krevyx = window.Krevyx || {};
+  window.Krevyx.VirtualList = VirtualList;
 }

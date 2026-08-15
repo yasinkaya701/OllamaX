@@ -1,11 +1,11 @@
-# 🛡️ OllamaX Ultra Pro: Güvenlik ve Kod Kalitesi Raporu (Gemini Security Audit)
+# 🛡️ Krevyx Ultra Pro: Güvenlik ve Kod Kalitesi Raporu (Gemini Security Audit)
 
-Bu rapor, OllamaX Ultra Pro projesinin mimari sağlamlığını, güvenlik açıklarını ve performans potansiyelini analiz eder.
+Bu rapor, Krevyx Ultra Pro projesinin mimari sağlamlığını, güvenlik açıklarını ve performans potansiyelini analiz eder.
 
 ---
 
 ## 📊 1. Yönetici Özeti (Executive Summary)
-OllamaX Ultra Pro, modern bir AI stüdyosunun gerektirdiği tüm özelliklere (multi-agent, cross-platform, multi-cloud) sahiptir. Kod tabanı **%95 oranında temiz, modüler ve yüksek performanslıdır.** Geri kalan %5'lik kısım, üretim seviyesindeki güvenlik ve hata toleransı (fault tolerance) iyileştirmelerini kapsar.
+Krevyx Ultra Pro, modern bir AI stüdyosunun gerektirdiği tüm özelliklere (multi-agent, cross-platform, multi-cloud) sahiptir. Kod tabanı **%95 oranında temiz, modüler ve yüksek performanslıdır.** Geri kalan %5'lik kısım, üretim seviyesindeki güvenlik ve hata toleransı (fault tolerance) iyileştirmelerini kapsar.
 
 ---
 
@@ -85,7 +85,7 @@ OllamaX Ultra Pro, modern bir AI stüdyosunun gerektirdiği tüm özelliklere (m
 3.  **Güvenlik:** `main.js` içinde `shell.openExternal` kullanımını kısıtlayarak sadece bilinen (whitelist) URL'lerin açılmasına izin ver.
 
 ---
-*Raporun bu bölümü, OllamaX Ultra Pro'yu ticari bir ürün kalitesine taşımak için hazırlanmıştır.*
+*Raporun bu bölümü, Krevyx Ultra Pro'yu ticari bir ürün kalitesine taşımak için hazırlanmıştır.*
 
 ---
 
@@ -114,7 +114,7 @@ OllamaX Ultra Pro, modern bir AI stüdyosunun gerektirdiği tüm özelliklere (m
 *   **"Time Travel" Chat:** Mesaj geçmişinde sadece yukarı kaydırmak yerine, bir zaman çizelgesi (Timeline) üzerinden önceki delegasyon katmanlarına hızlıca "zıplama" yeteneği.
 
 ---
-*Bu bölüm, OllamaX Ultra Pro'nun sadece bir araç değil, yaşayan bir deneyim olması için hazırlanmıştır.*
+*Bu bölüm, Krevyx Ultra Pro'nun sadece bir araç değil, yaşayan bir deneyim olması için hazırlanmıştır.*
 
 ---
 
@@ -150,33 +150,33 @@ OllamaX Ultra Pro, modern bir AI stüdyosunun gerektirdiği tüm özelliklere (m
 *   **Başarı Rozetleri:** "1000 satır kod düzeltildi", "İlk GitHub reposu klonlandı" gibi teknik başarıların arayüzde şık rozetler (badges) olarak sergilenmesi.
 
 ---
-*Bu doküman, OllamaX Ultra Pro'nun sadece bir kodlama aracı değil, bir yapay zeka işletim sistemi (AI-OS) olma yolundaki vizyon belgesidir.*
+*Bu doküman, Krevyx Ultra Pro'nun sadece bir kodlama aracı değil, bir yapay zeka işletim sistemi (AI-OS) olma yolundaki vizyon belgesidir.*
 
 ---
 
 ## 🔬 13. Yapay Zeka Ekosistemi ve Repo Önerileri (Research Audit)
 
 ### 📈 Pazar Analizi ve Trendler (2024-2025)
-Yapay zeka ekosistemi, "sohbet" odaklı model kullanımından "otonom ajan" (agentic) iş akışlarına doğru evrilmektedir. OllamaX Ultra Pro'nun bu ekosistemdeki yerini güçlendirecek, entegrasyona en uygun yüksek değerli GitHub depoları aşağıda kategorize edilmiştir.
+Yapay zeka ekosistemi, "sohbet" odaklı model kullanımından "otonom ajan" (agentic) iş akışlarına doğru evrilmektedir. Krevyx Ultra Pro'nun bu ekosistemdeki yerini güçlendirecek, entegrasyona en uygun yüksek değerli GitHub depoları aşağıda kategorize edilmiştir.
 
 ### 🤖 Otonom Ajan Çatıları (Agent Frameworks)
-*   **[CrewAI](https://github.com/crewAIInc/crewAI):** Rol bazlı, iş birliği yapan otonom ajan ekipleri kurmak için en popüler araçtır. OllamaX'in "Lead Agent" sistemiyle tam uyumlu çalışabilir.
-*   **[OpenHands (OpenDevin)](https://github.com/All-Hands-AI/OpenHands):** Tam kapsamlı, otonom bir yazılım mühendisi ajanıdır. OllamaX'e "Süper Mühendis" modu olarak entegre edilebilir.
+*   **[CrewAI](https://github.com/crewAIInc/crewAI):** Rol bazlı, iş birliği yapan otonom ajan ekipleri kurmak için en popüler araçtır. Krevyx'in "Lead Agent" sistemiyle tam uyumlu çalışabilir.
+*   **[OpenHands (OpenDevin)](https://github.com/All-Hands-AI/OpenHands):** Tam kapsamlı, otonom bir yazılım mühendisi ajanıdır. Krevyx'e "Süper Mühendis" modu olarak entegre edilebilir.
 *   **[MetaGPT](https://github.com/foundationagents/MetaGPT):** Tek satırlık bir isteği, tüm bir yazılım şirketini simüle ederek (PM, Architect, Dev rolleriyle) tam bir depoya dönüştürür.
 
 ### 💻 Kodlama ve Terminal Ajanları
-*   **[Aider](https://github.com/Aider-AI/aider):** Git entegrasyonu en güçlü terminal ajanıdır. OllamaX içindeki "Files" sekmesiyle Aider'ın "Pair Programming" yeteneklerini birleştirmek devrimsel bir adım olur.
-*   **[Cline](https://github.com/cline/cline):** VS Code içinde "Planla ve Uygula" modelini en iyi yansıtan ajandır. OllamaX'in arayüz mimarisi için ilham verici bir referanstır.
+*   **[Aider](https://github.com/Aider-AI/aider):** Git entegrasyonu en güçlü terminal ajanıdır. Krevyx içindeki "Files" sekmesiyle Aider'ın "Pair Programming" yeteneklerini birleştirmek devrimsel bir adım olur.
+*   **[Cline](https://github.com/cline/cline):** VS Code içinde "Planla ve Uygula" modelini en iyi yansıtan ajandır. Krevyx'in arayüz mimarisi için ilham verici bir referanstır.
 
 ### 🏗️ Bilgi Yönetimi ve Altyapı (RAG)
-*   **[LlamaIndex](https://github.com/run-llama/llama_index):** Ajanların yerel dosya sistemindeki binlerce dosyayı "hafızasına" alması (RAG) için en sağlam kütüphanedir. OllamaX'e "Gelişmiş Hafıza" özelliği katar.
-*   **[Dify](https://github.com/langgenius/dify):** Görsel ajan akışları tasarlamak için kullanılan platformdur. OllamaX'in "Tools" paneli için sürükle-bırak mantığında bir rehber olabilir.
+*   **[LlamaIndex](https://github.com/run-llama/llama_index):** Ajanların yerel dosya sistemindeki binlerce dosyayı "hafızasına" alması (RAG) için en sağlam kütüphanedir. Krevyx'e "Gelişmiş Hafıza" özelliği katar.
+*   **[Dify](https://github.com/langgenius/dify):** Görsel ajan akışları tasarlamak için kullanılan platformdur. Krevyx'in "Tools" paneli için sürükle-bırak mantığında bir rehber olabilir.
 
 ### 💡 Temel Bulgular ve Stratejik Öneri (Key Insights)
-OllamaX Ultra Pro'nun bir sonraki aşamasında, bu repoların sadece linklerini sunmak yerine, **CrewAI** veya **LlamaIndex** kütüphanelerini "Dahili Eklenti" (Native Plugin) olarak sisteme dahil etmek, uygulamayı dünyadaki en güçlü yerel AI çalışma alanlarından biri haline getirecektir.
+Krevyx Ultra Pro'nun bir sonraki aşamasında, bu repoların sadece linklerini sunmak yerine, **CrewAI** veya **LlamaIndex** kütüphanelerini "Dahili Eklenti" (Native Plugin) olarak sisteme dahil etmek, uygulamayı dünyadaki en güçlü yerel AI çalışma alanlarından biri haline getirecektir.
 
 ---
-*Bu araştırma raporu, OllamaX Ultra Pro'nun stratejik yol haritasını desteklemek için titizlikle hazırlanmıştır.*
+*Bu araştırma raporu, Krevyx Ultra Pro'nun stratejik yol haritasını desteklemek için titizlikle hazırlanmıştır.*
 
 ---
 
@@ -184,30 +184,30 @@ OllamaX Ultra Pro'nun bir sonraki aşamasında, bu repoların sadece linklerini 
 
 ### 🧩 Otomatik Prompt Optimizasyonu (The End of Manual Prompting)
 Araştırmalar, manuel prompt yazımının yerini "Programlanabilir Prompt" sistemlerine bıraktığını göstermektedir.
-*   **[DSPy (Stanford)](https://github.com/stanfordnlp/dspy):** Promptları manuel yazmak yerine, onları bir kod gibi "derleyen" (compile) devrimsel bir çatıdır. OllamaX'e entegre edildiğinde, ajanların başarısını %40'a kadar otomatik olarak artırabilir.
+*   **[DSPy (Stanford)](https://github.com/stanfordnlp/dspy):** Promptları manuel yazmak yerine, onları bir kod gibi "derleyen" (compile) devrimsel bir çatıdır. Krevyx'e entegre edildiğinde, ajanların başarısını %40'a kadar otomatik olarak artırabilir.
 *   **[Langfuse](https://github.com/langfuse/langfuse):** Ajanların ne kadar iyi performans gösterdiğini, hangi promptların "halüsinasyon" gördüğünü takip eden endüstriyel bir gözlem (observability) aracıdır.
 
 ### 🖼️ Multimodal ve Görsel Zeka (Local Vision)
-OllamaX'in sadece metin değil, resim ve ekran görüntülerini de anlaması için kritik repolar:
+Krevyx'in sadece metin değil, resim ve ekran görüntülerini de anlaması için kritik repolar:
 *   **[Moondream](https://github.com/vikhyat/moondream):** Çok küçük kaynaklarla yerel olarak çalışan en güçlü görsel modeldir. Ollama üzerinden doğrudan çağrılabilir.
 *   **[Llava (llama.cpp)](https://github.com/ggml-org/llama.cpp):** Multimodal yeteneklerin (metin + resim) yerel donanımda en stabil çalıştığı motor altyapısıdır.
 
 ### 🔌 "Drop-in" API Alternatifleri
-*   **[LocalAI](https://github.com/mudler/LocalAI):** OpenAI API'si bekleyen her türlü yazılımı, hiçbir kod değişikliği yapmadan OllamaX'e bağlamanızı sağlayan bir köprüdür.
-*   **[Open WebUI](https://github.com/open-webui/open-webui):** Dosya yükleme ve RAG süreçleri için en gelişmiş açık kaynak referans arayüzdür. OllamaX'in "Files" sekmesi için UX ilhamı sağlar.
+*   **[LocalAI](https://github.com/mudler/LocalAI):** OpenAI API'si bekleyen her türlü yazılımı, hiçbir kod değişikliği yapmadan Krevyx'e bağlamanızı sağlayan bir köprüdür.
+*   **[Open WebUI](https://github.com/open-webui/open-webui):** Dosya yükleme ve RAG süreçleri için en gelişmiş açık kaynak referans arayüzdür. Krevyx'in "Files" sekmesi için UX ilhamı sağlar.
 
 ### 💡 Stratejik Analiz: "Zeka Katmanlandırma"
-Gelecekte OllamaX Ultra Pro, sadece modelleri çalıştırmakla kalmamalı; **DSPy** gibi araçlarla bu modelleri arka planda sürekli "eğitmeli" ve **Langfuse** ile her bir ajanının kalitesini raporlamalıdır. Bu, uygulamayı basit bir arayüzden, profesyonel bir "AI Mühendislik İstasyonu"na dönüştürür.
+Gelecekte Krevyx Ultra Pro, sadece modelleri çalıştırmakla kalmamalı; **DSPy** gibi araçlarla bu modelleri arka planda sürekli "eğitmeli" ve **Langfuse** ile her bir ajanının kalitesini raporlamalıdır. Bu, uygulamayı basit bir arayüzden, profesyonel bir "AI Mühendislik İstasyonu"na dönüştürür.
 
 ---
-*Bu derinlemesine teknik araştırma, OllamaX Ultra Pro'nun siber-mekanik üstünlüğünü korumak için hazırlanmıştır.*
+*Bu derinlemesine teknik araştırma, Krevyx Ultra Pro'nun siber-mekanik üstünlüğünü korumak için hazırlanmıştır.*
 
 ---
 
 ## 🏗️ 15. Teknik Altyapı Analizi ve Yol Haritası (Infrastructure Roadmap)
 
 ### 📊 Mevcut Altyapı Durumu (Current State)
-OllamaX Ultra Pro, şu an **"Monolitik ve Yalın"** bir mimari üzerine kuruludur. Vanilla JS ve Electron IPC kullanımı, uygulamaya muazzam bir hız ve düşük kaynak tüketimi sağlar. Ancak projenin "Ultra" vizyonu için bu altyapının **"Modüler ve Ölçeklenebilir"** bir yapıya evrilmesi gerekmektedir.
+Krevyx Ultra Pro, şu an **"Monolitik ve Yalın"** bir mimari üzerine kuruludur. Vanilla JS ve Electron IPC kullanımı, uygulamaya muazzam bir hız ve düşük kaynak tüketimi sağlar. Ancak projenin "Ultra" vizyonu için bu altyapının **"Modüler ve Ölçeklenebilir"** bir yapıya evrilmesi gerekmektedir.
 
 ### 🛠️ Yapılması Gereken Teknik İyileştirmeler (To-Do List)
 
@@ -232,7 +232,7 @@ OllamaX Ultra Pro, şu an **"Monolitik ve Yalın"** bir mimari üzerine kuruludu
 *   **Eylem:** Merkezi bir hata yakalama sistemi kurarak, çökmeleri kullanıcıya şık bir "Kurtarma Ekranı" ile bildirmek ve otomatik restart mekanizması eklemek.
 
 ### 🎯 Vizyon: "Siber-Çekirdek" Mimarisi
-Hedefimiz, OllamaX Ultra Pro'yu sadece bir uygulama değil; eklentilerle genişleyebilen, kendi veri tabanını yöneten ve her türlü donanımda (Raspberry Pi'den en güçlü Workstation'lara kadar) aynı performansı veren bir **"AI İşletim Sistemi Çekirdeği"**ne dönüştürmektir.
+Hedefimiz, Krevyx Ultra Pro'yu sadece bir uygulama değil; eklentilerle genişleyebilen, kendi veri tabanını yöneten ve her türlü donanımda (Raspberry Pi'den en güçlü Workstation'lara kadar) aynı performansı veren bir **"AI İşletim Sistemi Çekirdeği"**ne dönüştürmektir.
 
 ---
-*Bu yol haritası, OllamaX Ultra Pro'nun teknik mükemmeliyete ulaşması için bir pusula görevi görmektedir.*
+*Bu yol haritası, Krevyx Ultra Pro'nun teknik mükemmeliyete ulaşması için bir pusula görevi görmektedir.*

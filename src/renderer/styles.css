@@ -1,5 +1,5 @@
 /*
- * OllamaX v3.3 Design System — "Tricolor Pro" (siyah / beyaz / zümrüt #00a878)
+ * Krevyx v3.3 Design System — "Tricolor Pro" (siyah / beyaz / zümrüt #00a878)
  * Tema `data-theme` özniteliğiyle seçilir: dark (varsayılan), light, high-contrast, custom:*
  * Üç renkli disiplin: yüzeyler monokrom (siyah/beyaz/gray), tek imza renk emerald.
  * Eski değişkenler (--bg vb.) geriye uyumluluk için korunur; yeni yüzeyler
@@ -943,7 +943,7 @@ body.ghost-active .tools-panel {
   opacity: 0.85;
 }
 
-/* ================= OLLAMAX v3.0 — YENİ PANELLER ================= */
+/* ================= Krevyx v3.0 — YENİ PANELLER ================= */
 
 /* --- Oturum listesi (kenar çubuğu) --- */
 .session-list {
@@ -1277,7 +1277,7 @@ body.ghost-active .tools-panel {
 
 
 /* ============================================================
-   OllamaX v3.1+ Yeni Arayüz Bileşenleri (UI/Feature Upgrade Planı)
+   Krevyx v3.1+ Yeni Arayüz Bileşenleri (UI/Feature Upgrade Planı)
    ============================================================ */
 
 /* --- Workspace Layout (plan 1.2) — CSS grid ile 4 bölge --- */

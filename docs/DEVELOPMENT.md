@@ -21,7 +21,7 @@ npm run build:win  # Portable (Windows)
 ## Architecture
 
 1. **Main** (`src/main.js`): Node-only — HTTP(S) to Ollama, OpenAI, Anthropic, Gemini; git; filesystem; session file.
-2. **Preload** (`src/preload.js`): Exposes `ollamaxApi` to the renderer with a strict channel whitelist.
+2. **Preload** (`src/preload.js`): Exposes `krevyxApi` to the renderer with a strict channel whitelist.
 3. **Renderer** (`src/renderer/app.js`): UI, orchestration, markdown + DOMPurify + highlight.js, delegation queue.
 
 ## Adding an IPC channel

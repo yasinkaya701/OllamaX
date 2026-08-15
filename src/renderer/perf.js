@@ -1,5 +1,5 @@
 /**
- * perf.js — OllamaX v3.1 performans katmanı (Plan Bölüm 1.8)
+ * perf.js — Krevyx v3.1 performans katmanı (Plan Bölüm 1.8)
  *
  * 1.8.2 Streaming batching: token olaylarını raf başına tek DOM güncellemesinde
  *     birleştirir (agresif aralıklı akışlarda layout thrash'ı önler).
@@ -126,6 +126,6 @@
     target._lazyObserver = obs;
   }
 
-  window.OllamaX = window.OllamaX || {};
-  window.OllamaX.perf = { StreamBatcher, mark, measure, recent, clear: clearMeasurements, renderWhenVisible };
+  window.Krevyx = window.Krevyx || {};
+  window.Krevyx.perf = { StreamBatcher, mark, measure, recent, clear: clearMeasurements, renderWhenVisible };
 })();

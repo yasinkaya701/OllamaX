@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * agent-console.js — OllamaX v3.4 "AI Coding Console" modülü
+ * agent-console.js — Krevyx v3.4 "AI Coding Console" modülü
  *
  * Üç kod ajanını tek arayüzden kontrol eder (Tricolor Pro: siyah / beyaz / zümrüt #00a878):
  *   - Claude Code (Anthropic)
@@ -90,7 +90,7 @@
   }
 
   function getApi() {
-    if (!api && window.ollamaxApi) api = window.ollamaxApi;
+    if (!api && window.krevyxApi) api = window.krevyxApi;
     return api;
   }
 
@@ -474,8 +474,8 @@
     return true;
   }
 
-  window.OllamaX = window.OllamaX || {};
-  window.OllamaX.agentConsole = {
+  window.Krevyx = window.Krevyx || {};
+  window.Krevyx.agentConsole = {
     TAB_ID: 'code-agents',
     TAB_LABEL: 'Kod Ajanları',
     TAB_ICON: 'M4 6h16M4 12h10M4 18h6',

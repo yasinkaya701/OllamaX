@@ -20,7 +20,7 @@ const child = spawn(electronExe, ['.'], {
 });
 
 child.on('error', (err) => {
-  console.error('[OllamaX] Electron başlatılamadı:', err.message);
+  console.error('[Krevyx] Electron başlatılamadı:', err.message);
   process.exit(1);
 });
 

@@ -40,7 +40,7 @@ const INVOKE = new Set([
   'agent-discover-all', // Orkestrasyon: tüm lokal ajanları keşfet
 ]);
 
-contextBridge.exposeInMainWorld('ollamaxApi', {
+contextBridge.exposeInMainWorld('krevyxApi', {
   send(channel, ...args) {
     if (!SEND.has(channel)) throw new Error(`Blocked send: ${channel}`);
     ipcRenderer.send(channel, ...args);

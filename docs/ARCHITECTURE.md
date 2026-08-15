@@ -1,11 +1,11 @@
-# OllamaX v3.0 — Architecture Overview
+# Krevyx v3.0 — Architecture Overview
 
-OllamaX is a local-first AI agent studio built on Electron. It wraps local LLM inference (Ollama) and cloud APIs (OpenAI, Anthropic, Gemini) behind a unified IPC layer, and adds autonomous agent capabilities, persistent semantic memory, executable workflows, a plugin system, and a full audit trail.
+Krevyx is a local-first AI agent studio built on Electron. It wraps local LLM inference (Ollama) and cloud APIs (OpenAI, Anthropic, Gemini) behind a unified IPC layer, and adds autonomous agent capabilities, persistent semantic memory, executable workflows, a plugin system, and a full audit trail.
 
 ## High-Level Structure
 
 ```
-OllamaX (Electron 43)
+Krevyx (Electron 43)
 ├── Main Process (Node)
 │   ├── ipc-v3-handlers.js     — v3 IPC endpoint registry (ipc:3:*)
 │   ├── config/config-store.js — schema-versioned settings & sessions

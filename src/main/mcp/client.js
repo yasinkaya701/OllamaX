@@ -137,7 +137,7 @@ class McpClient {
     const result = await this.rpc('initialize', {
       protocolVersion: '2024-11-05',
       capabilities: {},
-      clientInfo: { name: 'ollamax', version: '3.0.0' },
+      clientInfo: { name: 'Krevyx', version: '3.0.0' },
     });
     if (!result) return false;
     await this.rpc('notifications/initialized', {});

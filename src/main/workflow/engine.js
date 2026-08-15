@@ -125,10 +125,10 @@ async function runWorkflow(wf, { userMessage, agents, runFn }) {
 }
 
 /**
- * Persistence: userData/ollamax/workflows/*.json (ve .yaml okunur)
+ * Persistence: userData/Krevyx/workflows/*.json (ve .yaml okunur)
  */
 function workflowsDir() {
-  return path.join(configStore.ollamaxRoot(), 'workflows');
+  return path.join(configStore.krevyxRoot(), 'workflows');
 }
 
 function loadWorkflows() {

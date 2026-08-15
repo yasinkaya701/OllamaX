@@ -1,4 +1,4 @@
-src = open('/home/ubuntu/OllamaX/src/renderer/app.js').read()
+src = open('/home/ubuntu/Krevyx/src/renderer/app.js').read()
 needle = "];\n\n"
 positions = [i for i in range(len(src)) if src[i:i+len(needle)] == needle]
 print('occurrences of "];\\n\\n":', len(positions), positions)

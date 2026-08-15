@@ -1,4 +1,4 @@
-# OllamaX Ultra — Windows kurulumu
+# Krevyx Ultra — Windows kurulumu
 
 ## Gereksinimler
 
@@ -12,7 +12,7 @@
 1. **PowerShell** veya **cmd** ile proje klasörüne gidin:
 
 ```powershell
-cd C:\path\to\OllamaX
+cd C:\path\to\Krevyx
 npm install
 npm start
 ```

@@ -1,5 +1,5 @@
 /**
- * orchestrator-view.js — OllamaX v3.2 sub-agent orkestrasyon görünümü (Plan 2.6)
+ * orchestrator-view.js — Krevyx v3.2 sub-agent orkestrasyon görünümü (Plan 2.6)
  *
  * Lead agent alt ajanlarını bu panelde gösterir: her sub-agent için
  * hedef, durum, ilerleme yüzdesi ve son çıktı özeti. ipc:4:orchestrator:*
@@ -8,8 +8,8 @@
  */
 'use strict';
 (function initOrchestratorView() {
-  if (!window.ollamaxApi) return;
-  const api = window.ollamaxApi;
+  if (!window.krevyxApi) return;
+  const api = window.krevyxApi;
 
   function esc(s) {
     if (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) {
@@ -82,7 +82,7 @@
     },
   };
 
-  window.OllamaX = window.OllamaX || {};
-  window.OllamaX.orchestrator = Orchestrator;
+  window.Krevyx = window.Krevyx || {};
+  window.Krevyx.orchestrator = Orchestrator;
   bind();
 })();

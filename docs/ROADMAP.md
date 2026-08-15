@@ -1,7 +1,7 @@
-# OllamaX Ultra — Kapsamlı Geliştirme Planı ve Yol Haritası
+# Krevyx Ultra — Kapsamlı Geliştirme Planı ve Yol Haritası
 
 **Sürüm hedefi:** v3.0 → v4.x · **Yazar:** Manus AI · **Tarih:** 15 Ağustos 2026
-**Repo:** https://github.com/yasinkaya701/OllamaX · **Mevcut sürüm:** 2.7.0
+**Repo:** https://github.com/yasinkaya701/Krevyx · **Mevcut sürüm:** 2.7.0
 
 ---
 
@@ -31,7 +31,7 @@
 
 ## 1.1 Vizyon
 
-OllamaX Ultra, tek bir masaüstü uygulaması içinde **yerel (Ollama)** ve **bulut (OpenAI, Anthropic, Gemini)** yapay zeka modellerini güvenli, performanslı ve kullanıcı dostu biçimde birleştiren bir **AI ajan stüdyosudur**. Projenin uzun vadeli vizyonu, tekil bir sohbet arayüzünden evrilen bir ürünü; **kişisel, yerel-öncelikli (local-first), çok ajanlı bir yapay zeka iş istasyonuna** dönüştürmektir. Bu dönüşümde üç ilke rehberdir:
+Krevyx Ultra, tek bir masaüstü uygulaması içinde **yerel (Ollama)** ve **bulut (OpenAI, Anthropic, Gemini)** yapay zeka modellerini güvenli, performanslı ve kullanıcı dostu biçimde birleştiren bir **AI ajan stüdyosudur**. Projenin uzun vadeli vizyonu, tekil bir sohbet arayüzünden evrilen bir ürünü; **kişisel, yerel-öncelikli (local-first), çok ajanlı bir yapay zeka iş istasyonuna** dönüştürmektir. Bu dönüşümde üç ilke rehberdir:
 
 1. **Gizlilik önceliği:** Kullanıcının verisi önce kullanıcının makinesinde yaşar. Bulut API'leri yalnızca isteğe bağlı bir katmandır.
 2. **Güvenlik mimarisi:** SSRF koruması, path sandbox ve IPC beyaz listesi gibi v2.5'te atılan güvenlik temelleri, tüm yeni özellikler için değişmez kurallar (invariant) olarak korunur.
@@ -68,7 +68,7 @@ v2.7.0 itibarıyla sistem, üç katmanlı bir Electron mimarisinde çalışmakta
 |---|---|---|---|
 | Main | `src/main.js` | ~1032 | 33 IPC uç noktası, pencere yönetimi, streaming SSE, git işlemleri |
 | Main | `src/main-security.js` | ~178 | SSRF engeli, path sandbox, URL whitelisting, sanitize fonksiyonları |
-| Preload | `src/preload.js` | ~47 | `contextBridge` beyaz listesi (`ollamaxApi`) |
+| Preload | `src/preload.js` | ~47 | `contextBridge` beyaz listesi (`krevyxApi`) |
 | Renderer | `src/renderer/app.js` | ~1773 | UI state yönetimi, mesaj döngüsü, ajan arayüzü, quest log |
 | Renderer | `src/renderer/lib/delegate-parse.js` | ~22 | Lead ajan delegasyon ayrıştırıcısı (`//CALL:AgentName`) |
 | Shared | `src/shared/model-catalog.json` | — | Sağlayıcı model katalogları |
@@ -97,7 +97,7 @@ Mevcut kod tabanı dört alanda sektördeki birçok Electron projesinden daha iy
 
 ## 2.4 Rekabet Analizi ve Konumlandırma
 
-Rakip ürünler üç kategoridedir. **Tam istemci ekosistemleri** (Continue, Cline, Windsurf) IDE içinde çalışır ve kod üretimine odaklanır; OllamaX'in farkı, **bağımsız bir stüdyo** olması ve sohbet/ajandan kod ötesine (doküman, analiz, otomasyon) uzanabilmesidir. **Genel chat istemcileri** (ChatGPT Desktop, Claude Desktop) tek sağlayıcıya sadıktır; OllamaX'in farkı hibrit çoklu sağlayıcı ve yerel-öncelikli mimaridir. **Açık kaynak arayüzler** (LibreChat, Open WebUI, Chutes) web tabanlıdır; OllamaX'in farkı native masaüstü deneyimi, terminal entegrasyonu ve dosya sistemi işlemleridir.
+Rakip ürünler üç kategoridedir. **Tam istemci ekosistemleri** (Continue, Cline, Windsurf) IDE içinde çalışır ve kod üretimine odaklanır; Krevyx'in farkı, **bağımsız bir stüdyo** olması ve sohbet/ajandan kod ötesine (doküman, analiz, otomasyon) uzanabilmesidir. **Genel chat istemcileri** (ChatGPT Desktop, Claude Desktop) tek sağlayıcıya sadıktır; Krevyx'in farkı hibrit çoklu sağlayıcı ve yerel-öncelikli mimaridir. **Açık kaynak arayüzler** (LibreChat, Open WebUI, Chutes) web tabanlıdır; Krevyx'in farkı native masaüstü deneyimi, terminal entegrasyonu ve dosya sistemi işlemleridir.
 
 Konumlandırma önerisi: *"Gizlilik odaklı, hibrit çok-providercılı masaüstü AI ajan stüdyosu — tek bir arayüzde Ollama + OpenAI + Anthropic + Gemini."*
 
@@ -169,7 +169,7 @@ src/renderer/
 
 ```
 userData/
-└── ollamax/
+└── Krevyx/
     ├── config.json          (settings, providers, ajan tanımları — şema v3)
     ├── sessions/
     │   └── {sessionId}.db   (oturum mesajları — ayrı dosyalar)
@@ -189,7 +189,7 @@ Config şeması:
     "gemini": { "apiKey": "ENV:GEMINI_API_KEY" }
   },
   "agents": [ { "id": "a1", "name": "Lead", ... } ],
-  "workspaces": [ { "path": "/home/x/OllamaX-Projects", "alias": "default" } ]
+  "workspaces": [ { "path": "/home/x/krevyx-Projects", "alias": "default" } ]
 }
 ```
 
@@ -243,7 +243,7 @@ Kullanıcı opt-in crash raporu için `electron-unhandled` entegrasyonu; raporla
 | 5 | Çökme sonrası checkpoint geri yükleme | Son 30 sn state'i korunur |
 # Bölüm 5 — Faz 2: Ajan Mimarisi ve Orkestrasyon (v3.1)
 
-**Zaman aralığı:** Hafta 7–14 · **Temel vaat:** OllamaX, "delegasyon regex'i"nden gerçek **tool-use** destekli, plancı-çalıştırıcı ajan mimarisine evrilir.
+**Zaman aralığı:** Hafta 7–14 · **Temel vaat:** Krevyx, "delegasyon regex'i"nden gerçek **tool-use** destekli, plancı-çalıştırıcı ajan mimarisine evrilir.
 
 ## 5.1 F2.1 — Araç (Tool) Soyutlama Katmanı
 
@@ -299,7 +299,7 @@ Her adapter provider'ın akış JSON'ını ortak olay setine map'ler. Örneğin 
 
 ## 5.3 F2.3 — MCP (Model Context Protocol) Desteği
 
-MCP, 2025-2026'da ajan araç standartlaşmasının fiili protokolüdür. OllamaX'in yerleşik araç setini MCP sunucularıyla genişletmesi, pazardaki rakiplerle (Cline, Zed) özellik denkliğini sağlar.
+MCP, 2025-2026'da ajan araç standartlaşmasının fiili protokolüdür. Krevyx'in yerleşik araç setini MCP sunucularıyla genişletmesi, pazardaki rakiplerle (Cline, Zed) özellik denkliğini sağlar.
 
 **Mimari:** MCP client `src/main/mcp/client.js` içinde stdio tabanlı olarak çalışır. Kullanıcı `settings`'ten MCP sunucusu ekler:
 
@@ -369,7 +369,7 @@ Renderer'da basit bir workflow editörü (adım kartları, sürükle-sıralama) 
 
 ```
 userData/
-└── ollamax/
+└── Krevyx/
     └── memory/
         ├── memory.db        (SQLite: messages, memories, sources tabloları)
         └── index/           (vektör index dosyası)
@@ -413,7 +413,7 @@ Ajan tanımları ve takım presetleri artık paylaşılabilir biçime sahiptir: 
 | 6 | Agent-pack import güvenlik onayı | Araç erişimleri onay öncesi görünür |
 # Bölüm 7 — Faz 4: Çok Modlu Yetenekler (v3.3)
 
-**Zaman aralığı:** Hafta 23–30 · **Temel vaat:** OllamaX metin dışına çıkar: görüntü anlama, görsel üretim, ses.
+**Zaman aralığı:** Hafta 23–30 · **Temel vaat:** Krevyx metin dışına çıkar: görüntü anlama, görsel üretim, ses.
 
 ## 7.1 F4.1 — Görsel Giriş (Vision)
 
@@ -486,7 +486,7 @@ GitHub Gist/Discussion tabanlı minimalist bir " eklenti dizini" protokolü: plu
 
 ## 8.5 F5.5 — IDE ve Dış Entegrasyonlar
 
-**URI handler:** `ollamax://chat?agent=lead&workspace=/path` URI şeması kaydedilir; tarayıcıdan veya terminal'den `open ollamax://...` ile OllamaX açılıp bağlam taşınır. **CLI köprüsü:** `ollamax send "mesaj"` komutu (basit bir Node CLI, `userData` pipe socket'i üzerinden ana pencereye IPC gönderir). **VS Code uzantısı (opsiyonel):** Seçili kodu OllamaX'e gönderen hafif uzantı (URI handler ile entegre, sıfır backend).
+**URI handler:** `Krevyx://chat?agent=lead&workspace=/path` URI şeması kaydedilir; tarayıcıdan veya terminal'den `open Krevyx://...` ile Krevyx açılıp bağlam taşınır. **CLI köprüsü:** `Krevyx send "mesaj"` komutu (basit bir Node CLI, `userData` pipe socket'i üzerinden ana pencereye IPC gönderir). **VS Code uzantısı (opsiyonel):** Seçili kodu Krevyx'e gönderen hafif uzantı (URI handler ile entegre, sıfır backend).
 
 ## 8.6 Faz 5 Kabul Testleri
 
@@ -499,7 +499,7 @@ GitHub Gist/Discussion tabanlı minimalist bir " eklenti dizini" protokolü: plu
 | 5 | Eklenti mağazası dizini | İndirme + hash doğrulama çalışır |
 # Bölüm 9 — Faz 6: Kurumsal Katman (v4.0)
 
-**Zaman aralığı:** Hafta 39–52 · **Hedef:** Küçük ekiplerin OllamaX'i güvenli biçimde benimseyebilmesi.
+**Zaman aralığı:** Hafta 39–52 · **Hedef:** Küçük ekiplerin Krevyx'i güvenli biçimde benimseyebilmesi.
 
 ## 9.1 F6.1 — Ekip Profili ve Politika Yönetimi
 
@@ -542,7 +542,7 @@ Güvenlik, bu yol haritasının her fazında birinci sınıf vatandaş olarak el
 |---|---|---|---|
 | I1 | Context isolation + preload beyaz listesi | v2.5 mirası | Her yeni IPC `ipcMain.handle` üzerinden, renderer asla doğrudan Node API'sine erişmez |
 | I2 | SSRF koruması | `main-security.js` | Tüm dış istek URL'leri `normalizeOllamaHost`/benzeri guard'dan geçer; metadata IP aralıkları engelli |
-| I3 | Path sandbox | `resolveReadablePath` | Dosya erişimi yalnızca home + OllamaX-Projects + kullanıcı seçili + workspace kökleri |
+| I3 | Path sandbox | `resolveReadablePath` | Dosya erişimi yalnızca home + krevyx-Projects + kullanıcı seçili + workspace kökleri |
 | I4 | Shell:false child process | `git-clone` mirası | Tüm spawn çağrıları argüman dizisi ile; asla komut string'i değil |
 | I5 | Maksimum boyut sınırları | 15MB session, 2MB preview | Yeni akışlar için (medya 2048px, embedding batch 32) benzer tavanlar tanımlanır |
 | I6 | CSP: base-uri/object-src/frame-ancestors none | v2.5 | Değişmeden kalır; eklenti panelleri aynı CSP içinde render edilir |
@@ -555,7 +555,7 @@ Jest 29 pin durumu (Jest 30.4.2 modül çözünürlük bug'u) aylık olarak yeni
 
 ## 10.3 Gizlilik ve Uyumluluk
 
-Veri akış haritası dokümante edilir: hangi veri hangi sağlayıcıya gider, lokalde ne saklanır. Kullanıcı "sıfırla" işleminde (`userData/ollamax/` silme) tüm bellek, config ve logların silindiği garanti edilir (test: dosya listesi boş olmalı). Kurumsal kullanımda log toplama hedefleri kullanıcı tanımlıdır (OllamaX merkezi hiçbir veri toplamaz). GDPR benzeri talepler (veri dışa aktarımı) `export-data` komutu ile karşılanır: tüm config + bellek + loglar `.zip` olarak dışa aktarılır.
+Veri akış haritası dokümante edilir: hangi veri hangi sağlayıcıya gider, lokalde ne saklanır. Kullanıcı "sıfırla" işleminde (`userData/Krevyx/` silme) tüm bellek, config ve logların silindiği garanti edilir (test: dosya listesi boş olmalı). Kurumsal kullanımda log toplama hedefleri kullanıcı tanımlıdır (Krevyx merkezi hiçbir veri toplamaz). GDPR benzeri talepler (veri dışa aktarımı) `export-data` komutu ile karşılanır: tüm config + bellek + loglar `.zip` olarak dışa aktarılır.
 
 ## 10.4 Güvenlik Test Sürekliliği
 
@@ -564,7 +564,7 @@ Mevcut 13 güvenlik testi, her fazın kabul testlerine güvenlik senaryolarıyla
 
 ## 11.1 Test Piramidi
 
-OllamaX'in test stratejisi dört katmana ayrılır. **Birim testleri** (Jest): pure fonksiyonlar — `main-security.js` fonksiyonları, `delegate-parse.js`, config migration fonksiyonları, araç şema validasyonu, EventChannel adapter map'leri. Hedef: çekirdek saf fonksiyonlarda %90 satır kapsaması. **IPC entegrasyon testleri**: electron'un gerçek `ipcMain`/`ipcRenderer` çiftiyle (spectron benzeri hafif bir mock katmanı veya `electron` binary ile `--enable-logging`) ana süreç akışları doğrulanır; özellikle streaming pipeline'ı ve tool execution döngüsü. **UI davranış testleri**: Playwright ile Electron penceresi başlatılır; sohbet gönderimi, onay modalı, sekme yönetimi, ayarlar kalıcılığı e2e doğrulanır. **Performans testleri**: 10k mesaj render, 1000 öğe bellek arama, 5 host fleet taraması — her biri süre bütçesiyle (bkz. Faz 1 ve 3 kabul testleri).
+Krevyx'in test stratejisi dört katmana ayrılır. **Birim testleri** (Jest): pure fonksiyonlar — `main-security.js` fonksiyonları, `delegate-parse.js`, config migration fonksiyonları, araç şema validasyonu, EventChannel adapter map'leri. Hedef: çekirdek saf fonksiyonlarda %90 satır kapsaması. **IPC entegrasyon testleri**: electron'un gerçek `ipcMain`/`ipcRenderer` çiftiyle (spectron benzeri hafif bir mock katmanı veya `electron` binary ile `--enable-logging`) ana süreç akışları doğrulanır; özellikle streaming pipeline'ı ve tool execution döngüsü. **UI davranış testleri**: Playwright ile Electron penceresi başlatılır; sohbet gönderimi, onay modalı, sekme yönetimi, ayarlar kalıcılığı e2e doğrulanır. **Performans testleri**: 10k mesaj render, 1000 öğe bellek arama, 5 host fleet taraması — her biri süre bütçesiyle (bkz. Faz 1 ve 3 kabul testleri).
 
 ## 11.2 CI/CD Kalite Kapısı
 
@@ -649,7 +649,7 @@ Her faz sonunda kararlı bir release tag'i (`v3.0.0`, `v3.1.0`…) konur. Herhan
 
 ## 15.1 Özet
 
-Bu plan, OllamaX Ultra'yı v2.7.0'dan alıp altı fazda v4.0 kurumsal olgunluğa taşıyan, mevcut mimarideki güvenlik temellerini koruyan, vanilla JS sadeliğine sadık kalan ve tek geliştirici modeline uygun eforla yürütülebilecek bir yol haritasıdır. En kritik sıralama mantığı şudur: **önce altyapı (F1), sonra ajan beyni (F2), sonra hafıza (F3), sonra duyular (F4), sonra ekosistem (F5), en son ölçek (F6)** — her faz bir öncekinin üzerine inşa edilir ve bağımlılık zinciri minimum tutulmuştur.
+Bu plan, Krevyx Ultra'yı v2.7.0'dan alıp altı fazda v4.0 kurumsal olgunluğa taşıyan, mevcut mimarideki güvenlik temellerini koruyan, vanilla JS sadeliğine sadık kalan ve tek geliştirici modeline uygun eforla yürütülebilecek bir yol haritasıdır. En kritik sıralama mantığı şudur: **önce altyapı (F1), sonra ajan beyni (F2), sonra hafıza (F3), sonra duyular (F4), sonra ekosistem (F5), en son ölçek (F6)** — her faz bir öncekinin üzerine inşa edilir ve bağımlılık zinciri minimum tutulmuştur.
 
 ## 15.2 Hemen Sonraki Adımlar (İlk 2 Hafta)
 
@@ -664,7 +664,7 @@ Repo herkese açık olduğundan (private'tan public'e geçiş kararı kullanıc�
 
 ---
 
-*Bu doküman OllamaX v2.7.0 kod tabanı incelenerek 15 Ağustos 2026 tarihinde Manus AI tarafından hazırlanmıştır. Tüm fazlar mevcut kodun mimarisine (33 IPC uç noktası, main-security katmanı, delegate-parse delegasyonu, provider streaming adapter'ları) birebir referans verilerek tasarlanmıştır.*
+*Bu doküman Krevyx v2.7.0 kod tabanı incelenerek 15 Ağustos 2026 tarihinde Manus AI tarafından hazırlanmıştır. Tüm fazlar mevcut kodun mimarisine (33 IPC uç noktası, main-security katmanı, delegate-parse delegasyonu, provider streaming adapter'ları) birebir referans verilerek tasarlanmıştır.*
 # EK — Uygulama Detayları ve Referans Kod Örnekleri
 
 Bu ek bölüm, yol haritasındaki her faz için anahtar bileşenlerin **gerçekten kullanılabilir referans implementasyonlarını** içerir. Kodlar Electron 43.4.0 + Node 22 uyumlu yazılmıştır ve mevcut kod tabanındaki sözleşmeleri (DOMPurify, esc(), q()/qa(), IPC isimlendirme) takip eder.
@@ -783,7 +783,7 @@ import { initTools }   from './modules/tools/index.js';
 import { initProviders } from './modules/providers/index.js';
 import { initSettings }  from './modules/settings/index.js';
 
-const api = window.ollamaxApi;
+const api = window.krevyxApi;
 const modules = [initChat, initAgents, initTools, initProviders, initSettings];
 
 for (const initFn of modules) {
@@ -800,7 +800,7 @@ document.addEventListener('keydown', (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'l') { bus.emit('tools:toggle'); }
 });
 
-console.log('[app] OllamaX Ultra başlatıldı, modül sayısı:', modules.length);
+console.log('[app] Krevyx Ultra başlatıldı, modül sayısı:', modules.length);
 ```
 
 ---
@@ -1033,7 +1033,7 @@ class AgentLoop {
   }
 
   saveCheckpoint() {
-    // userData/ollamax/sessions/{session}/checkpoints/step-{n}.json
+    // userData/Krevyx/sessions/{session}/checkpoints/step-{n}.json
   }
 }
 
@@ -1195,7 +1195,7 @@ Aşağıdaki tablo, v3.0+ sistemin hedeflenen tam IPC yüzeyini listeler. **Kal�
 ## EK-G — Veri Modeli Şeması (v3, Tam)
 
 ```
-userData/ollamax/
+userData/Krevyx/
 ├── config.json                 # schemaVersion 3 (EK-B yapısı)
 ├── agents/
 │   └── custom-templates/       # kullanıcı ajan şablonları (.json)

@@ -23,7 +23,7 @@ const configStore = require('../src/main/config/config-store');
 
 let tmpDir;
 beforeAll(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ollamax-test-'));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'krevyx-test-'));
   // electron.app yerine geçici yol döndüren sahte app
   configStore.setApp({ getPath: () => tmpDir });
 });
@@ -152,14 +152,14 @@ describe('configStore (geçici dizin)', () => {
   });
 
   test('resolvedProviders ENV: değerlerini çözer', () => {
-    process.env.OLLAMAX_TEST_KEY = 'secret-123';
+    process.env.Krevyx_TEST_KEY = 'secret-123';
     configStore.updateConfig((c) => ({
       ...c,
-      providers: { ...c.providers, openai: { apiKey: 'ENV:OLLAMAX_TEST_KEY' } },
+      providers: { ...c.providers, openai: { apiKey: 'ENV:Krevyx_TEST_KEY' } },
     }));
     const providers = configStore.resolvedProviders(configStore.readConfig());
     expect(providers.openai).toBe('secret-123');
-    delete process.env.OLLAMAX_TEST_KEY;
+    delete process.env.Krevyx_TEST_KEY;
   });
 
   test('resolveApiKey ön ek olmayan değeri olduğu gibi döner', () => {

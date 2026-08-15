@@ -1,6 +1,6 @@
-# OllamaX Ultra — IPC & persistence API
+# Krevyx Ultra — IPC & persistence API
 
-## Renderer bridge (`window.ollamaxApi`)
+## Renderer bridge (`window.krevyxApi`)
 
 Exposed from `src/preload.js` (context isolation). Only listed channels are allowed.
 
@@ -16,7 +16,7 @@ Exposed from `src/preload.js` (context isolation). Only listed channels are allo
 | `gemini-chat` | same shape | same |
 | `github-search` | `{ query }` | `github-results` |
 | `git-clone` | `{ url }` — yalnızca `https://` github.com / gitlab.com / bitbucket.org / codeberg.org `.git` | `exec-output`, `git-done` |
-| `list-dir` | path string (yalnızca kullanıcı ana dizini, `OllamaX-Projects` veya seçilen klasör altı) | `dir-contents` |
+| `list-dir` | path string (yalnızca kullanıcı ana dizini, `krevyx-Projects` veya seçilen klasör altı) | `dir-contents` |
 | `read-file` | path string (aynı sınır; önizleme max ~2 MB) | `file-content` |
 | `open-folder-dialog` | — | `folder-selected` |
 | `get-workspaces` | — | `workspaces-list` |

@@ -53,7 +53,7 @@ function userDataDir() {
     const { app } = require('electron');
     return app.getPath('userData');
   } catch {
-    return path.join(process.env.HOME || '/tmp', '.ollamax');
+    return path.join(process.env.HOME || '/tmp', '.Krevyx');
   }
 }
 
@@ -135,7 +135,7 @@ async function fetchCategory(cat) {
   const opts = {
     hostname: 'api.github.com',
     path: `/search/repositories?q=${encodeURIComponent(cat.query)}&sort=stars&per_page=${MAX_REPO_PER_CAT + 4}`,
-    headers: { 'User-Agent': 'OllamaX-Ultra/3.11', Accept: 'application/vnd.github.v3+json' },
+    headers: { 'User-Agent': 'krevyx-Ultra/3.11', Accept: 'application/vnd.github.v3+json' },
     timeout: 15000,
   };
   const data = await httpsGetJson(opts);

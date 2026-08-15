@@ -1,4 +1,4 @@
-# OllamaX Ultra — Dağıtım ve kurulum
+# Krevyx Ultra — Dağıtım ve kurulum
 
 Bu uygulama **masaüstü Electron** uygulamasıdır; “backend” tarayıcıya değil, **Electron ana sürecine** (`src/main.js`) ve yerel makinede çalışan **Ollama** sürecine bağlıdır.
 

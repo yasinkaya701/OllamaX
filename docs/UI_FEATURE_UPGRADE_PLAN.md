@@ -1,4 +1,4 @@
-# OllamaX — Arayüz ve Özellik Upgrade Planı (v3.1 → v5.0)
+# Krevyx — Arayüz ve Özellik Upgrade Planı (v3.1 → v5.0)
 
 > **Doküman tipi:** Teknik gelişim planı (uygulama öncesi tasarım dokümanı)
 > **Referans dokümanlar:** `docs/ROADMAP.md` (ana yol haritası), `docs/ARCHITECTURE.md` (mimari),
@@ -11,7 +11,7 @@
 
 # Bölüm 0 — Nasıl Okunur
 
-Bu doküman, OllamaX'in v3.0 "AI Agent Studio" sürümünden v5.0 "Market-Leading AI Agent Platform"
+Bu doküman, Krevyx'in v3.0 "AI Agent Studio" sürümünden v5.0 "Market-Leading AI Agent Platform"
 sürümüne geçişini sağlayan **arayüz (UI/UX)** ve **özellik (feature)** upgrade'lerinin tam
 tasarımını içerir. `docs/ROADMAP.md` 1.200 satırlık stratejik yol haritasıdır; bu doküman ise o
 yol haritasındaki arayüz ve özellik maddelerini **implementasyona hazır mühendislik seviyesine**
@@ -287,7 +287,7 @@ function fuzzyScore(query, target) {
 Modüller palet'e kayıt fonksiyonuyla bağlanır:
 
 ```js
-window.OllamaX.palette.register({
+window.Krevyx.palette.register({
   group: 'actions',
   label: 'Denetim kaydını doğrula',
   keywords: ['audit', 'denetim', 'zincir'],
@@ -518,7 +518,7 @@ Araç çağrıları artık satırlık metin değil **kart**tır:
 │ [dosya-yaz] workspace/rapor.md          42ms │
 │ Boyut: 12.4 KB · Önceki sürüm: none          │
 │ ───────────────────────────────────────────  │
-│ 1 │ # OllamaX İnceleme                       │
+│ 1 │ # Krevyx İnceleme                       │
 │ 2 │                                          │
 │ 3 │ ## Yöntem                                │
 │     ⋮ +142 satır (genişlet)                  │
@@ -723,8 +723,8 @@ Hedef: sürükle-bırak akış editörü, çıktısı yine aynı JSON şemaya.
 ```
 eklenti-adı/
   manifest.json      { id, name, version, description, icon(svg), tools:[], ui:[],
-                       permissions:[], requires:{ ollamax: '>=4.0.0' } }
-  main.js            vanilla JS; OllamaX eklenti API'si ile sınırlı
+                       permissions:[], requires:{ Krevyx: '>=4.0.0' } }
+  main.js            vanilla JS; Krevyx eklenti API'si ile sınırlı
   assets/            (opsiyonel) küçük görseller, max 2 MB
 ```
 
@@ -732,16 +732,16 @@ eklenti-adı/
 `ui.panel`, `ui.composer-action`, `network.external`. `tools.exec` ve `network.external`
 kombinasyonu mağazada **yüksek risk** rozeti alır ve kurulumda iki aşamalı onay ister.
 
-### 3.4.2 API yüzeyi (OllamaX Plugin API v1)
+### 3.4.2 API yüzeyi (Krevyx Plugin API v1)
 
 ```js
 // eklenti main.js — sandbox proxy üzerinden
-ollamax.tools.register({ name: 'ceviri', tier: 'read',
+Krevyx.tools.register({ name: 'ceviri', tier: 'read',
   schema: { path: 'string' },
-  execute: async (args) => ({ translated: await ollamax.llm('gpt-5-mini', args.text) }) });
-ollamax.ui.registerPanel({ id: 'ceviri-panel', title: 'Çeviri', render: (root) => { ... } });
-ollamax.memory.get('ilgili sorgu');
-ollamax.events.on('tool:result', (e) => { ... });
+  execute: async (args) => ({ translated: await Krevyx.llm('gpt-5-mini', args.text) }) });
+Krevyx.ui.registerPanel({ id: 'ceviri-panel', title: 'Çeviri', render: (root) => { ... } });
+Krevyx.memory.get('ilgili sorgu');
+Krevyx.events.on('tool:result', (e) => { ... });
 ```
 
 Sandbox: eklenti `require`'suz, `Function`/`eval` engelli, 500ms CPU zaman tavanı, kendi
@@ -750,7 +750,7 @@ yeniden yazılır; ADR-003 korunur).
 
 ### 3.4.3 Mağaza deneyimi (topluğun ilk sürümü)
 
-1. **Yerel mağaza:** kullanıcının `~/.ollamax/plugins-market` klasöründeki eklentileri tarar;
+1. **Yerel mağaza:** kullanıcının `~/.Krevyx/plugins-market` klasöründeki eklentileri tarar;
    kategori, arama, izin özet kartı.
 2. **Güvenilir listeden kurulum:** ilk sürümde merkezi sunucu yok; `docs/COMMUNITY-PLUGINS.md`
    listesi (repo içinde) + kullanıcının kendi klasörü. Güvenilir liste, hash + imza (Ed25519,
@@ -843,7 +843,7 @@ v4.0'da ekip özelliğinin **yerel tek kullanıcılı temeli** atılır:
 
 1. **Main process crash recovery:** `uncaughtException` / `unhandledRejection` yakalanır; son
    oturum + aktif görev checkpoint'i `crash-state.json`'a yazılır. Bir sonraki açılışta
-   "OllamaX beklenmedik kapandı; kaldığın yerden devam edilsin mi?" banner'ı gösterilir.
+   "Krevyx beklenmedik kapandı; kaldığın yerden devam edilsin mi?" banner'ı gösterilir.
 2. **Renderer crash:** `webContents` `render-process-gone` dinlenir; pencere yeniden yüklenir,
    oturum geri yüklenir.
 3. **Hata günlüğü:** `logs/app.log` (rotating, 5×2MB); hata ekranında (yerel, kullanıcı
@@ -971,14 +971,14 @@ v3 şeması `docs/ROADMAP.md` EK-G'dedir; v4'e eklenen varlıklar:
 
 | Varlık | Dosya | Şema versiyonu | Not |
 | --- | --- | --- | --- |
-| `workspace.json` | userData/ollamax/config.json içi | 4 | Bölüm 1.2.2 |
-| `cards.jsonl` | userData/ollamax/memory/ | 1 | Bilgi kartları, hash zinciri |
-| `kb/{sourceId}/manifest.json` | userData/ollamax/knowledge/ | 1 | KB kaynağı meta |
-| `tasks/{goalHash}.json` | userData/ollamax/checkpoints/ | 1 | Görev checkpoint |
-| `generated/manifest.jsonl` | userData/ollamax/generated/ | 1 | Medya meta |
-| `plugins-market/{id}/manifest.json` | userData/ollamax/plugins-market/ | 1 | Mağaza meta |
-| `telemetry/{date}.jsonl` | userData/ollamax/telemetry/ | 1 | Yerel metrik |
-| `logs/app.log` | userData/ollamax/logs/ | 1 | Uygulama günlüğü |
+| `workspace.json` | userData/Krevyx/config.json içi | 4 | Bölüm 1.2.2 |
+| `cards.jsonl` | userData/Krevyx/memory/ | 1 | Bilgi kartları, hash zinciri |
+| `kb/{sourceId}/manifest.json` | userData/Krevyx/knowledge/ | 1 | KB kaynağı meta |
+| `tasks/{goalHash}.json` | userData/Krevyx/checkpoints/ | 1 | Görev checkpoint |
+| `generated/manifest.jsonl` | userData/Krevyx/generated/ | 1 | Medya meta |
+| `plugins-market/{id}/manifest.json` | userData/Krevyx/plugins-market/ | 1 | Mağaza meta |
+| `telemetry/{date}.jsonl` | userData/Krevyx/telemetry/ | 1 | Yerel metrik |
+| `logs/app.log` | userData/Krevyx/logs/ | 1 | Uygulama günlüğü |
 
 Tüm yeni şemalar `config-migrations.js`'e v4 migration bloğu olarak eklenir; okuma zamanında
 şema doğrulaması zorunludur, bozuk şema varsayılan değerle onarılır ve `config:repaired`
@@ -1069,7 +1069,7 @@ bayrak kaldırılır; **en fazla 3 sürüm** bayraklı yaşar, sonra koddan çı
 
 # Sonuç ve İlk Adımlar
 
-Bu plan, OllamaX'i v3.0 "çalışan ajan stüdyosu"ndan v5.0 "pazar lideri ajan platformu"na
+Bu plan, Krevyx'i v3.0 "çalışan ajan stüdyosu"ndan v5.0 "pazar lideri ajan platformu"na
 taşıyan arayüz ve özellik yolunun mühendislik dokümanıdır. ROADMAP'in stratejik katmanıyla
 çelişmez; onu implementasyon seviyesine indirir. Uygulama sırası EK-C sprint planında
 belirtilmiştir ve ilk blok (W1–W2: workspace layout + tema altyapısı) diğer tüm blokların

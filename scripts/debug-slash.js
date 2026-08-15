@@ -21,8 +21,8 @@ http.get('http://localhost:9222/json', (r) => {
     const r = await call('Runtime.evaluate', {
       expression: `(function(){
         try {
-          const pb = window.OllamaX.promptBuilder;
-          const st = window.OllamaX.state;
+          const pb = window.Krevyx.promptBuilder;
+          const st = window.Krevyx.state;
           const outs = {};
           outs.prompt = pb.trySlash('/prompt test');
           outs.improve = pb.trySlash('/improve');

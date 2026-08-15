@@ -1,4 +1,4 @@
-# OllamaX Ultra — macOS kurulumu
+# Krevyx Ultra — macOS kurulumu
 
 ## Gereksinimler
 
@@ -9,7 +9,7 @@
 ## A) Kaynak koddan çalıştırma (geliştirme)
 
 ```bash
-cd /path/to/OllamaX
+cd /path/to/Krevyx
 npm install
 npm start
 ```

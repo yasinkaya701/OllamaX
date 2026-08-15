@@ -1,6 +1,6 @@
-# 📜 OllamaX Ultra Pro: Tam İstek ve Özellik Arşivi (Master Audit Trail)
+# 📜 Krevyx Ultra Pro: Tam İstek ve Özellik Arşivi (Master Audit Trail)
 
-Bu belge, OllamaX Ultra Pro projesinin başlangıcından son "Endüstriyel" aşamasına kadar iletilen tüm talepleri ve bunların kod içerisindeki gerçek karşılıklarını listeler. 
+Bu belge, Krevyx Ultra Pro projesinin başlangıcından son "Endüstriyel" aşamasına kadar iletilen tüm talepleri ve bunların kod içerisindeki gerçek karşılıklarını listeler. 
 
 ---
 
@@ -40,4 +40,4 @@ Bu belge, OllamaX Ultra Pro projesinin başlangıcından son "Endüstriyel" aşa
 - **Kod Konumu:** `README.md`
 
 ---
-*OllamaX Ultra Pro, "Fake" hiçbir özellik barındırmayan, tam donanımlı bir yapay zeka stüdyosudur.*
+*Krevyx Ultra Pro, "Fake" hiçbir özellik barındırmayan, tam donanımlı bir yapay zeka stüdyosudur.*

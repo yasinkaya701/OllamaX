@@ -1,4 +1,4 @@
-// MOCK ollamaxApi — Electron preload/contextBridge taklidi (yalnızca UI testi için)
+// MOCK krevyxApi — Electron preload/contextBridge taklidi (yalnızca UI testi için)
 // serve-ui-test.js tarafından servis edilir.
 'use strict';
 window.__uiTestMode = true;
@@ -10,7 +10,7 @@ const __mockData = {
     { name: 'gemma3:4b', size: '3.1 GB', family: 'gemma', status: 'ready', modified: '2026-08-02' },
   ],
   sessions: [
-    { id: 's1', title: 'OllamaX v3.0 geçişi', createdAt: Date.now() - 3600000 * 5 },
+    { id: 's1', title: 'Krevyx v3.0 geçişi', createdAt: Date.now() - 3600000 * 5 },
     { id: 's2', title: 'Arayüz modernizasyonu', createdAt: Date.now() - 3600000 * 2 },
   ],
   memoryItems: [
@@ -26,14 +26,14 @@ const __mockData = {
   ],
   audit: [
     { time: Date.now() - 60000, type: 'config.set', detail: 'theme=dark' },
-    { time: Date.now() - 300000, type: 'session.create', detail: 'OllamaX v3.0 geçişi' },
+    { time: Date.now() - 300000, type: 'session.create', detail: 'Krevyx v3.0 geçişi' },
   ],
   agents: [],
   queue: [],
   settings: {
     apiBase: 'http://localhost:11434',
     temperature: 0.7,
-    systemPrompt: 'Sen OllamaX AI asistanısın.',
+    systemPrompt: 'Sen Krevyx AI asistanısın.',
   },
   featuredRepos: { categories: [
     { id: 'ai-foundations', label: 'AI Foundations', icon: 'chip', repos: [
@@ -60,7 +60,7 @@ function __emit(evt, data) {
   (__listeners[evt] || []).forEach((f) => { try { f(data); } catch (e) { console.warn('mock emit fail', e); } });
 }
 
-const __demoReply = 'Merhaba! Ben OllamaX v3.2.0 test modunda çalışıyorum. Yerel Ollama bağlantısı bu modda taklit ediliyor; tüm paneller (Oturumlar, Bellek, İş Akışları, Eklentiler, Denetim) gerçek veri ile dolduruldu. Komut paletini Ctrl/Cmd+K ile açabilir, Agent Canvas bölümlerini /goal ile test edebilirsiniz.';
+const __demoReply = 'Merhaba! Ben Krevyx v3.2.0 test modunda çalışıyorum. Yerel Ollama bağlantısı bu modda taklit ediliyor; tüm paneller (Oturumlar, Bellek, İş Akışları, Eklentiler, Denetim) gerçek veri ile dolduruldu. Komut paletini Ctrl/Cmd+K ile açabilir, Agent Canvas bölümlerini /goal ile test edebilirsiniz.';
 
 function __v3Handle(name, args) {
   args = args || {};
@@ -108,7 +108,7 @@ function __invokeResult(ch, args) {
   }
   if (ch === 'get-model-catalog') return { openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-5'], anthropic: ['claude-sonnet-4-5', 'claude-haiku-4'], gemini: ['gemini-2.5-pro', 'gemini-2.5-flash'] };
   if (ch === 'normalize-ollama-host') return { ok: true, host: (args && args.host) || args || 'http://localhost:11434' };
-  if (ch === 'app-health') return { ok: true, ollamaReachable: true, modelCount: 3, latencyMs: 12, version: '3.2.0', platform: 'linux', userData: '/home/ubuntu/.ollamax', ollamaVersion: '0.6.0' };
+  if (ch === 'app-health') return { ok: true, ollamaReachable: true, modelCount: 3, latencyMs: 12, version: '3.2.0', platform: 'linux', userData: '/home/ubuntu/.Krevyx', ollamaVersion: '0.6.0' };
   if (ch === 'get-stats') return { ok: true, tokensUsed: 12450, sessions: __mockData.sessions.length };
   if (ch === 'get-workspaces') return { ok: true, workspaces: [] };
   if (ch === 'persist-load') return { ok: true, settings: __mockData.settings };
@@ -144,19 +144,19 @@ function __invokeResult(ch, args) {
     return { ok: true };
   }
   if (String(ch).startsWith('ipc:3:')) return __v3Handle(String(ch).slice(6), args);
-  if (ch === 'ollama' || ch === 'ollamax' || ch === 'events') {
+  if (ch === 'ollama' || ch === 'Krevyx' || ch === 'events') {
     const method = (args && args.method) || '';
     if (method === 'models') return __mockData.models;
     return { ok: true };
   }
   if (ch === 'tools' || ch === 'tools.v3') return { ok: true, tools: __mockData.plugins.map((p) => ({ id: p.id, name: p.name })) };
   if (ch === 'orchestrator' || ch === 'orchestrator.v3') return { ok: true, agents: [] };
-  if (ch === 'version') return { ok: true, ollama: '0.6.0', ollamax: '3.2.0' };
+  if (ch === 'version') return { ok: true, ollama: '0.6.0', Krevyx: '3.2.0' };
   if (ch === 'status') return { ok: true, ollama: 'mock' };
   return { ok: false, error: 'mock:unknown', channel: ch };
 }
 
-const ollamaxApi = {
+const krevyxApi = {
   send: (ch, args) => { const res = __invokeResult(ch, args); __emit(ch, res); return res; },
   on: (ch, fn) => { (__listeners[ch] = __listeners[ch] || []).push(fn); },
   off: () => {},
@@ -166,10 +166,10 @@ const ollamaxApi = {
 };
 
 // EventChannel akış anahtarları ön kayıt (renderer'ın dinlediği kanallar)
-['stream:token', 'stream:done', 'stream:error', 'agent:started', 'agent:done', 'agents:changed', 'sessions:changed', 'memory:changed', 'config:changed', 'audit:entry', 'models-list', 'models-data', 'chat-response'].forEach((e) => { ollamaxApi.on(e, () => {}); });
+['stream:token', 'stream:done', 'stream:error', 'agent:started', 'agent:done', 'agents:changed', 'sessions:changed', 'memory:changed', 'config:changed', 'audit:entry', 'models-list', 'models-data', 'chat-response'].forEach((e) => { krevyxApi.on(e, () => {}); });
 
-window.ollamaxApi = ollamaxApi;
-window.ollamaxPlatform = 'linux';
+window.krevyxApi = krevyxApi;
+window.krevyxPlatform = 'linux';
 window.__mockListeners = __listeners;
 window.__mockEmit = __emit;
-console.log('[mock-api] ollamaxApi yüklendi (test modu)');
+console.log('[mock-api] krevyxApi yüklendi (test modu)');

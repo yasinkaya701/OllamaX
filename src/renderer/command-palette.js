@@ -1,15 +1,15 @@
 /**
- * command-palette.js — OllamaX v3.1 komut paleti (Plan Bölüm 1.4)
+ * command-palette.js — Krevyx v3.1 komut paleti (Plan Bölüm 1.4)
  *
  * Ctrl/Cmd+K ile açılır. Dört kanal: komutlar, oturumlar, bellek, modeller.
- * Kendi fuzzy arama motoru (bağımlılıksız). Modüller window.OllamaX.palette.register(...)
+ * Kendi fuzzy arama motoru (bağımlılıksız). Modüller window.Krevyx.palette.register(...)
  * ile kendini kaydeder.
  */
 'use strict';
 (function initCommandPalette() {
   if (typeof window === 'undefined') return;
 
-  const STORAGE_KEY = 'ollamax_palette_recent_v1';
+  const STORAGE_KEY = 'Krevyx_palette_recent_v1';
 
   /**
    * Fuzzy skorlama: eşleşen karakterler sıralı olmalı.
@@ -215,12 +215,12 @@
     _resetRecent() { recent = loadRecent(); },
   };
 
-  window.OllamaX = window.OllamaX || {};
-  window.OllamaX.palette = Palette;
+  window.Krevyx = window.Krevyx || {};
+  window.Krevyx.palette = Palette;
   Palette._resetRecent();
 
   // Klavye katmanına bağla (keymap.js yüklendiyse)
-  const km = window.OllamaX?.keymap;
+  const km = window.Krevyx?.keymap;
   if (km) {
     km.on('palette.open', () => Palette.open());
   }

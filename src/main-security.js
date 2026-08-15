@@ -54,7 +54,7 @@ function tryUserDataRoot() {
 
 function readableRoots() {
   const home = path.resolve(os.homedir());
-  const projects = path.resolve(path.join(home, 'OllamaX-Projects'));
+  const projects = path.resolve(path.join(home, 'krevyx-Projects'));
   const roots = [home, projects, ...userSelectedRoots];
   const ud = tryUserDataRoot();
   if (ud) roots.push(ud);

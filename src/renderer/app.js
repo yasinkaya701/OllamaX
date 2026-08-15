@@ -1,5 +1,5 @@
-const STORAGE_KEY = 'ollamax_v4_permanent';
-const api = typeof window !== 'undefined' && window.ollamaxApi ? window.ollamaxApi : null;
+const STORAGE_KEY = 'Krevyx_v4_permanent';
+const api = typeof window !== 'undefined' && window.krevyxApi ? window.krevyxApi : null;
 
 const PROMPT_TEMPLATES = [
   {
@@ -828,8 +828,8 @@ async function init() {
   bindFeaturedAccordion();
   bindGithubResultsAccordion();
   bindKeyboardShortcuts();
-  log('OllamaX Ultra v4 ready', 'success');
-  toast('OllamaX Ultra yüklendi · modeller senkronize edildi', 'success', 2800);
+  log('Krevyx Ultra v4 ready', 'success');
+  toast('Krevyx Ultra yüklendi · modeller senkronize edildi', 'success', 2800);
 }
 
 async function hydrateModelCatalog() {
@@ -876,35 +876,35 @@ function bindKeyboardShortcuts() {
   document.addEventListener('keydown', (e) => {
     const mod = e.metaKey || e.ctrlKey;
     // V3.1 klavye katmanı (keymap.js) komutlarına devret
-    if (window.OllamaX?.keymap) {
+    if (window.Krevyx?.keymap) {
       if (mod && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        void window.OllamaX.keymap.execute('composer.focus');
+        void window.Krevyx.keymap.execute('composer.focus');
         return;
       }
       if (mod && e.key.toLowerCase() === 'l') {
         e.preventDefault();
-        void window.OllamaX.keymap.execute('sidebar.tools.toggle');
+        void window.Krevyx.keymap.execute('sidebar.tools.toggle');
         return;
       }
       if (mod && e.key === ',') {
         e.preventDefault();
-        void window.OllamaX.keymap.execute('settings.open');
+        void window.Krevyx.keymap.execute('settings.open');
         return;
       }
       if (mod && e.key.toLowerCase() === 'd' && e.shiftKey) {
         e.preventDefault();
-        void window.OllamaX.keymap.execute('theme.toggle');
+        void window.Krevyx.keymap.execute('theme.toggle');
         return;
       }
       if (mod && e.key.toLowerCase() === 'm' && e.shiftKey) {
         e.preventDefault();
-        void window.OllamaX.keymap.execute('memory.search');
+        void window.Krevyx.keymap.execute('memory.search');
         return;
       }
       if (mod && e.key === 'Enter') {
         e.preventDefault();
-        void window.OllamaX.keymap.execute('composer.send');
+        void window.Krevyx.keymap.execute('composer.send');
         return;
       }
     }
@@ -927,14 +927,14 @@ function bindKeyboardShortcuts() {
 }
 
 /* V3.1 keymap komut tanımları (Plan 1.5) */
-if (window.OllamaX?.keymap) {
-  window.OllamaX.keymap.on('composer.focus', () => q('#msg-input')?.focus());
-  window.OllamaX.keymap.on('sidebar.tools.toggle', () => q('#tools-panel')?.classList.toggle('hidden'));
-  window.OllamaX.keymap.on('settings.open', () => openModal('settings-modal'));
-  window.OllamaX.keymap.on('theme.toggle', () => window.OllamaX?.theme?.toggle());
-  window.OllamaX.keymap.on('composer.send', () => q('#btn-send')?.click());
-  window.OllamaX.keymap.on('onboarding.replay', () => window.OllamaX?.onboarding?.replay());
-  window.OllamaX.keymap.on('memory.search', () => {
+if (window.Krevyx?.keymap) {
+  window.Krevyx.keymap.on('composer.focus', () => q('#msg-input')?.focus());
+  window.Krevyx.keymap.on('sidebar.tools.toggle', () => q('#tools-panel')?.classList.toggle('hidden'));
+  window.Krevyx.keymap.on('settings.open', () => openModal('settings-modal'));
+  window.Krevyx.keymap.on('theme.toggle', () => window.Krevyx?.theme?.toggle());
+  window.Krevyx.keymap.on('composer.send', () => q('#btn-send')?.click());
+  window.Krevyx.keymap.on('onboarding.replay', () => window.Krevyx?.onboarding?.replay());
+  window.Krevyx.keymap.on('memory.search', () => {
     // Bellek paneli varsa sekmeyi aç ve arama kutusuna odaklan
     const memTab = document.querySelector('[data-ttab="memory"]');
     if (memTab) void memTab.click();
@@ -1024,11 +1024,11 @@ function schedulePersist() {
 }
 
 /* V3.9: diğer modüllere (prompt builder vb.) erken erişim */
-window.OllamaX = window.OllamaX || {};
-window.OllamaX.state = state;
-window.OllamaX.md = md;
-window.OllamaX.save = save;
-window.OllamaX.clearChat = clearChat;
+window.Krevyx = window.Krevyx || {};
+window.Krevyx.state = state;
+window.Krevyx.md = md;
+window.Krevyx.save = save;
+window.Krevyx.clearChat = clearChat;
 window.api = api;
 window.q = q;
 
@@ -1377,14 +1377,14 @@ function bindFeaturedAccordion() {
   const det = q('#acc-featured');
   if (!det) return;
   try {
-    if (localStorage.getItem('ollamax_acc_featured') === '1') det.setAttribute('open', '');
-    if (localStorage.getItem('ollamax_acc_featured') === '0') det.removeAttribute('open');
+    if (localStorage.getItem('Krevyx_acc_featured') === '1') det.setAttribute('open', '');
+    if (localStorage.getItem('Krevyx_acc_featured') === '0') det.removeAttribute('open');
   } catch {
     /* ignore */
   }
   det.addEventListener('toggle', () => {
     try {
-      localStorage.setItem('ollamax_acc_featured', det.open ? '1' : '0');
+      localStorage.setItem('Krevyx_acc_featured', det.open ? '1' : '0');
     } catch {
       /* ignore */
     }
@@ -1395,14 +1395,14 @@ function bindGithubResultsAccordion() {
   const det = q('#acc-github-results');
   if (!det) return;
   try {
-    if (localStorage.getItem('ollamax_acc_github') === '0') det.removeAttribute('open');
-    if (localStorage.getItem('ollamax_acc_github') === '1') det.setAttribute('open', '');
+    if (localStorage.getItem('Krevyx_acc_github') === '0') det.removeAttribute('open');
+    if (localStorage.getItem('Krevyx_acc_github') === '1') det.setAttribute('open', '');
   } catch {
     /* ignore */
   }
   det.addEventListener('toggle', () => {
     try {
-      localStorage.setItem('ollamax_acc_github', det.open ? '1' : '0');
+      localStorage.setItem('Krevyx_acc_github', det.open ? '1' : '0');
     } catch {
       /* ignore */
     }
@@ -1622,36 +1622,36 @@ function exportChatJson() {
   const payload = JSON.stringify({ exportedAt: new Date().toISOString(), history: state.history, agents: state.agents }, null, 2);
   if (api) {
     api
-      .invoke('export-to-path', { defaultName: 'ollamax-chat.json', content: payload })
+      .invoke('export-to-path', { defaultName: 'krevyx-chat.json', content: payload })
       .then((r) => {
-        if (r.ok) toast(`Kaydedildi: ${r.filePath || r.path || r.defaultName || 'ollamax-chat.json'}`, 'success');
+        if (r.ok) toast(`Kaydedildi: ${r.filePath || r.path || r.defaultName || 'krevyx-chat.json'}`, 'success');
         else if (!r.canceled) toast(r.error || 'Export failed', 'error');
       });
   } else {
     const blob = new Blob([payload], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'ollamax-chat.json';
+    a.download = 'krevyx-chat.json';
     a.click();
     toast('Download started', 'info');
   }
 }
 
 function exportChatMarkdown() {
-  let md = `# OllamaX Ultra export\n\n_Generated: ${new Date().toISOString()}_\n\n`;
+  let md = `# Krevyx Ultra export\n\n_Generated: ${new Date().toISOString()}_\n\n`;
   state.history.forEach((h) => {
     md += `## ${h.role === 'user' ? 'User' : 'Assistant'}\n\n${h.content}\n\n---\n\n`;
   });
   if (api) {
-    api.invoke('export-to-path', { defaultName: 'ollamax-chat.md', content: md }).then((r) => {
-      if (r.ok) toast(`Kaydedildi: ${r.filePath || r.path || r.defaultName || 'ollamax-chat.md'}`, 'success');
+    api.invoke('export-to-path', { defaultName: 'krevyx-chat.md', content: md }).then((r) => {
+      if (r.ok) toast(`Kaydedildi: ${r.filePath || r.path || r.defaultName || 'krevyx-chat.md'}`, 'success');
       else if (!r.canceled) toast(r.error || 'Export failed', 'error');
     });
   } else {
     const blob = new Blob([md], { type: 'text/markdown' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'ollamax-chat.md';
+    a.download = 'krevyx-chat.md';
     a.click();
   }
 }
@@ -1855,14 +1855,14 @@ function bindAll() {
     chip.addEventListener('click', () => {
       qa('#settings-theme-chips .theme-chip').forEach((c) => c.classList.remove('active'));
       chip.classList.add('active');
-      if (chip.dataset.theme && window.OllamaX?.theme?.apply) window.OllamaX.theme.apply(chip.dataset.theme);
+      if (chip.dataset.theme && window.Krevyx?.theme?.apply) window.Krevyx.theme.apply(chip.dataset.theme);
     });
   });
   qa('#settings-density-chips .theme-chip').forEach((chip) => {
     chip.addEventListener('click', () => {
       qa('#settings-density-chips .theme-chip').forEach((c) => c.classList.remove('active'));
       chip.classList.add('active');
-      if (chip.dataset.density && window.OllamaX?.layout?.setDensity) window.OllamaX.layout.setDensity(chip.dataset.density);
+      if (chip.dataset.density && window.Krevyx?.layout?.setDensity) window.Krevyx.layout.setDensity(chip.dataset.density);
     });
   });
   on('btn-add-ollama-machine', 'click', () => {
@@ -1917,7 +1917,7 @@ function bindAll() {
   qa('#composer-mode-chips .cm-chip').forEach((c) => c.addEventListener('click', () => composerSetMode(c.dataset.mode)));
   on('btn-composer-add', 'click', () => {
     if (!api) return;
-    const dir = state.currentDir || `OllamaX-Projects`;
+    const dir = state.currentDir || `krevyx-Projects`;
     api.send('list-dir', dir);
     showToolsTab('files');
     q('#tools-panel').classList.remove('hidden');
@@ -2166,7 +2166,7 @@ function bindIPC() {
       d.className = 'ws-item';
       d.innerHTML = `<span class="ws-icon">${iconSvg('icon-folder-open')}</span><span class="ws-name">${esc(name)}</span>`;
       d.addEventListener('click', () => {
-        const fp = `OllamaX-Projects/${name}`;
+        const fp = `krevyx-Projects/${name}`;
         api.send('list-dir', fp);
         showToolsTab('files');
         q('#tools-panel').classList.remove('hidden');
@@ -2463,9 +2463,9 @@ async function saveApiKeys() {
 
 /* V3.1: Ayarlar modalı açıldığında mevcut tema/yoğunluk seçili çipleri işaretler */
 function refreshAppearanceSettings() {
-  const theme = window.OllamaX?.theme?.current?.() || 'dark';
+  const theme = window.Krevyx?.theme?.current?.() || 'dark';
   qa('#settings-theme-chips .theme-chip').forEach((c) => c.classList.toggle('active', c.dataset.theme === theme));
-  const density = window.OllamaX?.layout?.get?.().density || 'comfortable';
+  const density = window.Krevyx?.layout?.get?.().density || 'comfortable';
   qa('#settings-density-chips .theme-chip').forEach((c) => c.classList.toggle('active', c.dataset.density === density));
 }
 
@@ -2595,13 +2595,13 @@ async function saveSettings() {
   syncOllamaHostFromDefaultMachine();
 
     // V3.1 görünüm ayarları: tema ve yoğunluk
-  if (window.OllamaX?.theme) {
+  if (window.Krevyx?.theme) {
     const themeChip = q('#settings-theme-chips .theme-chip.active');
-    if (themeChip?.dataset.theme) window.OllamaX.theme.apply(themeChip.dataset.theme);
+    if (themeChip?.dataset.theme) window.Krevyx.theme.apply(themeChip.dataset.theme);
   }
-  if (window.OllamaX?.layout) {
+  if (window.Krevyx?.layout) {
     const densityChip = q('#settings-density-chips .theme-chip.active');
-    if (densityChip?.dataset.density) window.OllamaX.layout.setDensity(densityChip.dataset.density);
+    if (densityChip?.dataset.density) window.Krevyx.layout.setDensity(densityChip.dataset.density);
   }
   // V3.7 model parametreleri ve davranış profili
   const profChip = q('#settings-profile-chips .theme-chip.active');
@@ -2657,13 +2657,13 @@ async function sendMessage() {
   inp.value = '';
   inp.style.height = 'auto';
   q('#char-count').textContent = '0';
-  if (window.OllamaX?.tryGoalSlash && window.OllamaX.tryGoalSlash(text)) {
+  if (window.Krevyx?.tryGoalSlash && window.Krevyx.tryGoalSlash(text)) {
     state.processing = false;
     setStatus('ready');
     log('Canvas hedefi: ' + text, 'info');
     return;
   }
-  if (window.OllamaX?.agentConsole?.tryChainSlash && window.OllamaX.agentConsole.tryChainSlash(text)) {
+  if (window.Krevyx?.agentConsole?.tryChainSlash && window.Krevyx.agentConsole.tryChainSlash(text)) {
     state.processing = false;
     setStatus('ready');
     log('Zincir ajan görevi: ' + text, 'info');
@@ -2672,11 +2672,11 @@ async function sendMessage() {
   /* v3.9: prompt builder modülüne api/q erişimi */
   window.api = api;
   window.q = q;
-  window.OllamaX = window.OllamaX || {};
-  window.OllamaX.state = state;
-  window.OllamaX.md = md;
-  window.OllamaX.save = save;
-  if (window.OllamaX?.promptBuilder?.trySlash && window.OllamaX.promptBuilder.trySlash(text)) {
+  window.Krevyx = window.Krevyx || {};
+  window.Krevyx.state = state;
+  window.Krevyx.md = md;
+  window.Krevyx.save = save;
+  if (window.Krevyx?.promptBuilder?.trySlash && window.Krevyx.promptBuilder.trySlash(text)) {
     state.processing = false;
     setStatus('ready');
     log('Slash komutu: ' + text, 'info');
@@ -2899,7 +2899,7 @@ function addAIBubble(text, name, agent) {
 
 function clearChat() {
   q('#chat-area').innerHTML =
-    '<div class="welcome-screen"><img src="../../assets/logo.png" class="welcome-logo" alt="OllamaX"><h1>OllamaX Ultra</h1><p class="welcome-lead">Yerel Ollama ve bulut modelleri</p><p class="welcome-sub">Sağdaki <strong>Araçlar</strong> ile API ve dosyalara erişin.</p><p class="kbd-hint"><kbd>⌘</kbd><kbd>K</kbd> sohbet · <kbd>⌘</kbd><kbd>L</kbd> araçlar <span class="kbd-win">(<kbd>Ctrl</kbd> Windows)</span></p></div>';
+    '<div class="welcome-screen"><img src="../../assets/logo.png" class="welcome-logo" alt="Krevyx"><h1>Krevyx Ultra</h1><p class="welcome-lead">Yerel Ollama ve bulut modelleri</p><p class="welcome-sub">Sağdaki <strong>Araçlar</strong> ile API ve dosyalara erişin.</p><p class="kbd-hint"><kbd>⌘</kbd><kbd>K</kbd> sohbet · <kbd>⌘</kbd><kbd>L</kbd> araçlar <span class="kbd-win">(<kbd>Ctrl</kbd> Windows)</span></p></div>';
   state.history = [];
   save();
   toast('Chat cleared', 'info');
@@ -2910,7 +2910,7 @@ function refreshChatFromHistory() {
   area.innerHTML = '';
   if (!state.history.length) {
     area.innerHTML =
-      '<div class="welcome-screen"><img src="../../assets/logo.png" class="welcome-logo" alt="OllamaX"><h1>OllamaX Ultra</h1><p>Professional AI Agent Studio</p></div>';
+      '<div class="welcome-screen"><img src="../../assets/logo.png" class="welcome-logo" alt="Krevyx"><h1>Krevyx Ultra</h1><p>Professional AI Agent Studio</p></div>';
     return;
   }
   state.history.forEach((h) => {

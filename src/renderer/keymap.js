@@ -1,5 +1,5 @@
 /**
- * keymap.js — OllamaX v3.1 klavye kısayol katmanı (UI/Feature Upgrade Planı Bölüm 1.5)
+ * keymap.js — Krevyx v3.1 klavye kısayol katmanı (UI/Feature Upgrade Planı Bölüm 1.5)
  *
  * Merkezi kısayol kaydı; `mod` = Cmd (macOS) / Ctrl (diğer). Çakışma tespiti,
  * kullanıcı overrides (config.keymap.overrides) ve komut çalıştırma bus'ı içerir.
@@ -24,7 +24,7 @@
     'ctrl+shift+tab': 'session.prev',
   };
 
-  const STORAGE_KEY = 'ollamax_keymap_overrides_v1';
+  const STORAGE_KEY = 'Krevyx_keymap_overrides_v1';
   const handlers = new Map();
 
   function parseKey(keyStr) {
@@ -141,7 +141,7 @@
     }
   }, true);
 
-  window.OllamaX = window.OllamaX || {};
-  window.OllamaX.keymap = Keymap;
-  window.OllamaX.KEYMAP_DEFAULTS = DEFAULT_KEYMAP;
+  window.Krevyx = window.Krevyx || {};
+  window.Krevyx.keymap = Keymap;
+  window.Krevyx.KEYMAP_DEFAULTS = DEFAULT_KEYMAP;
 })();

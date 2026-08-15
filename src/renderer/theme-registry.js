@@ -1,5 +1,5 @@
 /**
- * theme-registry.js — OllamaX v3.1 tema altyapısı (UI/Feature Upgrade Planı Bölüm 1.3)
+ * theme-registry.js — Krevyx v3.1 tema altyapısı (UI/Feature Upgrade Planı Bölüm 1.3)
  *
  * Tema, `data-theme` özniteliği + CSS değişkenleriyle yönetilir; JavaScript yalnızca
  * özniteliği ve accent değişkenini değiştirir. Runtime'da sayfa yeniden yükleme yoktur.
@@ -11,8 +11,8 @@
   if (typeof window === 'undefined') return;
 
   const BUILTIN_THEMES = ['dark', 'light', 'high-contrast'];
-  const ACCENT_STORAGE_KEY = 'ollamax_theme_accent_v2'; // v2: varsayılan zümrüt #00a878 (Tricolor Pro)
-  const THEME_STORAGE_KEY = 'ollamax_theme_v1';
+  const ACCENT_STORAGE_KEY = 'Krevyx_theme_accent_v2'; // v2: varsayılan zümrüt #00a878 (Tricolor Pro)
+  const THEME_STORAGE_KEY = 'Krevyx_theme_v1';
 
   const customThemes = new Map();
 
@@ -36,11 +36,11 @@
       // Özel tema değişkenleri :root satır içi stiline yazılır (test/bağımsız doğrulama için)
       const customVars = effective.startsWith('custom:') ? customThemes.get(effective) : null;
       if (customVars) {
-        const st = document.querySelector(`style[data-ollamax-theme="${effective}"]`);
+        const st = document.querySelector(`style[data-krevyx-theme="${effective}"]`);
         if (st) st.remove();
         if (Object.keys(customVars).length) {
           const el = document.createElement('style');
-          el.setAttribute('data-ollamax-theme', effective);
+          el.setAttribute('data-krevyx-theme', effective);
           el.textContent = `:root{${Object.entries(customVars).map(([k, v]) => `${k}:${v}`).join(';')}}`;
           document.head.appendChild(el);
           for (const [k, v] of Object.entries(customVars)) {
@@ -74,7 +74,7 @@
         if (/^--[\w-]+$/.test(k) && typeof v === 'string') safeVars[k] = v;
       }
       customThemes.set(`custom:${name}`, safeVars);
-      localStorage.setItem(`ollamax_theme_custom_${name}`, JSON.stringify(safeVars));
+      localStorage.setItem(`Krevyx_theme_custom_${name}`, JSON.stringify(safeVars));
       this.apply(`custom:${name}`);
       return { ok: true, theme: `custom:${name}` };
     },
@@ -83,7 +83,7 @@
     remove(name) {
       const key = `custom:${name}`;
       customThemes.delete(key);
-      localStorage.removeItem(`ollamax_theme_custom_${name}`);
+      localStorage.removeItem(`Krevyx_theme_custom_${name}`);
       if (this.current() === key) this.apply('dark');
       return { ok: true };
     },
@@ -115,11 +115,11 @@
 
     /** Tema değişimlerini dinle (diğer modüller için) */
     onChange(fn) {
-      window.addEventListener('ollamax-theme', (e) => fn(e.detail));
+      window.addEventListener('krevyx-theme', (e) => fn(e.detail));
     },
 
     _notify(type, detail) {
-      window.dispatchEvent(new CustomEvent('ollamax-theme', { detail: { type, ...detail } }));
+      window.dispatchEvent(new CustomEvent('krevyx-theme', { detail: { type, ...detail } }));
     },
 
     lighten(hex, amt) {
@@ -132,8 +132,8 @@
     },
   };
 
-  window.OllamaX = window.OllamaX || {};
-  window.OllamaX.theme = ThemeRegistry;
+  window.Krevyx = window.Krevyx || {};
+  window.Krevyx.theme = ThemeRegistry;
 
   window.addEventListener('DOMContentLoaded', () => {
     ThemeRegistry.apply();
