@@ -11,7 +11,7 @@
   if (typeof window === 'undefined') return;
 
   const BUILTIN_THEMES = ['dark', 'light', 'high-contrast'];
-  const ACCENT_STORAGE_KEY = 'ollamax_theme_accent_v1';
+  const ACCENT_STORAGE_KEY = 'ollamax_theme_accent_v2'; // v2: varsayılan zümrüt #00a878 (Tricolor Pro)
   const THEME_STORAGE_KEY = 'ollamax_theme_v1';
 
   const customThemes = new Map();
@@ -54,7 +54,7 @@
 
     /** Accent rengini uygula (tek setProperty çağrısı) */
     applyAccent(hex) {
-      const safe = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : '#2f81f7';
+      const safe = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : '#00a878';
       document.documentElement.style.setProperty('--accent', safe);
       document.documentElement.style.setProperty('--accent-hover', this.lighten(safe, 8));
       document.documentElement.style.setProperty('--accent-soft', `${safe}1F`);
@@ -63,7 +63,7 @@
 
     savedAccent() {
       const v = localStorage.getItem(ACCENT_STORAGE_KEY);
-      return /^#[0-9a-fA-F]{6}$/.test(v) ? v : '#2f81f7';
+      return /^#[0-9a-fA-F]{6}$/.test(v) ? v : '#00a878';
     },
 
     /** Özel temayı kaydet: { name, vars: { '--bg-primary': ..., ... } } */
