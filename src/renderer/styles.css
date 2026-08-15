@@ -1518,3 +1518,10 @@ body.ghost-active .tools-panel {
 .task-entry .te-status { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .task-entry .te-meta { margin-left: auto; font-size: var(--v3-size-1); color: var(--v3-text-muted); font-family: var(--v3-font-mono); }
 .task-compensation { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px dashed var(--v3-warn); border-radius: var(--v3-radius-md); color: var(--v3-text-secondary); font-size: var(--v3-size-2); }
+/* v3.6.0: Çoklu sağlayıcı — genişleyen sekme barı + API kartı açıklamaları */
+.provider-tabs{overflow-x:auto;scrollbar-width:thin;}
+.provider-tabs::-webkit-scrollbar{height:4px;}
+.provider-tabs::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.api-prov-hint{margin:6px 0 0;font-size:11px;color:var(--text2);line-height:1.45;}
+.api-prov-hint a{color:var(--accent);text-decoration:none;}
+.api-prov-hint a:hover{text-decoration:underline;}

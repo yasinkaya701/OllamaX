@@ -21,6 +21,7 @@ const {
   safeCloneRepoName,
 } = require('./main-security');
 const { registerIpcV3Handlers } = require('./main/ipc-v3-handlers');
+const { registerProviderChatHandlers } = require('./main/agents/provider-chat');
 const { registerIpcBridge } = require('./main/ipc-bridge');
 const configStore = require('./main/config/config-store');
 
@@ -393,6 +394,7 @@ function registerV3Surface() {
     if (mainWindow) {
       registerIpcV3Handlers(mainWindow);
       registerIpcBridge();
+      registerProviderChatHandlers();
     }
   } catch (err) {
     console.error('[OllamaX] ipc-v3 başlatma hatası:', err?.message || err);

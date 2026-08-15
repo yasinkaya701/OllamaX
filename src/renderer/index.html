@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' blob:; base-uri 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'; connect-src 'self' https://api.github.com http://localhost:* http://127.0.0.1:* https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' blob:; base-uri 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'; connect-src 'self' https://api.github.com http://localhost:* http://127.0.0.1:* https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://openrouter.ai https://api.x.ai https://api.mistral.ai https://api.deepseek.com https://api.cohere.com https://api.perplexity.ai https://api.together.xyz https://api.groq.com https://api.cerebras.ai https://api.fireworks.ai https://api.replicate.com https://api.replicate.com https://*.amazonaws.com;">
 <title>OllamaX — AI Agent Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -90,6 +90,21 @@
           <button type="button" class="prov-btn" data-provider="openai" title="OpenAI API">OpenAI</button>
           <button type="button" class="prov-btn" data-provider="anthropic" title="Anthropic Claude">Anthropic</button>
           <button type="button" class="prov-btn" data-provider="gemini" title="Google Gemini">Gemini</button>
+          <button type="button" class="prov-btn" data-provider="openrouter" title="OpenRouter - 200+ model">OpenRouter</button>
+          <button type="button" class="prov-btn" data-provider="xai" title="xAI Grok">xAI</button>
+          <button type="button" class="prov-btn" data-provider="mistral" title="Mistral">Mistral</button>
+          <button type="button" class="prov-btn" data-provider="deepseek" title="DeepSeek">DeepSeek</button>
+          <button type="button" class="prov-btn" data-provider="groq" title="Groq - ultra hızlı">Groq</button>
+          <button type="button" class="prov-btn" data-provider="cohere" title="Cohere">Cohere</button>
+          <button type="button" class="prov-btn" data-provider="perplexity" title="Perplexity">Perplexity</button>
+          <button type="button" class="prov-btn" data-provider="together" title="Together AI">Together</button>
+          <button type="button" class="prov-btn" data-provider="cerebras" title="Cerebras">Cerebras</button>
+          <button type="button" class="prov-btn" data-provider="fireworks" title="Fireworks">Fireworks</button>
+          <button type="button" class="prov-btn" data-provider="replicate" title="Replicate">Replicate</button>
+          <button type="button" class="prov-btn" data-provider="azure" title="Azure OpenAI">Azure</button>
+          <button type="button" class="prov-btn" data-provider="aws-bedrock" title="Amazon Bedrock">Bedrock</button>
+          <button type="button" class="prov-btn" data-provider="lmstudio" title="LM Studio (yerel)">LM Studio</button>
+          <button type="button" class="prov-btn" data-provider="custom" title="Özel OpenAI-uyumlu uç nokta">Özel</button>
         </div>
         <div class="model-row-tools">
           <select id="model-select" class="model-sel"></select>
@@ -215,6 +230,145 @@
       <input id="gemini-key" type="password" class="api-key-input" placeholder="AIza…">
       <div class="api-models-list" id="gemini-model-rows"></div>
     </div>
+    <div class="api-provider-card" id="api-openrouter">
+      <div class="api-prov-header">
+        <div class="api-prov-name"><span class="api-prov-dot" id="dot-openrouter"></span>OpenRouter</div>
+        <span class="api-prov-badge openrouter">200+ model</span>
+      </div>
+      <input id="openrouter-key" type="password" class="api-key-input" placeholder="sk-or-…">
+      <div class="api-models-list" id="openrouter-model-rows"></div>
+      <p class="api-prov-hint">200+ açık kaynak ve ticari modeli tek anahtarla. <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a></p>
+    </div>
+    <div class="api-provider-card" id="api-xai">
+      <div class="api-prov-header">
+        <div class="api-prov-name"><span class="api-prov-dot" id="dot-xai"></span>xAI Grok</div>
+        <span class="api-prov-badge xai">Grok</span>
+      </div>
+      <input id="xai-key" type="password" class="api-key-input" placeholder="xAI-…">
+      <div class="api-models-list" id="xai-model-rows"></div>
+      <p class="api-prov-hint">Grok 4 ve Grok Code modelleri. <a href="https://console.x.ai" target="_blank" rel="noopener">console.x.ai</a></p>
+    </div>
+    <div class="api-provider-card" id="api-mistral">
+      <div class="api-prov-header">
+        <div class="api-prov-name"><span class="api-prov-dot" id="dot-mistral"></span>Mistral</div>
+        <span class="api-prov-badge mistral">Mistral</span>
+      </div>
+      <input id="mistral-key" type="password" class="api-key-input" placeholder="Mis-…">
+      <div class="api-models-list" id="mistral-model-rows"></div>
+      <p class="api-prov-hint">Mistral Large, Codestral. <a href="https://console.mistral.ai" target="_blank" rel="noopener">console.mistral.ai</a></p>
+    </div>
+    <div class="api-provider-card" id="api-deepseek">
+      <div class="api-prov-header">
+        <div class="api-prov-name"><span class="api-prov-dot" id="dot-deepseek"></span>DeepSeek</div>
+        <span class="api-prov-badge deepseek">DeepSeek</span>
+      </div>
+      <input id="deepseek-key" type="password" class="api-key-input" placeholder="sk-…">
+      <div class="api-models-list" id="deepseek-model-rows"></div>
+      <p class="api-prov-hint">DeepSeek-V3 ve Reasoner. <a href="https://platform.deepseek.com" target="_blank" rel="noopener">platform.deepseek.com</a></p>
+    </div>
+    <div class="api-provider-card" id="api-groq">
+      <div class="api-prov-header">
+        <div class="api-prov-name"><span class="api-prov-dot" id="dot-groq"></span>Groq</div>
+        <span class="api-prov-badge groq">Groq</span>
+      </div>
+      <input id="groq-key" type="password" class="api-key-input" placeholder="gsk_…">
+      <div class="api-models-list" id="groq-model-rows"></div>
+      <p class="api-prov-hint">Ultra hızlı LPU inference (Llama, Qwen). <a href="https://console.groq.com" target="_blank" rel="noopener">console.groq.com</a></p>
+    </div>
+    <div class="api-provider-card" id="api-cohere">
+      <div class="api-prov-header">
+        <div class="api-prov-name"><span class="api-prov-dot" id="dot-cohere"></span>Cohere</div>
+        <span class="api-prov-badge cohere">Cohere</span>
+      </div>
+      <input id="cohere-key" type="password" class="api-key-input" placeholder="…">
+      <div class="api-models-list" id="cohere-model-rows"></div>
+      <p class="api-prov-hint">Command R ve Aya modelleri. <a href="https://dashboard.cohere.com" target="_blank" rel="noopener">dashboard.cohere.com</a></p>
+    </div>
+    <div class="api-provider-card" id="api-perplexity">
+      <div class="api-prov-header">
+        <div class="api-prov-name"><span class="api-prov-dot" id="dot-perplexity"></span>Perplexity</div>
+        <span class="api-prov-badge perplexity">Sonar</span>
+      </div>
+      <input id="perplexity-key" type="password" class="api-key-input" placeholder="pplx-…">
+      <div class="api-models-list" id="perplexity-model-rows"></div>
+      <p class="api-prov-hint">Sonar arama + muhakeme modelleri.</p>
+    </div>
+    <div class="api-provider-card" id="api-together">
+      <div class="api-prov-header">
+        <div class="api-prov-name"><span class="api-prov-dot" id="dot-together"></span>Together</div>
+        <span class="api-prov-badge together">Together</span>
+      </div>
+      <input id="together-key" type="password" class="api-key-input" placeholder="…">
+      <div class="api-models-list" id="together-model-rows"></div>
+      <p class="api-prov-hint">Llama ve açık modeller, yüksek bağlam. <a href="https://api.together.xyz" target="_blank" rel="noopener">together.ai</a></p>
+    </div>
+    <div class="api-provider-card" id="api-cerebras">
+      <div class="api-prov-header">
+        <div class="api-prov-name"><span class="api-prov-dot" id="dot-cerebras"></span>Cerebras</div>
+        <span class="api-prov-badge cerebras">Cerebras</span>
+      </div>
+      <input id="cerebras-key" type="password" class="api-key-input" placeholder="…">
+      <div class="api-models-list" id="cerebras-model-rows"></div>
+      <p class="api-prov-hint">Cerebras wafer-scale hızla Llama/Qwen.</p>
+    </div>
+    <div class="api-provider-card" id="api-fireworks">
+      <div class="api-prov-header">
+        <div class="api-prov-name"><span class="api-prov-dot" id="dot-fireworks"></span>Fireworks</div>
+        <span class="api-prov-badge fireworks">Fireworks</span>
+      </div>
+      <input id="fireworks-key" type="password" class="api-key-input" placeholder="…">
+      <div class="api-models-list" id="fireworks-model-rows"></div>
+      <p class="api-prov-hint">Fireworks AI hızlı inference.</p>
+    </div>
+    <div class="api-provider-card" id="api-replicate">
+      <div class="api-prov-header">
+        <div class="api-prov-name"><span class="api-prov-dot" id="dot-replicate"></span>Replicate</div>
+        <span class="api-prov-badge replicate">Replicate</span>
+      </div>
+      <input id="replicate-key" type="password" class="api-key-input" placeholder="r8_…">
+      <div class="api-models-list" id="replicate-model-rows"></div>
+      <p class="api-prov-hint">Replicate bulut modelleri.</p>
+    </div>
+    <div class="api-provider-card" id="api-azure">
+      <div class="api-prov-header">
+        <div class="api-prov-name"><span class="api-prov-dot" id="dot-azure"></span>Azure OpenAI</div>
+        <span class="api-prov-badge azure">Azure</span>
+      </div>
+      <input id="azure-endpoint" type="text" class="api-key-input" placeholder="https://&lt;resource&gt;.openai.azure.com">
+      <input id="azure-key" type="password" class="api-key-input" placeholder="Azure API anahtarı">
+      <div class="api-models-list" id="azure-model-rows"></div>
+      <p class="api-prov-hint">Azure OpenAI hizmeti uç noktası + anahtar ( deployment/model adı ile). <a href="https://portal.azure.com" target="_blank" rel="noopener">portal.azure.com</a></p>
+    </div>
+    <div class="api-provider-card" id="api-aws-bedrock">
+      <div class="api-prov-header">
+        <div class="api-prov-name"><span class="api-prov-dot" id="dot-aws-bedrock"></span>Amazon Bedrock</div>
+        <span class="api-prov-badge bedrock">AWS</span>
+      </div>
+      <input id="bedrock-region" type="text" class="api-key-input" placeholder="Bölge: us-east-1">
+      <input id="bedrock-access-key" type="password" class="api-key-input" placeholder="AWS Access Key ID">
+      <input id="bedrock-secret-key" type="password" class="api-key-input" placeholder="AWS Secret Access Key">
+      <div class="api-models-list" id="aws-bedrock-model-rows"></div>
+      <p class="api-prov-hint">AWS SigV4 imzalama ile Bedrock'ta Claude ve diğer modeller. Anahtarlar yalnızca yerelde saklanır.</p>
+    </div>
+    <div class="api-provider-card" id="api-lmstudio">
+      <div class="api-prov-header">
+        <div class="api-prov-name"><span class="api-prov-dot" id="dot-lmstudio"></span>LM Studio</div>
+        <span class="api-prov-badge lmstudio">Yerel</span>
+      </div>
+      <input id="lmstudio-endpoint" type="text" class="api-key-input" placeholder="http://localhost:1234">
+      <div class="api-models-list" id="lmstudio-model-rows"></div>
+      <p class="api-prov-hint">Bilgisayarınızdaki LM Studio sunucusu — anahtarsız, tamamen yerel.</p>
+    </div>
+    <div class="api-provider-card" id="api-custom">
+      <div class="api-prov-header">
+        <div class="api-prov-name"><span class="api-prov-dot" id="dot-custom"></span>Özel Uç Nokta</div>
+        <span class="api-prov-badge custom">OpenAI-uyumlu</span>
+      </div>
+      <input id="custom-endpoint" type="text" class="api-key-input" placeholder="https://sunucu-adresi/v1">
+      <input id="custom-key" type="password" class="api-key-input" placeholder="API anahtarı (opsiyonel)">
+      <div class="api-models-list" id="custom-model-rows"></div>
+      <p class="api-prov-hint">OpenAI-uyumlu herhangi bir sunucu (vLLM, Ollama OpenAI portu, TGI …).</p>
+    </div>
     <div class="save-keys-row">
       <button id="btn-save-keys" class="primary-btn full-w"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save API Keys</button>
     </div>
@@ -281,6 +435,21 @@
         <option value="openai">OpenAI</option>
         <option value="anthropic">Anthropic</option>
         <option value="gemini">Google Gemini</option>
+        <option value="openrouter">OpenRouter</option>
+        <option value="xai">xAI Grok</option>
+        <option value="mistral">Mistral</option>
+        <option value="deepseek">DeepSeek</option>
+        <option value="groq">Groq</option>
+        <option value="cohere">Cohere</option>
+        <option value="perplexity">Perplexity</option>
+        <option value="together">Together AI</option>
+        <option value="cerebras">Cerebras</option>
+        <option value="fireworks">Fireworks</option>
+        <option value="replicate">Replicate</option>
+        <option value="azure">Azure OpenAI</option>
+        <option value="aws-bedrock">Amazon Bedrock</option>
+        <option value="lmstudio">LM Studio (yerel)</option>
+        <option value="custom">Özel uç nokta</option>
       </select>
     </div>
     <div class="form-g">

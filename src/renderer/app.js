@@ -107,7 +107,8 @@ function iconSvg(cls) {
   return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
 }
 
-const MODEL_LISTS = { ollama: [], openai: [], anthropic: [], gemini: [] };
+const MODEL_LISTS = { ollama: [], openai: [], anthropic: [], gemini: [], openrouter: [], xai: [], mistral: [], deepseek: [], cohere: [], perplexity: [], together: [], groq: [], cerebras: [], fireworks: [], replicate: [], azure: [], "aws-bedrock": [], lmstudio: [], custom: [] };
+const CLOUD_PROVIDERS = ['openai','anthropic','gemini','openrouter', 'xai', 'mistral', 'deepseek', 'cohere', 'perplexity', 'together', 'groq', 'cerebras', 'fireworks', 'replicate', 'azure', 'aws-bedrock', 'lmstudio', 'custom'];
 
 const MODEL_FALLBACK = {
   openai: ['gpt-5.5', 'gpt-5.3', 'gpt-5', 'gpt-5-mini', 'gpt-4o', 'gpt-4.1', 'o5-mini', 'o4-mini'],
@@ -323,20 +324,16 @@ async function init() {
 
 async function hydrateModelCatalog() {
   if (!api) {
-    MODEL_LISTS.openai = [...MODEL_FALLBACK.openai];
-    MODEL_LISTS.anthropic = [...MODEL_FALLBACK.anthropic];
-    MODEL_LISTS.gemini = [...MODEL_FALLBACK.gemini];
+    for (const pid of CLOUD_PROVIDERS) MODEL_LISTS[pid] = [...(MODEL_FALLBACK[pid] || [])];
     return;
   }
   try {
     const c = await api.invoke('get-model-catalog');
-    if (c?.openai?.length) MODEL_LISTS.openai = c.openai;
-    if (c?.anthropic?.length) MODEL_LISTS.anthropic = c.anthropic;
-    if (c?.gemini?.length) MODEL_LISTS.gemini = c.gemini;
+    for (const pid of CLOUD_PROVIDERS) {
+      if (c?.[pid]?.length) MODEL_LISTS[pid] = c[pid];
+    }
   } catch {
-    MODEL_LISTS.openai = [...MODEL_FALLBACK.openai];
-    MODEL_LISTS.anthropic = [...MODEL_FALLBACK.anthropic];
-    MODEL_LISTS.gemini = [...MODEL_FALLBACK.gemini];
+    for (const pid of CLOUD_PROVIDERS) MODEL_LISTS[pid] = [...(MODEL_FALLBACK[pid] || [])];
   }
 }
 
@@ -345,6 +342,10 @@ async function bootstrapCloudModels() {
   const order = ['anthropic'];
   if (state.settings.openai?.trim()) order.push('openai');
   if (state.settings.gemini?.trim()) order.push('gemini');
+  for (const pid of CLOUD_PROVIDERS) {
+    if (pid === 'azure' || pid === 'aws-bedrock' || pid === 'lmstudio' || pid === 'custom') continue;
+    if (state.settings[pid]?.trim()) order.push(pid);
+  }
   for (const prov of order) {
     try {
       const key =
@@ -352,7 +353,7 @@ async function bootstrapCloudModels() {
           ? state.settings.openai
           : prov === 'gemini'
             ? state.settings.gemini
-            : state.settings.anthropic || '';
+            : state.settings[prov] || '';
       const res = await api.invoke('fetch-provider-models', { provider: prov, apiKey: key });
       if (res.ok && Array.isArray(res.models) && res.models.length) MODEL_LISTS[prov] = res.models;
     } catch {
@@ -463,6 +464,25 @@ async function loadPersistedSession() {
       q('#openai-key').value = state.settings.openai || '';
       q('#anthropic-key').value = state.settings.anthropic || '';
       q('#gemini-key').value = state.settings.gemini || '';
+  q('#openrouter-key').value = state.settings[pid] || '';
+  q('#xai-key').value = state.settings[pid] || '';
+  q('#mistral-key').value = state.settings[pid] || '';
+  q('#deepseek-key').value = state.settings[pid] || '';
+  q('#cohere-key').value = state.settings[pid] || '';
+  q('#perplexity-key').value = state.settings[pid] || '';
+  q('#together-key').value = state.settings[pid] || '';
+  q('#groq-key').value = state.settings[pid] || '';
+  q('#cerebras-key').value = state.settings[pid] || '';
+  q('#fireworks-key').value = state.settings[pid] || '';
+  q('#replicate-key').value = state.settings[pid] || '';
+  q('#azure-endpoint').value = state.settings.azureEndpoint || '';
+  q('#azure-key').value = state.settings.azureApiKey || '';
+  q('#bedrock-region').value = state.settings.bedrockRegion || '';
+  q('#bedrock-access-key').value = state.settings.bedrockAccessKeyId || '';
+  q('#bedrock-secret-key').value = state.settings.bedrockSecretAccessKey || '';
+  q('#lmstudio-endpoint').value = state.settings.lmstudioEndpoint || '';
+  q('#custom-endpoint').value = state.settings.customEndpoint || '';
+  q('#custom-key').value = state.settings.customApiKey || '';
       if (Array.isArray(disk.history) && disk.history.length) {
         state.history = disk.history;
         refreshChatFromHistory();
@@ -498,7 +518,7 @@ function loadState() {
     const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (s?.agents?.length) state.agents = s.agents;
     if (s?.settings && typeof s.settings === 'object') {
-      for (const k of ['openai', 'anthropic', 'gemini', 'ollamaHost']) {
+      for (const k of ['openai', 'anthropic', 'gemini', 'ollamaHost', 'openrouter', 'xai', 'mistral', 'deepseek', 'cohere', 'perplexity', 'together', 'groq', 'cerebras', 'fireworks', 'replicate', 'azure', 'aws-bedrock', 'lmstudio', 'custom']) {
         if (typeof s.settings[k] === 'string') state.settings[k] = s.settings[k];
       }
       if (Array.isArray(s.settings.ollamaMachines) && s.settings.ollamaMachines.length) {
@@ -540,7 +560,8 @@ function save() {
 }
 
 function buildApiModelRows() {
-  [['openai-model-rows', 'openai'], ['anthropic-model-rows', 'anthropic'], ['gemini-model-rows', 'gemini']].forEach(([id, prov]) => {
+  const rowBindings = [['openai-model-rows','openai'],['anthropic-model-rows','anthropic'],['gemini-model-rows','gemini']].concat(CLOUD_PROVIDERS.filter((x)=>!['openai','anthropic','gemini'].includes(x)).map((pid)=>[pid+'-model-rows', pid]));
+  rowBindings.forEach(([id, prov]) => {
     const host = q('#' + id);
     if (!host) return;
     host.innerHTML = '';
@@ -937,15 +958,32 @@ async function syncCloudModels() {
   }
   if (!api) return;
   let key = '';
+  let opts = {};
   if (p === 'openai') key = state.settings.openai;
   if (p === 'gemini') key = state.settings.gemini;
   if (p === 'anthropic') key = state.settings.anthropic || '';
-  if ((p === 'openai' || p === 'gemini') && !key.trim()) {
+  if (['openrouter','xai','mistral','deepseek','cohere','perplexity','together','groq','cerebras','fireworks','replicate'].includes(p)) {
+    key = state.settings[p] || '';
+  }
+  if (p === 'azure') { opts.endpoint = state.settings.azureEndpoint || ''; key = state.settings.azureApiKey || ''; }
+  if (p === 'aws-bedrock') {
+    opts = {
+      region: state.settings.bedrockRegion || '',
+      awsAccessKeyId: state.settings.bedrockAccessKeyId || '',
+      awsSecretAccessKey: state.settings.bedrockSecretAccessKey || '',
+    };
+    key = state.settings.bedrockAccessKeyId || '';
+  }
+  if (p === 'lmstudio') { opts.endpoint = state.settings.lmstudioEndpoint || 'http://localhost:1234'; }
+  if (p === 'custom') { opts.endpoint = state.settings.customEndpoint || ''; key = state.settings.customApiKey || ''; }
+  if ((p === 'openai' || p === 'gemini' || p === 'custom' || p === 'azure') && !key.trim()) {
     toast('Önce Araçlar → API anahtarını kaydedin', 'warn');
     return;
   }
   toast(`${p} modelleri çekiliyor…`, 'info', 2000);
-  const res = await api.invoke('fetch-provider-models', { provider: p, apiKey: key });
+  const res = api
+    ? await api.invoke(CLOUD_PROVIDERS.includes(p) ? 'multi-models' : 'fetch-provider-models', { provider: p, apiKey: key, options: opts })
+    : null;
   if (!res.ok && res.error) {
     toast(res.error, 'error', 6000);
     showErrorBanner(res.error);
@@ -1495,6 +1533,25 @@ async function saveApiKeys() {
   state.settings.openai = q('#openai-key').value.trim();
   state.settings.anthropic = q('#anthropic-key').value.trim();
   state.settings.gemini = q('#gemini-key').value.trim();
+  state.settings[pid] = (q('#openrouter-key').value || '').trim();
+  state.settings[pid] = (q('#xai-key').value || '').trim();
+  state.settings[pid] = (q('#mistral-key').value || '').trim();
+  state.settings[pid] = (q('#deepseek-key').value || '').trim();
+  state.settings[pid] = (q('#cohere-key').value || '').trim();
+  state.settings[pid] = (q('#perplexity-key').value || '').trim();
+  state.settings[pid] = (q('#together-key').value || '').trim();
+  state.settings[pid] = (q('#groq-key').value || '').trim();
+  state.settings[pid] = (q('#cerebras-key').value || '').trim();
+  state.settings[pid] = (q('#fireworks-key').value || '').trim();
+  state.settings[pid] = (q('#replicate-key').value || '').trim();
+  state.settings.azureEndpoint = (q('#azure-endpoint').value || '').trim();
+  state.settings.azureApiKey = (q('#azure-key').value || '').trim();
+  state.settings.bedrockRegion = (q('#bedrock-region').value || '').trim();
+  state.settings.bedrockAccessKeyId = (q('#bedrock-access-key').value || '').trim();
+  state.settings.bedrockSecretAccessKey = (q('#bedrock-secret-key').value || '').trim();
+  state.settings.lmstudioEndpoint = (q('#lmstudio-endpoint').value || '').trim();
+  state.settings.customEndpoint = (q('#custom-endpoint').value || '').trim();
+  state.settings.customApiKey = (q('#custom-key').value || '').trim();
   save();
   updateApiDots();
   log('API keys saved ✓', 'success');
@@ -1566,6 +1623,15 @@ function updateApiDots() {
   set('dot-openai', !!state.settings.openai);
   set('dot-anthropic', !!state.settings.anthropic);
   set('dot-gemini', !!state.settings.gemini);
+  for (const pid of CLOUD_PROVIDERS.filter((x) => x !== 'openai' && x !== 'anthropic' && x !== 'gemini')) {
+    const has = pid === 'aws-bedrock'
+      ? !!(state.settings.bedrockRegion && state.settings.bedrockAccessKeyId && state.settings.bedrockSecretAccessKey)
+      : pid === 'azure' ? !!(state.settings.azureEndpoint && state.settings.azureApiKey)
+        : pid === 'lmstudio' ? !!state.settings.lmstudioEndpoint
+          : pid === 'custom' ? !!state.settings.customEndpoint
+            : !!state.settings[pid];
+    set('dot-' + pid, has);
+  }
 }
 
 async function sendMessage() {
@@ -1639,6 +1705,27 @@ function runAgent(agent) {
     else if (prov === 'openai') api.send('openai-chat', { agentId: agent.id, model, messages: msgs, apiKey: state.settings.openai });
     else if (prov === 'anthropic') api.send('anthropic-chat', { agentId: agent.id, model, messages: msgs, apiKey: state.settings.anthropic });
     else if (prov === 'gemini') api.send('gemini-chat', { agentId: agent.id, model, messages: msgs, apiKey: state.settings.gemini });
+    else if (CLOUD_PROVIDERS.includes(prov)) api.send('multi-chat', {
+      provider: prov,
+      agentId: agent.id,
+      model,
+      messages: msgs,
+      apiKey: prov === 'azure' ? state.settings.azureApiKey
+        : prov === 'aws-bedrock' ? state.settings.bedrockAccessKeyId
+          : prov === 'lmstudio' ? ''
+            : prov === 'custom' ? state.settings.customApiKey
+              : state.settings[prov],
+      options: {
+        endpoint: prov === 'azure' ? state.settings.azureEndpoint
+          : prov === 'lmstudio' ? state.settings.lmstudioEndpoint || 'http://localhost:1234'
+            : prov === 'custom' ? state.settings.customEndpoint || ''
+              : '',
+        region: state.settings.bedrockRegion || '',
+        awsAccessKeyId: state.settings.bedrockAccessKeyId || '',
+        awsSecretAccessKey: state.settings.bedrockSecretAccessKey || '',
+        apiVersion: '2024-02-15-preview',
+      },
+    });
 
     const onChunk = (d) => {
       full += d.content;

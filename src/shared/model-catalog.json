@@ -51,5 +51,119 @@
     "gemini-2.5-flash-lite",
     "gemini-2.5-pro-preview-05-06",
     "gemini-2.0-flash"
-  ]
+  ],
+  "openrouter": [
+    "anthropic/claude-opus-4.5",
+    "anthropic/claude-opus-4.1",
+    "anthropic/claude-sonnet-4.5",
+    "openai/gpt-5.5",
+    "openai/gpt-5",
+    "openai/gpt-5-mini",
+    "openai/gpt-5-nano",
+    "openai/gpt-5-pro",
+    "openai/o5-pro",
+    "openai/o4-pro",
+    "openai/o4-mini",
+    "openai/o3",
+    "openai/o3-mini",
+    "google/gemini-2.5-pro",
+    "google/gemini-2.5-flash",
+    "meta-llama/llama-3.3-70b-instruct",
+    "meta-llama/llama-3.1-405b-instruct",
+    "qwen/qwen3-235b-a22b",
+    "qwen/qwen3-max",
+    "deepseek/deepseek-r1",
+    "mistralai/mistral-large-2",
+    "moonshotai/kimi-k2"
+  ],
+  "xai": [
+    "grok-4",
+    "grok-3",
+    "grok-3-mini",
+    "grok-3-mini-fast",
+    "grok-4-fast",
+    "grok-vision",
+    "grok-code-fast-1"
+  ],
+  "mistral": [
+    "mistral-large-latest",
+    "mistral-medium-latest",
+    "mistral-small-latest",
+    "codestral-latest",
+    "mistral-embed",
+    "pixtral-large-latest",
+    "pixtral-12b-2409",
+    "mistral-nemo"
+  ],
+  "deepseek": [
+    "deepseek-chat",
+    "deepseek-reasoner",
+    "deepseek-coder"
+  ],
+  "cohere": [
+    "command-r-plus-08-2024",
+    "command-r-08-2024",
+    "command-r7b-12-2024",
+    "command-a-03-2025",
+    "command-a-lite-03-2025",
+    "c4ai-aya-vision-32b",
+    "c4ai-aya-expanse-32b",
+    "c4ai-aya-expanse-8b"
+  ],
+  "perplexity": [
+    "sonar-pro",
+    "sonar",
+    "sonar-reasoning-pro",
+    "sonar-reasoning",
+    "sonar-deep-research"
+  ],
+  "together": [
+    "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+    "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+    "mistralai/Mixtral-8x7B-Instruct-v0.1",
+    "deepseek-ai/DeepSeek-V3-0324",
+    "deepseek-ai/DeepSeek-R1",
+    "Qwen/Qwen3-235B-A22B-Instruct-2507"
+  ],
+  "groq": [
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    "qwen-qwq-32b",
+    "deepseek-r1-distill-llama-70b",
+    "mixtral-8x7b-32768",
+    "gemma2-9b-it",
+    "llama-guard-4-12b",
+    "playai-tts"
+  ],
+  "cerebras": [
+    "llama3.1-8b",
+    "llama3.1-70b",
+    "llama-3.3-70b",
+    "qwen-3-235b-a22b"
+  ],
+  "fireworks": [
+    "accounts/fireworks/models/llama-v3p1-405b-instruct",
+    "accounts/fireworks/models/llama-v3p3-70b-instruct",
+    "accounts/fireworks/models/qwen3-235b-a22b-instruct",
+    "accounts/fireworks/models/deepseek-v3",
+    "accounts/fireworks/models/deepseek-r1"
+  ],
+  "replicate": [
+    "meta/meta-llama-3.1-405b-instruct",
+    "meta/meta-llama-3.3-70b-instruct",
+    "qwen/qwen3-235b-a22b",
+    "deepseek-ai/deepseek-v3-0324",
+    "google/gemma-3-27b-it"
+  ],
+  "azure": [
+    "gpt-4o",
+    "gpt-4.1",
+    "gpt-4.1-mini",
+    "gpt-5",
+    "o4-mini",
+    "o3"
+  ],
+  "lmstudio": [],
+  "custom": []
 }
