@@ -1537,3 +1537,49 @@ body.ghost-active .tools-panel {
 .adv-param label{font-size:10.5px;color:var(--text2);display:flex;justify-content:space-between;align-items:baseline;}
 .adv-param input[type=range]{width:100%;accent-color:var(--accent);height:4px;}
 .adv-val{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--accent);font-weight:600;}
+
+/* V3.8 PROFIL DETAY PANELI (settings modal içinde) */
+.profile-detail{position:absolute;inset:0;background:var(--surface1);border-radius:12px;padding:18px 20px;overflow-y:auto;z-index:5;}
+.profile-detail-inner{max-width:640px;margin:0 auto;}
+.profile-detail-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.profile-detail-hdr h4{margin:0;font-size:13px;letter-spacing:.02em;}
+.profile-detail-params{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--accent);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;background:var(--surface2);margin-bottom:10px;}
+.profile-detail-md{font-size:12.5px;line-height:1.65;color:var(--text2);}
+.profile-detail-md h2,.profile-detail-md h3,.profile-detail-md h4{color:var(--text);font-size:12.5px;margin:12px 0 4px;text-transform:uppercase;letter-spacing:.05em;}
+.profile-detail-md ul{margin:4px 0 8px 18px;}
+.profile-detail-md li{margin-bottom:3px;}
+.profile-detail-md strong{color:var(--text);}
+.profile-detail-md code{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:4px;}
+
+/* V3.8 COMPOSER MODU (Cursor benzeri) */
+.composer-mode-chips{display:flex;align-items:center;gap:6px;padding:4px 4px 6px;flex-wrap:wrap;}
+.cm-chip{background:none;border:1px solid var(--border2);color:var(--text3);font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px;cursor:pointer;transition:all .15s;letter-spacing:.02em;}
+.cm-chip:hover{border-color:rgba(0,168,120,.45);color:var(--text2);}
+.cm-chip.active{background:rgba(0,168,120,.14);border-color:rgba(0,168,120,.55);color:var(--accent);}
+.cm-add-btn{background:none;border:1px dashed var(--border2);color:var(--text3);font-size:11px;font-weight:600;padding:3px 9px;border-radius:12px;cursor:pointer;transition:all .15s;}
+.cm-add-btn:hover{border-color:rgba(0,168,120,.5);color:var(--text2);}
+.cm-hint{font-size:10px;color:var(--text3);margin-left:2px;}
+.composer-files{display:flex;flex-wrap:wrap;gap:5px;padding:0 2px 6px;}
+.cm-file{display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:2px 6px 2px 8px;font-size:10.5px;font-family:var(--mono);color:var(--text2);max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cm-file .cm-file-x{background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0 2px;line-height:1;}
+.cm-file .cm-file-x:hover{color:var(--red);}
+.cm-file-dir{color:var(--accent);font-weight:600;}
+
+/* Composer görev paneli */
+.composer-task-list{display:flex;flex-direction:column;gap:5px;padding:6px 8px;overflow-y:auto;max-height:220px;}
+.ct-item{border:1px solid var(--border2);border-radius:var(--r-sm);background:var(--surface2);padding:6px 8px;font-size:11px;cursor:pointer;transition:border-color .15s;}
+.ct-item:hover{border-color:var(--text3);}
+.ct-item .ct-head{display:flex;align-items:center;gap:6px;}
+.ct-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0;}
+.ct-item[data-status="running"] .ct-dot{background:var(--orange);box-shadow:0 0 6px rgba(210,153,34,.6);}
+.ct-item[data-status="done"] .ct-dot{background:var(--green);}
+.ct-item[data-status="error"] .ct-dot{background:var(--red);}
+.ct-title{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text2);}
+.ct-files{font-size:9.5px;font-family:var(--mono);color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* Composer görev paneli (bağlantı çubuğu altında) */
+.composer-task-panel{margin:0 0 6px;padding:4px 10px 6px;border-bottom:1px solid var(--border2);background:var(--bg-elevated);}
+.ctp-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;}
+.ctp-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);}
+.ctp-clear{background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0 4px;}
+.ctp-clear:hover{color:var(--red);}

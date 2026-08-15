@@ -137,6 +137,10 @@
   </div>
 
   <div id="agent-status-bar-container"></div>
+  <div id="composer-task-panel" class="composer-task-panel hidden">
+    <div class="ctp-hdr"><span class="ctp-title">Composer Görevleri</span><button type="button" id="btn-clear-composer-tasks" class="ctp-clear" title="Görevleri temizle">✕</button></div>
+    <div id="composer-task-list" class="composer-task-list hidden"></div>
+  </div>
   <div class="chat-area" id="chat-area">
     <div class="welcome-screen">
       <img src="../../assets/logo.png" class="welcome-logo" alt="OllamaX">
@@ -155,6 +159,14 @@
 
   <div class="input-zone">
     <div id="prompt-suggestion" class="prompt-suggestion hidden"></div>
+    <div id="composer-mode-chips" class="composer-mode-chips">
+      <button type="button" class="cm-chip active" data-mode="chat">💬 Sohbet</button>
+      <button type="button" class="cm-chip" data-mode="code">⌨ Composer</button>
+      <button type="button" id="btn-composer-add" class="cm-add-btn hidden" title="Dosya bağlamı ekle (Cursor @file gibi)">＋ Bağlam</button>
+      <button type="button" id="btn-composer-folder" class="cm-add-btn hidden" title="Proje klasörü seç">📁 Klasör</button>
+      <span id="composer-mode-hint" class="cm-hint">Sohbet modu: aktif ajanlarla diyalog</span>
+    </div>
+    <div id="composer-files" class="composer-files hidden"></div>
     <div class="input-card">
       <textarea id="msg-input" class="msg-ta" rows="1" placeholder="Ajanlara yazın… (Enter gönder, Shift+Enter satır)" autocomplete="off" aria-label="Sohbet mesajı"></textarea>
       <div class="input-actions">

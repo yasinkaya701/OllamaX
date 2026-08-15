@@ -30,6 +30,8 @@ const INVOKE = new Set([
   'scan-project',
   'write-project-doc',
   'terminal-create',
+  'composer-file-read',
+  'get-behavior-profiles',
 ]);
 
 contextBridge.exposeInMainWorld('ollamaxApi', {

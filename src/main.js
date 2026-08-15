@@ -104,7 +104,27 @@ function isLikelyOpenAIChatModel(id) {
 }
 
 ipcMain.handle('get-model-catalog', () => readModelCatalog());
+ipcMain.handle('get-behavior-profiles', () => {
+  try {
+    return { ok: true, profiles: JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'shared', 'behavior-profiles.json'), 'utf8')).profiles || [] };
+  } catch {
+    return { ok: false, profiles: [] };
+  }
+});
 
+/* V3.8 Composer: dosya bağlamı okuma (güvenli yol çözümlemesi ile) */
+ipcMain.handle('composer-file-read', async (_e, filePath) => {
+  const safe = resolveReadablePath(filePath);
+  if (!safe) return { ok: false, error: 'Erişim reddedildi: izin verilen klasör dışında.' };
+  try {
+    const st = fs.statSync(safe);
+    if (!st.isFile()) return { ok: false, error: 'Bu yol bir dosya değil.' };
+    if (st.size > MAX_PREVIEW_FILE_BYTES) return { ok: false, error: `Dosya çok büyük (${st.size} bayt; üst sınır ${MAX_PREVIEW_FILE_BYTES / (1024 * 1024)} MB).` };
+    return { ok: true, path: safe, name: path.basename(safe), size: st.size, content: fs.readFileSync(safe, 'utf8') };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
 ipcMain.handle('set-window-opacity', (event, opacity) => {
   if (mainWindow) {
     mainWindow.setOpacity(opacity);

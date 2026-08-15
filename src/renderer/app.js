@@ -791,6 +791,7 @@ async function init() {
     syncOllamaHostFromDefaultMachine();
   }
   await hydrateModelCatalog();
+  await loadRichProfiles();
   buildApiModelRows();
   renderAgentList();
   renderTemplates();
@@ -1576,6 +1577,108 @@ function bindGlobalStreamListeners() {
   });
 }
 
+/* ============================================================
+ * V3.8 COMPOSER MODU (Cursor Composer benzeri)
+ * Sohbet/Composer modu, dosya bağlamı (@file), görev listesi
+ * ============================================================ */
+const COMPOSER = {
+  mode: 'chat',
+  files: [],          // { path, name, size }
+  pickerDir: '',      // son açılan dizin
+  tasks: [],          // { id, title, files, status, startedAt }
+  _taskId: 0,
+};
+function composerSetMode(mode) {
+  COMPOSER.mode = mode;
+  qa('#composer-mode-chips .cm-chip').forEach((c) => c.classList.toggle('active', c.dataset.mode === mode));
+  qa('#composer-mode-chips .cm-add-btn').forEach((b) => b.classList.toggle('hidden', mode !== 'code'));
+  const hint = q('#composer-mode-hint');
+  const input = q('#msg-input');
+  if (mode === 'code') {
+    if (hint) hint.textContent = 'Composer modu: dosya bağlamıyla kod görevleri';
+    if (input) input.placeholder = 'Görevi yazın… (Ctrl+Enter görev gönder, Shift+Enter satır)';
+  } else {
+    if (hint) hint.textContent = 'Sohbet modu: aktif ajanlarla diyalog';
+    if (input) input.placeholder = 'Ajanlara yazın… (Enter gönder, Shift+Enter satır)';
+  }
+  composerRenderFiles();
+  save();
+}
+function composerRenderFiles() {
+  const box = q('#composer-files');
+  if (!box) return;
+  box.classList.toggle('hidden', !COMPOSER.files.length);
+  box.innerHTML = COMPOSER.files.map((f, i) =>
+    `<span class="cm-file${f.isDir ? ' cm-file-dir' : ''}" title="${esc(f.path)}">${f.isDir ? '📁 ' : '📄 '}${esc(f.name)}<button type="button" class="cm-file-x" data-i="${i}" title="Kaldır">✕</button></span>`,
+  ).join('');
+  box.querySelectorAll('.cm-file-x').forEach((b) => b.addEventListener('click', () => {
+    COMPOSER.files.splice(Number(b.dataset.i), 1);
+    composerRenderFiles();
+    save();
+  }));
+}
+async function composerAddContext(path, name, isDir) {
+  const entry = { path, name, isDir: !!isDir };
+  if (COMPOSER.files.some((f) => f.path === path)) {
+    toast('Bu bağlam zaten ekli', 'warn');
+    return;
+  }
+  if (isDir) {
+    COMPOSER.files.push(entry);
+    composerRenderFiles();
+    save();
+    log(`Klasör bağlamı eklendi: ${name}`, 'info');
+    return;
+  }
+  try {
+    const res = await api.invoke('composer-file-read', path);
+    if (!res.ok) { toast(res.error || 'Dosya okunamadı', 'error'); return; }
+    entry.size = res.size;
+    COMPOSER.files.push(entry);
+    composerRenderFiles();
+    save();
+    log(`Bağlam dosyası eklendi: ${name} (${res.size} bayt)`, 'info');
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+function buildComposerFileContext() {
+  if (!COMPOSER.files.length) return '';
+  const parts = COMPOSER.files.map((f) => {
+    if (f.isDir) return `## DİZİN: ${f.name}\n(Yol: ${f.path} — içerik, modelin sorarak veya mevcut bağlamdan değerlendirmesi içindir.)`;
+    try {
+      const raw = f._content ? f._content.toString().slice(0, 120000) : '';
+      return `## DOSYA: ${f.name} (${f.path})\n\`\`\`text\n${raw}\n\`\`\``;
+    } catch { return `## DOSYA: ${f.name} (okunamadı)`; }
+  });
+  return `\n\n[COMPOSER BAĞLAMI — REFERANS DOSYALAR]\n${parts.join('\n\n')}\n[/COMPOSER BAĞLAMI]`;
+}
+function composerAddTask(title, files) {
+  COMPOSER._taskId += 1;
+  const task = { id: COMPOSER._taskId, title, files: files.map((f) => f.name).join(', '), status: 'queued', startedAt: Date.now() };
+  COMPOSER.tasks.unshift(task);
+  if (COMPOSER.tasks.length > 50) COMPOSER.tasks.length = 50;
+  composerRenderTasks();
+  q('#composer-task-panel')?.classList.remove('hidden');
+  return task;
+}
+function composerUpdateTask(task, status) {
+  task.status = status;
+  composerRenderTasks();
+}
+function composerRenderTasks() {
+  const box = q('#composer-task-list');
+  if (!box) return;
+  box.classList.toggle('hidden', !COMPOSER.tasks.length);
+  box.innerHTML = COMPOSER.tasks.map((t) =>
+    `<div class="ct-item" data-status="${t.status}" data-task-id="${t.id}"><div class="ct-head"><span class="ct-dot"></span><span class="ct-title">${esc(t.title)}</span></div><div class="ct-files">${esc(t.files)}</div></div>`,
+  ).join('');
+  box.querySelectorAll('.ct-item').forEach((el) => el.addEventListener('click', () => {
+    const t = COMPOSER.tasks.find((x) => x.id === Number(el.dataset.taskId));
+    if (t) addUserBubble(`Görev: ${t.title} (${t.status})${t.files ? ' · Bağlam: ' + t.files : ''}`, t.status === 'done' ? 'var(--green)' : undefined);
+  }));
+}
+
 function bindAll() {
   on('btn-hide-sidebar', 'click', () => {
     q('#sidebar').classList.add('collapsed');
@@ -1717,6 +1820,23 @@ function bindAll() {
 
   on('console-toggle', 'click', () => q('#system-console').classList.toggle('collapsed'));
   on('btn-refresh-workspace', 'click', () => api && api.send('get-workspaces'));
+
+  /* V3.8 Composer bağlamaları */
+  qa('#composer-mode-chips .cm-chip').forEach((c) => c.addEventListener('click', () => composerSetMode(c.dataset.mode)));
+  on('btn-composer-add', 'click', () => {
+    if (!api) return;
+    const dir = state.currentDir || `OllamaX-Projects`;
+    api.send('list-dir', dir);
+    showToolsTab('files');
+    q('#tools-panel').classList.remove('hidden');
+    q('#file-tree').dataset.composerMode = '1';
+  });
+  on('btn-composer-folder', 'click', () => api && api.send('open-folder-dialog'));
+  on('btn-clear-composer-tasks', 'click', () => {
+    COMPOSER.tasks = [];
+    composerRenderTasks();
+    q('#composer-task-panel')?.classList.add('hidden');
+  });
 
   on('btn-load-team', 'click', () => {
     const id = q('#team-preset-select')?.value;
@@ -1899,6 +2019,11 @@ function bindIPC() {
       d.innerHTML = `<span class="fi-icon">${iconSvg(it.isDir ? "icon-folder" : "icon-file")}</span><span class="fi-name">${esc(it.name)}</span>`;
       d.addEventListener('click', () => {
         const fp = `${p.replace(/[/\\]$/, '')}${p.includes('\\') ? '\\' : '/'}${it.name}`;
+        if (tree.dataset.composerMode) {
+          void composerAddContext(fp, it.name, it.isDir);
+          q('#composer-task-panel')?.classList.remove('hidden');
+          return;
+        }
         it.isDir ? api.send('list-dir', fp) : api.send('read-file', fp);
       });
       tree.appendChild(d);
@@ -2103,8 +2228,27 @@ const BEHAVIOR_PROFILES = {
   creative: { temperature: 1.2, top_p: 0.95, max_tokens: 8192 },
   fast: { temperature: 0.2, top_p: 1, max_tokens: 2048 },
 };
+/* V3.8: main'den zengin MD profillerini çek (fallback: yerleşik parametre seti) */
+let richProfiles = [];
+async function loadRichProfiles() {
+  if (!api || richProfiles.length) return;
+  try {
+    const res = await api.invoke('get-behavior-profiles');
+    if (res?.ok && Array.isArray(res.profiles)) richProfiles = res.profiles;
+  } catch {
+    /* offline kal; yerleşik profiller kullan */
+  }
+}
+function getProfileInfo(name) {
+  const found = richProfiles.find((p) => p.id === name);
+  if (found) return found;
+  const built = BEHAVIOR_PROFILES[name];
+  return built ? { id: name, label: BUILTIN_LABELS[name] || name, params: built, markdown: '' } : null;
+}
+const BUILTIN_LABELS = { precise: 'Hassas', balanced: 'Dengeli', creative: 'Yaratıcı', fast: 'Hızlı' };
 function applyBehaviorProfile(name) {
-  const p = BEHAVIOR_PROFILES[name] || BEHAVIOR_PROFILES.precise;
+  const info = getProfileInfo(name);
+  const p = (info && info.params) || BEHAVIOR_PROFILES.precise;
   for (const k of ['temperature', 'top_p', 'max_tokens']) {
     state.settings.modelParams[k] = p[k];
     const el = q('#settings-' + k);
@@ -2143,12 +2287,45 @@ function setupAdvancedParamsListeners() {
   }
   qa('#settings-profile-chips .theme-chip').forEach((chip) => {
     chip.addEventListener('click', () => applyBehaviorProfile(chip.dataset.profile));
+    chip.addEventListener('dblclick', () => showProfileDetail(chip.dataset.profile));
   });
 }
 setupAdvancedParamsListeners();
 
+/* V3.8: Profil detay modalı — çift tıklayınca zengin MD profil kartı */
+function showProfileDetail(name) {
+  const info = getProfileInfo(name);
+  if (!info) return;
+  const box = q('#profile-detail-md') || createProfileDetailPanel();
+  box.innerHTML = info.markdown ? md(info.markdown) : `<p>${info.tagline || ''}</p>`;
+  const ttl = q('#profile-detail-title');
+  if (ttl) ttl.textContent = `${info.label || name}${info.labelEn ? ` — ${info.labelEn}` : ''}`;
+  const mp = info.params || BEHAVIOR_PROFILES[name] || {};
+  const lbl = q('#profile-detail-params');
+  if (lbl) lbl.textContent = `temperature ${mp.temperature ?? '?'} · top_p ${mp.top_p ?? '?'} · max_tokens ${mp.max_tokens ?? '?'}`;
+  q('#profile-detail-panel').classList.remove('hidden');
+  if (q('#profile-detail-close')) q('#profile-detail-close').onclick = () => q('#profile-detail-panel').classList.add('hidden');
+}
+function createProfileDetailPanel() {
+  const wrap = document.createElement('div');
+  wrap.id = 'profile-detail-panel';
+  wrap.className = 'profile-detail hidden';
+  wrap.innerHTML = `
+    <div class="profile-detail-inner">
+      <div class="profile-detail-hdr">
+        <h4 id="profile-detail-title">Profil</h4>
+        <button id="profile-detail-close" class="modal-x" type="button">✕</button>
+      </div>
+      <div id="profile-detail-params" class="profile-detail-params"></div>
+      <div id="profile-detail-md" class="profile-detail-md markdown-body"></div>
+    </div>`;
+  q('#settings-modal')?.appendChild(wrap);
+  return q('#profile-detail-md');
+}
+
 async function saveSettings() {
   ensureOllamaMachines();
+  await loadRichProfiles();
   if (api) {
     for (const m of state.settings.ollamaMachines) {
       const raw = (m.host || '').trim() || 'localhost:11434';
@@ -2228,6 +2405,7 @@ async function sendMessage() {
     toast('Select at least one agent', 'warn');
     return;
   }
+  const isComposer = COMPOSER.mode === 'code' && (state.history.length === 0 || !window.__composerTaskSent);
   inp.value = '';
   inp.style.height = 'auto';
   q('#char-count').textContent = '0';
@@ -2246,12 +2424,41 @@ async function sendMessage() {
   q('#chat-area .welcome-screen')?.remove();
   addUserBubble(text);
   state.history.push({ role: 'user', content: text });
+  if (isComposer) {
+    /* Composer modunda ilk gönderim: tek görev olarak işletilir ve bağlam dosyaları yüklenir */
+    window.__composerTaskSent = true;
+    const task = composerAddTask(text, COMPOSER.files);
+    composerUpdateTask(task, 'running');
+    await composerLoadFileContents();
+  }
   save();
   state.processing = true;
   setStatus('processing');
-  await Promise.all(active.map((a) => runAgent(a)));
-  state.processing = false;
-  setStatus('ready');
+  try {
+    await Promise.all(active.map((a) => runAgent(a)));
+  } finally {
+    state.processing = false;
+    setStatus('ready');
+    if (isComposer) {
+      const last = COMPOSER.tasks.find((t) => t.status === 'running');
+      if (last) composerUpdateTask(last, 'done');
+      window.__composerTaskSent = false;
+    }
+  }
+}
+async function composerLoadFileContents() {
+  if (!COMPOSER.files.length) return;
+  for (const f of COMPOSER.files) {
+    if (f.isDir) continue;
+    if (!f._content) {
+      try {
+        const res = await api.invoke('composer-file-read', f.path);
+        f._content = res.ok ? res.content : `[OKUNAMADI: ${res.error || 'erişim reddi'}]`;
+      } catch (e) {
+        f._content = `[HATA: ${e.message}]`;
+      }
+    }
+  }
 }
 
 function resolveModelParamsForAgent(agent) {
@@ -2293,6 +2500,7 @@ function runAgent(agent) {
         .join(', ');
       sysPrompt += `\n\n[ORCHESTRATION CONTEXT]: Available agents: ${others}. Use //CALL:AgentName task for sequential delegation, or //CALL_PARALLEL:AgentName task for parallel-friendly subtasks. One directive per block; use exact display names.`;
     }
+    if (COMPOSER.files.length) sysPrompt += buildComposerFileContext();
 
     const msgs = [...(sysPrompt ? [{ role: 'system', content: sysPrompt }] : []), ...state.history];
     const modelParams = resolveModelParamsForAgent(agent);
