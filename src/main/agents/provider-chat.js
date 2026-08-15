@@ -691,6 +691,7 @@ function registerProviderChatHandlers() {
 
 module.exports = {
   registerProviderChatHandlers,
+  runMultiChat,
   fetchProviderModelList,
   validateProvider,
   PROVIDERS,

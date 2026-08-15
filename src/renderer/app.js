@@ -1011,6 +1011,15 @@ function schedulePersist() {
   }, 500);
 }
 
+/* V3.9: diğer modüllere (prompt builder vb.) erken erişim */
+window.OllamaX = window.OllamaX || {};
+window.OllamaX.state = state;
+window.OllamaX.md = md;
+window.OllamaX.save = save;
+window.OllamaX.clearChat = clearChat;
+window.api = api;
+window.q = q;
+
 function loadState() {
   try {
     const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -2419,6 +2428,19 @@ async function sendMessage() {
     state.processing = false;
     setStatus('ready');
     log('Zincir ajan görevi: ' + text, 'info');
+    return;
+  }
+  /* v3.9: prompt builder modülüne api/q erişimi */
+  window.api = api;
+  window.q = q;
+  window.OllamaX = window.OllamaX || {};
+  window.OllamaX.state = state;
+  window.OllamaX.md = md;
+  window.OllamaX.save = save;
+  if (window.OllamaX?.promptBuilder?.trySlash && window.OllamaX.promptBuilder.trySlash(text)) {
+    state.processing = false;
+    setStatus('ready');
+    log('Slash komutu: ' + text, 'info');
     return;
   }
   q('#chat-area .welcome-screen')?.remove();

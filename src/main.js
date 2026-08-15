@@ -21,7 +21,7 @@ const {
   safeCloneRepoName,
 } = require('./main-security');
 const { registerIpcV3Handlers } = require('./main/ipc-v3-handlers');
-const { registerProviderChatHandlers } = require('./main/agents/provider-chat');
+const { registerProviderChatHandlers, runMultiChat } = require('./main/agents/provider-chat');
 const { registerIpcBridge } = require('./main/ipc-bridge');
 const configStore = require('./main/config/config-store');
 
@@ -125,6 +125,103 @@ ipcMain.handle('composer-file-read', async (_e, filePath) => {
     return { ok: false, error: e.message };
   }
 });
+/* V3.9 Slash araçları: /prompt /improve /summarize /extract /translate */
+function readSlashSettings() {
+  try {
+    const p = persistPath();
+    if (!fs.existsSync(p)) return {};
+    const raw = fs.readFileSync(p, 'utf8');
+    const parsed = JSON.parse(raw);
+    return (parsed && parsed.settings) ? parsed.settings : {};
+  } catch {
+    return {};
+  }
+}
+function defaultOllamaHostForSlash() {
+  const settings = readSlashSettings();
+  const machines = Array.isArray(settings.ollamaMachines) ? settings.ollamaMachines : [];
+  const active = machines.find((m) => m.active);
+  return (active && active.host) ? active.host : 'http://localhost:11434';
+}
+ipcMain.on('slash-tool', (event, { tool, msgs, prov, model }) => {
+  const agentId = `slash-${tool}-${Date.now()}`;
+  const settings = readSlashSettings();
+  const apiKey =
+    prov === 'openai' ? settings.openai
+      : prov === 'anthropic' ? settings.anthropic
+        : prov === 'gemini' ? settings.gemini
+          : prov === 'azure' ? settings.azureApiKey
+            : prov === 'aws-bedrock' ? settings.bedrockAccessKeyId
+              : prov === 'lmstudio' ? ''
+                : prov === 'custom' ? settings.customApiKey
+                  : settings[prov] || '';
+  const options = {
+    endpoint: prov === 'azure' ? settings.azureEndpoint || ''
+      : prov === 'lmstudio' ? settings.lmstudioEndpoint || 'http://localhost:1234'
+        : prov === 'custom' ? settings.customEndpoint || ''
+          : '',
+    region: settings.bedrockRegion || '',
+    awsAccessKeyId: settings.bedrockAccessKeyId || '',
+    awsSecretAccessKey: settings.bedrockSecretAccessKey || '',
+    apiVersion: '2024-02-15-preview',
+  };
+  const modelParams = (settings.modelParams && typeof settings.modelParams === 'object') ? settings.modelParams : {};
+  if (prov === 'ollama') {
+    const hostKey = normalizeOllamaHost(defaultOllamaHostForSlash()) || 'localhost:11434';
+    const t = splitOllamaHttpTarget(hostKey);
+    if (!t) {
+      event.reply('chat-chunk', { agentId, content: '❌ Geçersiz Ollama adresi.' });
+      event.reply('chat-done', { agentId });
+      return;
+    }
+    const body = JSON.stringify({
+      model,
+      messages: msgs,
+      stream: true,
+      options: {
+        temperature: Number.isFinite(Number(modelParams.temperature)) ? Math.min(2, Math.max(0, Number(modelParams.temperature))) : 0.7,
+        top_p: Number.isFinite(Number(modelParams.top_p)) ? Math.min(1, Math.max(0, Number(modelParams.top_p))) : 1,
+        num_predict: Number.isFinite(Number(modelParams.max_tokens)) ? Math.min(131072, Math.max(16, Math.floor(Number(modelParams.max_tokens)))) : -1,
+      },
+    });
+    const reqOpts = {
+      hostname: t.hostname,
+      port: t.port,
+      path: '/api/chat',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+      timeout: STREAM_TIMEOUT_MS,
+    };
+    const req = http.request(reqOpts, (res) => {
+      let buf = '';
+      res.on('data', (c) => {
+        buf += c.toString();
+        const lines = buf.split('\n');
+        buf = lines.pop();
+        for (const l of lines) {
+          if (!l.trim()) continue;
+          try {
+            const j = JSON.parse(l);
+            if (j.message?.content) event.reply('chat-chunk', { agentId, content: j.message.content });
+            if (j.done === true) event.reply('chat-done', { agentId });
+          } catch { /* parça atlandı */ }
+        }
+      });
+      res.on('end', () => { event.reply('chat-done', { agentId }); });
+      if (res.statusCode !== 200) {
+        event.reply('chat-chunk', { agentId, content: `❌ Ollama hatası (HTTP ${res.statusCode}). Sunucuyu kontrol edin.` });
+        event.reply('chat-done', { agentId });
+      }
+    });
+    req.on('error', (e) => { event.reply('chat-chunk', { agentId, content: `❌ Ollama sunucusuna bağlanılamadı (${e.message}). Sunucu çalışıyor mu?` }); event.reply('chat-done', { agentId }); });
+    req.on('timeout', () => { req.destroy(); event.reply('chat-chunk', { agentId, content: '⚠️ Ollama isteği zaman aşımına uğradı.' }); event.reply('chat-done', { agentId }); });
+    req.write(body);
+    req.end();
+  } else {
+    runMultiChat(event, { provider: prov, model, apiKey, options, messages: msgs, agentId, modelParams });
+  }
+});
+
 ipcMain.handle('set-window-opacity', (event, opacity) => {
   if (mainWindow) {
     mainWindow.setOpacity(opacity);
