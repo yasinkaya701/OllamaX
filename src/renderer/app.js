@@ -1090,17 +1090,19 @@ function bindAll() {
     openModal('settings-modal');
   });
 
-  // V3.1: Görünüm çip seçimleri
+  // V3.1: Görünüm çip seçimleri — anında önizleme (saveSettings'te de kalıcı kaydedilir)
   qa('#settings-theme-chips .theme-chip').forEach((chip) => {
     chip.addEventListener('click', () => {
       qa('#settings-theme-chips .theme-chip').forEach((c) => c.classList.remove('active'));
       chip.classList.add('active');
+      if (chip.dataset.theme && window.OllamaX?.theme?.apply) window.OllamaX.theme.apply(chip.dataset.theme);
     });
   });
   qa('#settings-density-chips .theme-chip').forEach((chip) => {
     chip.addEventListener('click', () => {
       qa('#settings-density-chips .theme-chip').forEach((c) => c.classList.remove('active'));
       chip.classList.add('active');
+      if (chip.dataset.density && window.OllamaX?.layout?.setDensity) window.OllamaX.layout.setDensity(chip.dataset.density);
     });
   });
   on('btn-add-ollama-machine', 'click', () => {

@@ -20,9 +20,9 @@ const {
   isAllowedGitCloneUrl,
   safeCloneRepoName,
 } = require('./main-security');
-const { registerIpcV3Handlers } = require('./ipc-v3-handlers');
-const { registerIpcBridge } = require('./ipc-bridge');
-const configStore = require('./config/config-store');
+const { registerIpcV3Handlers } = require('./main/ipc-v3-handlers');
+const { registerIpcBridge } = require('./main/ipc-bridge');
+const configStore = require('./main/config/config-store');
 
 const isWin = process.platform === 'win32';
 
@@ -531,7 +531,17 @@ ipcMain.on('chat', (event, { host, model, messages, agentId }) => {
   });
   attachStreamTimeout(req);
   req.on('error', (e) => {
-    event.reply('chat-chunk', { agentId, content: `\n\n❌ Ollama bağlantı hatası: ${e.message}` });
+    let hint = '';
+    if (e.code === 'ECONNREFUSED') {
+      hint = `Ollama bu bilgisayarda çalışmıyor görünüyor (${t ? `${t.hostname}:${t.port}` : hostKey}). Ollama uygulamasını başlatın veya uçbirimde \`ollama serve\` komutunu çalıştırın. İsterseniz sağ üstten OpenAI / Anthropic / Gemini sağlayıcısına geçebilirsiniz.`;
+    } else if (e.code === 'ENOTFOUND' || e.code === 'EHOSTUNREACH') {
+      hint = `Ollama adresine ulaşılamadı (${t ? `${t.hostname}:${t.port}` : hostKey}). Ayarlar → Ollama Makineleri bölümünden sunucu adresini kontrol edin.`;
+    } else if (e.code === 'ETIMEDOUT' || e.message === 'Request timeout') {
+      hint = `Ollama yanıt vermedi (${t ? `${t.hostname}:${t.port}` : hostKey}). Sunucunun çalıştığından ve ağ erişimin olduğundan emin olun.`;
+    } else {
+      hint = `Bağlantı sorunu: ${e.message || e.code || 'bilinmeyen hata'}. Ollama'nın çalıştığından emin olun.`;
+    }
+    event.reply('chat-chunk', { agentId, content: `\n\n❌ Ollama bağlantı hatası. ${hint}` });
     event.reply('chat-done', { agentId });
   });
   req.write(body);
