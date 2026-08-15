@@ -1,0 +1,59 @@
+{
+  "categories": [
+    {
+      "id": "local-ai",
+      "label": "Yerel AI",
+      "icon": "icon-llama",
+      "repos": [
+        { "name": "ollama/ollama", "query": "ollama", "desc": "LLM'leri yerel makinenizde çalıştırın", "stars": 250000, "lang": "Go" },
+        { "name": "ggerganov/llama.cpp", "query": "llama.cpp", "desc": "Saf C/C++ ile LLM çıkarımı", "stars": 80000, "lang": "C++" },
+        { "name": "Open-LLM-VTuber/Open-LLM-VTuber", "query": "open llm vtuber", "desc": "Yerel LLM tabanlı VTuber arayüzü", "stars": 15000, "lang": "Python" },
+        { "name": "lmstudio-ai/lm-studio", "query": "lm studio", "desc": "Yerel model keşfi ve sohbet arayüzü", "stars": 45000, "lang": "TypeScript" }
+      ]
+    },
+    {
+      "id": "agents",
+      "label": "Ajanlar & Orkestrasyon",
+      "icon": "icon-bot",
+      "repos": [
+        { "name": "microsoft/autogen", "query": "microsoft autogen", "desc": "Çok ajanlı konuşma çerçevesi", "stars": 45000, "lang": "Python" },
+        { "name": "langchain-ai/langchain", "query": "langchain", "desc": "LLM uygulama geliştirme çerçevesi", "stars": 105000, "lang": "Python" },
+        { "name": "crewAIInc/crewAI", "query": "crewai", "desc": "Ajan ekipleri ile rol tabanlı orkestrasyon", "stars": 30000, "lang": "Python" },
+        { "name": "camel-ai/camel", "query": "camel ai", "desc": "Otonom çok ajanlı sistemler için framework", "stars": 6000, "lang": "Python" }
+      ]
+    },
+    {
+      "id": "code",
+      "label": "Kod & Üretkenlik",
+      "icon": "icon-code",
+      "repos": [
+        { "name": "continuedev/continue", "query": "continuedev continue", "desc": "Açık kaynak AI kod asistanı", "stars": 25000, "lang": "TypeScript" },
+        { "name": "all-hands-ai/OpenHands", "query": "openhands", "desc": "Açık kaynak yazılım mühendisi ajan", "stars": 45000, "lang": "Python" },
+        { "name": "cline/cline", "query": "cline vscode", "desc": "VS Code için otonom kodlama ajanı", "stars": 40000, "lang": "TypeScript" },
+        { "name": "openai/openai-cookbook", "query": "openai cookbook", "desc": "OpenAI API örnekleri ve rehberleri", "stars": 85000, "lang": "Jupyter Notebook" }
+      ]
+    },
+    {
+      "id": "media",
+      "label": "Medya & Görüntü",
+      "icon": "icon-palette",
+      "repos": [
+        { "name": "comfyanonymous/ComfyUI", "query": "comfyui", "desc": "Düğüm tabanlı görüntü üretim arayüzü", "stars": 80000, "lang": "Python" },
+        { "name": "AUTOMATIC1111/stable-diffusion-webui", "query": "automatic1111 stable-diffusion", "desc": "Stable Diffusion web arayüzü", "stars": 145000, "lang": "Python" },
+        { "name": "openai/whisper", "query": "openai whisper", "desc": "Konuşma tanıma modeli", "stars": 75000, "lang": "Python" },
+        { "name": "lobehub/lobe-chat", "query": "lobehub lobe-chat", "desc": "Modern ChatGPT/Claude arayüzü", "stars": 85000, "lang": "TypeScript" }
+      ]
+    },
+    {
+      "id": "models",
+      "label": "Modeller & Altyapı",
+      "icon": "icon-brain",
+      "repos": [
+        { "name": "huggingface/transformers", "query": "huggingface transformers", "desc": "Öncü ML modelleri kütüphanesi", "stars": 140000, "lang": "Python" },
+        { "name": "vllm-project/vllm", "query": "vllm", "desc": "Yüksek performanslı LLM servis katmanı", "stars": 35000, "lang": "Python" },
+        { "name": "ggerganov/whisper.cpp", "query": "whisper.cpp", "desc": "Whisper'ın C/C++ portu", "stars": 30000, "lang": "C++" },
+        { "name": "ggerganov/llamafile", "query": "llamafile", "desc": "LLM'yi tek çalıştırılabilir dosya olarak dağıtma", "stars": 20000, "lang": "C++" }
+      ]
+    }
+  ]
+}

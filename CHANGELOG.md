@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.10.0 — 2026-08-16
+
+### GitHub Repo Keşfi — kategorili, canlı entegre keşif sistemi
+
+- **Merkezi katalog** (`src/shared/featured-repos.json`): 5 kategori, 20+ zenginleştirilmiş repo (Karpathy nanoGPT / llama2.c dahil); ana süreçten IPC ile yüklenir, çevrimdışı yedekli.
+- **Zengin kartlar**: kategori pilleri + bölümleme, yıldız skoru ve dil rozeti, tek tıkla GitHub arama paneline yönlendirme (sorgu otomatik dolar, sonuç listesi açılır).
+- **Denetim kaydı**: açılan öne çıkan repo `github.featured-open` olarak loglanır.
+- UI testleri (`scripts/serve-ui-test.js`, `scripts/mock-api.js`) ve CDP doğrulama betiği (`scripts/verify-discover.js`) eklendi; 9/9 kontrol geçer.
+
+### Kalite
+
+- **126 test** (hepsi yeşil), ESLint v9 uyarısız, `package.json` sürüm `3.10.0`.
+
 ## 3.0.0 — 2026-08-15
 
 ### AI Agent Studio dönüşümü (ROADMAP Faz 1–6)

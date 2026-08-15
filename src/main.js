@@ -860,6 +860,20 @@ ipcMain.on('gemini-chat', (event, { model, messages, apiKey, agentId, modelParam
   req.end();
 });
 
+/* V3.10: zenginleştirilmiş keşif reposu kataloğu */
+let featuredReposCache = null;
+function loadFeaturedRepos() {
+  if (featuredReposCache) return featuredReposCache;
+  try {
+    featuredReposCache = JSON.parse(fs.readFileSync(path.join(__dirname, 'shared', 'featured-repos.json'), 'utf8'));
+  } catch {
+    featuredReposCache = { categories: [] };
+  }
+  return featuredReposCache;
+}
+ipcMain.on('get-featured-repos', (event) => {
+  event.reply('featured-repos', loadFeaturedRepos());
+});
 ipcMain.on('github-search', (event, { query }) => {
   if (!query) return;
   const opts = {

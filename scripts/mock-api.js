@@ -35,6 +35,22 @@ const __mockData = {
     temperature: 0.7,
     systemPrompt: 'Sen OllamaX AI asistanısın.',
   },
+  featuredRepos: { categories: [
+    { id: 'ai-foundations', label: 'AI Foundations', icon: 'chip', repos: [
+      { name: 'nanoGPT', query: 'karpathy nanoGPT', desc: 'The simplest, fastest repository for training/finetuning medium-sized GPTs.', stars: 17200, lang: 'Python' },
+      { name: 'llama2.c', query: 'karpathy llama2.c', desc: 'Inference Llama 2 in one file of pure C.', stars: 12800, lang: 'C' },
+    ] },
+    { id: 'agents-orchestration', label: 'Agents & Orchestration', icon: 'workflow', repos: [
+      { name: 'llm-agent-orchestrator', query: 'karpathy llm-agent-orchestrator', desc: 'Simple agent orchestration with tool loops for local LLMs.', stars: 940, lang: 'TypeScript' },
+      { name: 'minimaxir-llm-agent', query: 'karpathy minimaxir llm agent framework', desc: 'Community agent frameworks worth exploring.', stars: 310, lang: 'Python' },
+    ] },
+    { id: 'local-inference', label: 'Local Inference', icon: 'terminal', repos: [
+      { name: 'llama.cpp', query: 'ggml-org llama.cpp', desc: 'LLM inference in C/C++.', stars: 72000, lang: 'C++' },
+    ] },
+    { id: 'learning-path', label: 'Learning Path', icon: 'sparkle', repos: [
+      { name: 'nn-zero-to-hero', query: 'karpathy neural networks zero to hero', desc: 'Zero to hero neural network lecture series.', stars: 6500, lang: 'Jupyter Notebook' },
+    ] },
+  ] },
 };
 
 let __sessionCounter = 3;
@@ -105,6 +121,10 @@ function __invokeResult(ch, args) {
   if (ch === 'scan-project') return { ok: true, files: 0 };
   if (ch === 'write-project-doc') return { ok: true, path: '/tmp/doc.md' };
   if (ch === 'get-team-presets') return { ok: true, presets: [] };
+  if (ch === 'get-featured-repos') {
+    __emit('featured-repos', __mockData.featuredRepos);
+    return { ok: true, catalog: __mockData.featuredRepos };
+  }
   if (ch === 'terminal-create') return { ok: true, id: 'term-' + Date.now() };
   if (ch === 'export-to-path') return { ok: true, filePath: '/home/user/export.json' };
   if (ch === 'set-window-opacity') return { ok: true };

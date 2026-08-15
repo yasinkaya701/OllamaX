@@ -55,6 +55,22 @@ const fakeData = {
     temperature: 0.7,
     systemPrompt: 'Sen OllamaX AI asistanısın.',
   },
+  featuredRepos: { categories: [
+    { id: 'ai-foundations', label: 'AI Foundations', repos: [
+      { name: 'nanoGPT', query: 'karpathy nanoGPT', desc: 'The simplest, fastest repository for training/finetuning medium-sized GPTs.', stars: 17200, lang: 'Python' },
+      { name: 'llama2.c', query: 'karpathy llama2.c', desc: 'Inference Llama 2 in one file of pure C.', stars: 12800, lang: 'C' },
+    ] },
+    { id: 'agents-orchestration', label: 'Agents & Orchestration', repos: [
+      { name: 'llm-agent-orchestrator', query: 'karpathy llm-agent-orchestrator', desc: 'Simple agent orchestration with tool loops for local LLMs.', stars: 940, lang: 'TypeScript' },
+      { name: 'minimaxir-llm-agent', query: 'karpathy minimaxir llm agent framework', desc: 'Community agent frameworks worth exploring.', stars: 310, lang: 'Python' },
+    ] },
+    { id: 'local-inference', label: 'Local Inference', repos: [
+      { name: 'llama.cpp', query: 'ggml-org llama.cpp', desc: 'LLM inference in C/C++.', stars: 72000, lang: 'C++' },
+    ] },
+    { id: 'learning-path', label: 'Learning Path', repos: [
+      { name: 'nn-zero-to-hero', query: 'karpathy neural networks zero to hero', desc: 'Zero to hero neural network lecture series.', stars: 6500, lang: 'Jupyter Notebook' },
+    ] },
+  ] },
 };
 
 let sessionCounter = 3;
@@ -100,6 +116,10 @@ function __invokeResult(ch, args) {
   if (method === 'scan-project') return { ok: true, files: 0 };
   if (method === 'write-project-doc') return { ok: true, path: '/tmp/doc.md' };
   if (method === 'get-team-presets') return { ok: true, presets: [] };
+  if (method === 'get-featured-repos') {
+    emit('featured-repos', __mock.featuredRepos);
+    return { ok: true, catalog: __mock.featuredRepos };
+  }
   if (method === 'terminal-create') return { ok: true, id: 'term-' + Date.now() };
   if (method === 'export-to-path') return { ok: true, filePath: '/home/user/export.json' };
   if (method === 'set-window-opacity') return { ok: true };

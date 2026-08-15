@@ -2,14 +2,14 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 const SEND = new Set([
   'get-models', 'pull-model', 'chat', 'openai-chat', 'anthropic-chat', 'gemini-chat',
-  'github-search', 'git-clone', 'list-dir', 'read-file',
+  'github-search', 'get-featured-repos', 'git-clone', 'list-dir', 'read-file',
   'open-folder-dialog', 'get-workspaces', 'get-stats',
   'terminal-input', 'terminal-resize', 'terminal-close',
   'tool-approval-response', // AgentLoop onay köprüsü (F2.4)
 ]);
 
 const ON = new Set([
-  'models-list', 'chat-chunk', 'chat-done', 'stats', 'github-results', 'exec-output',
+  'models-list', 'chat-chunk', 'chat-done', 'stats', 'github-results', 'featured-repos', 'exec-output',
   'git-done', 'dir-contents', 'folder-selected', 'file-content', 'pull-progress',
   'pull-done', 'workspaces-list', 'terminal-data',
   'tool-approval-request', // AgentLoop: write/exec araç onayı (F2.4)

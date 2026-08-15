@@ -555,20 +555,30 @@ Varsayım risk matrisi + doğrulama planı + birim ekonomi tablosu + 90 günlük
 Umut temelli iyimserlik yapma; her tahmin varsayımıyla etiketlenir.`,
   },
 ];
-const FEATURED_REPOS = [
-  { q: 'karpathy/nanoGPT', label: 'nanoGPT', icon: '', cssClass: 'icon-brain', desc: 'Minimal GPT training from scratch' },
-  { q: 'ollama/ollama', label: 'Ollama', icon: '', cssClass: 'icon-llama', desc: 'Run LLMs locally' },
-  { q: 'ggerganov/llama.cpp', label: 'llama.cpp', cssClass: 'icon-zap', desc: 'LLM inference in C/C++' },
-  { q: 'langchain-ai/langchain', label: 'LangChain', icon: '', cssClass: 'icon-link', desc: 'LLM application framework' },
-  { q: 'openai/whisper', label: 'Whisper', icon: '', cssClass: 'icon-mic', desc: 'Speech recognition by OpenAI' },
-  { q: 'huggingface/transformers', label: 'Transformers', icon: '', cssClass: 'icon-hug', desc: 'State-of-the-art ML models' },
-  { q: 'AUTOMATIC1111 stable-diffusion', label: 'Stable Diffusion', icon: '', cssClass: 'icon-palette', desc: 'Image generation AI' },
-  { q: 'microsoft autogen', label: 'AutoGen', icon: '', cssClass: 'icon-bot', desc: 'Multi-agent conversation framework' },
-  { q: 'openai/openai-cookbook', label: 'OpenAI Cookbook', icon: '', cssClass: 'icon-book', desc: 'OpenAI API examples & guides' },
-  { q: 'comfyanonymous ComfyUI', label: 'ComfyUI', icon: '', cssClass: 'icon-dial', desc: 'Node-based Stable Diffusion UI' },
-  { q: 'continuedev/continue', label: 'Continue', icon: '', cssClass: 'icon-wrench', desc: 'Open-source AI code assistant' },
-  { q: 'lobehub/lobe-chat', label: 'LobeChat', icon: '', cssClass: 'icon-chat', desc: 'Modern ChatGPT/Claude UI' },
+/* V3.10: Kategorili ve zenginleştirilmiş keşif reposu (src/shared/featured-repos.json'dan IPC ile yüklenir; çevrimdışı yedek aşağıdadır) */
+let FEATURED_REPOS_CATALOG = null; /* { categories: [{ id, label, icon, repos: [{ name, query, desc, stars, lang }] }] } */
+const FEATURED_REPOS_FALLBACK = [
+  { q: 'ollama/ollama', label: 'Ollama', cssClass: 'icon-llama', desc: 'LLM’leri yerel makinenizde çalıştırın', stars: 250000, lang: 'Go' },
+  { q: 'ggerganov/llama.cpp', label: 'llama.cpp', cssClass: 'icon-zap', desc: 'Saf C/C++ ile LLM çıkarımı', stars: 80000, lang: 'C++' },
+  { q: 'langchain-ai/langchain', label: 'LangChain', cssClass: 'icon-link', desc: 'LLM uygulama geliştirme çerçevesi', stars: 105000, lang: 'Python' },
+  { q: 'openai/whisper', label: 'Whisper', cssClass: 'icon-mic', desc: 'Konuşma tanıma modeli', stars: 75000, lang: 'Python' },
+  { q: 'huggingface/transformers', label: 'Transformers', cssClass: 'icon-hug', desc: 'Öncü ML modelleri kütüphanesi', stars: 140000, lang: 'Python' },
+  { q: 'AUTOMATIC1111/stable-diffusion-webui', label: 'Stable Diffusion', cssClass: 'icon-palette', desc: 'Stable Diffusion web arayüzü', stars: 145000, lang: 'Python' },
+  { q: 'microsoft/autogen', label: 'AutoGen', cssClass: 'icon-bot', desc: 'Çok ajanlı konuşma çerçevesi', stars: 45000, lang: 'Python' },
+  { q: 'openai/openai-cookbook', label: 'OpenAI Cookbook', cssClass: 'icon-book', desc: 'OpenAI API örnekleri ve rehberleri', stars: 85000, lang: 'Jupyter Notebook' },
+  { q: 'comfyanonymous/ComfyUI', label: 'ComfyUI', cssClass: 'icon-dial', desc: 'Düğüm tabanlı görüntü üretim arayüzü', stars: 80000, lang: 'Python' },
+  { q: 'continuedev/continue', label: 'Continue', cssClass: 'icon-wrench', desc: 'Açık kaynak AI kod asistanı', stars: 25000, lang: 'TypeScript' },
+  { q: 'lobehub/lobe-chat', label: 'LobeChat', cssClass: 'icon-chat', desc: 'Modern ChatGPT/Claude arayüzü', stars: 85000, lang: 'TypeScript' },
 ];
+/* FEATURED_REPOS uyumluluk görünümü: tüm kategorilerin düzleştirilmiş repo listesi */
+function allFeaturedRepos() {
+  if (FEATURED_REPOS_CATALOG?.categories?.length) {
+    return FEATURED_REPOS_CATALOG.categories.flatMap((c) =>
+      c.repos.map((r) => ({ q: r.query, label: r.name.split('/').pop(), cssClass: c.icon, desc: r.desc, stars: r.stars, lang: r.lang, fullName: r.name, repoUrl: `https://github.com/${r.name}` })),
+    );
+  }
+  return FEATURED_REPOS_FALLBACK.map((r) => ({ ...r, fullName: r.label, repoUrl: `https://github.com/search?q=${encodeURIComponent(r.q)}` }));
+}
 
 /* --- v3.0 ikon sistemi (AI slop temizliği: emoji yerine SVG) --- */
 const ICON_SVGS = {
@@ -806,6 +816,7 @@ async function init() {
     buildApiModelRows();
     populateModelSelect(state.currentProvider);
     api.send('get-models', defaultOllamaHost());
+    loadFeaturedReposCatalog();
     api.send('get-stats');
     api.send('get-workspaces');
     setInterval(() => api.send('get-stats'), 6000);
@@ -1444,24 +1455,82 @@ function renderTemplates() {
   });
 }
 
+/* V3.10: zenginleştirilmiş keşif reposu — kategori filtreli, canlı star/lfk rozetleri */
+let featuredRepoCat = 'Tümü';
 function renderFeaturedRepos() {
-  const el = q('#repo-chips');
-  el.innerHTML = '';
-  FEATURED_REPOS.forEach((r) => {
+  const container = q('#repo-discover');
+  if (!container) return;
+  const filterBar = q('#repo-cat-bar');
+  const list = q('#repo-chips');
+  if (!filterBar || !list) {
+    /* eski şablonla geriye dönük: basit liste */
+    const el = q('#repo-chips');
+    if (el) el.innerHTML = allFeaturedRepos().map((r) => `
+      <button class="repo-chip" data-q="${esc(r.q)}">
+        <span class="chip-icon">${iconSvg(r.cssClass || '')}</span>
+        <div><div class="chip-name">${esc(r.label)}</div><div class="chip-desc">${esc(r.desc)}</div></div>
+      </button>`).join('');
+    el?.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => openFeaturedRepo(b.dataset.q)));
+    return;
+  }
+  filterBar.innerHTML = '';
+  list.innerHTML = '';
+  const cats = FEATURED_REPOS_CATALOG?.categories?.length ? FEATURED_REPOS_CATALOG.categories : [];
+  const catNames = ['Tümü', ...cats.map((c) => c.label)];
+  catNames.forEach((c) => {
     const b = document.createElement('button');
-    b.className = 'repo-chip';
-    b.innerHTML = `<span class="chip-icon">${iconSvg(r.cssClass || "")}</span><div><div class="chip-name">${r.label}</div><div class="chip-desc">${r.desc}</div></div>`;
+    b.className = 'tmpl-cat-pill' + (c === featuredRepoCat ? ' active' : '');
+    b.textContent = c;
     b.addEventListener('click', () => {
-      q('#github-search-input').value = r.q;
-      showToolsTab('github');
-      if (!q('#tools-panel').classList.contains('hidden')) runGithubSearch();
-      else {
-        q('#tools-panel').classList.remove('hidden');
-        runGithubSearch();
-      }
+      featuredRepoCat = c;
+      renderFeaturedRepos();
     });
-    el.appendChild(b);
+    filterBar.appendChild(b);
   });
+  const visible = cats.filter((c) => featuredRepoCat === 'Tümü' || c.label === featuredRepoCat);
+  visible.forEach((cat) => {
+    const sec = document.createElement('div');
+    sec.className = 'repo-cat-sec';
+    const h = document.createElement('div');
+    h.className = 'repo-cat-head';
+    h.innerHTML = `<span class="chip-icon">${iconSvg(cat.icon || '')}</span><span>${esc(cat.label)}</span>`;
+    sec.appendChild(h);
+    const grid = document.createElement('div');
+    grid.className = 'repo-chip-grid';
+    cat.repos.forEach((r) => {
+      const b = document.createElement('button');
+      b.className = 'repo-chip repo-chip-rich';
+      b.type = 'button';
+      b.title = `${r.name} — ${r.desc}`;
+      b.innerHTML = `
+        <span class="chip-icon">${iconSvg(cat.icon || '')}</span>
+        <div class="rcr-body">
+          <div class="rcr-name">${esc(r.name.replace(/^.+\//, ''))}</div>
+          <div class="rcr-desc">${esc(r.desc)}</div>
+          <div class="rcr-meta">${r.stars ? `★ ${(r.stars / 1000).toFixed(0)}k` : ''}${r.lang ? ` · ${esc(r.lang)}` : ''}</div>
+        </div>`;
+      b.addEventListener('click', () => openFeaturedRepo(r.query, r.name));
+      grid.appendChild(b);
+    });
+    sec.appendChild(grid);
+    list.appendChild(sec);
+  });
+}
+function openFeaturedRepo(query, fullName) {
+  if (fullName && api && typeof api.send === 'function') api.send('audit-record', { type: 'github.featured-open', detail: fullName });
+  q('#github-search-input').value = query;
+  showToolsTab('github');
+  if (q('#tools-panel').classList.contains('hidden')) q('#tools-panel').classList.remove('hidden');
+  runGithubSearch();
+}
+/* V3.10: kataloğu ana süreçten yükle (çevrimdışı yedekle) */
+function loadFeaturedReposCatalog() {
+  if (api && api.send) {
+    api.send('get-featured-repos', {});
+  } else {
+    FEATURED_REPOS_CATALOG = { categories: [] };
+    renderFeaturedRepos();
+  }
 }
 
 function populateModelSelect(provider) {
@@ -1982,6 +2051,10 @@ function bindIPC() {
   });
 
   api.on('github-results', (data) => renderGithubResults(data));
+  api.on('featured-repos', (data) => {
+    if (data?.categories?.length) FEATURED_REPOS_CATALOG = data;
+    renderFeaturedRepos();
+  });
   api.on('exec-output', (d) => log(d.data.trimEnd(), d.type === 'stderr' ? 'warn' : 'info'));
 
   api.on('git-done', (d) => {
