@@ -72,6 +72,20 @@
   --v3-text-primary: #1f2328;
   --v3-text-secondary: #656d76;
   --v3-text-muted: #8b949e;
+  --bg: #ffffff;
+  --bg-elevated: #f6f8fa;
+  --surface: #f0f2f5;
+  --surface2: #e7ebf0;
+  --surface3: #dfe3e8;
+  --border: #d0d7de;
+  --border2: #e1e4e8;
+  --text: #1f2328;
+  --text2: #656d76;
+  --text3: #8b949e;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 24px 48px rgba(0, 0, 0, 0.18);
+  --elev-1: 0 4px 14px rgba(0, 0, 0, 0.1);
 }
 
 [data-theme="high-contrast"] {
@@ -83,6 +97,16 @@
   --v3-text-primary: #ffffff;
   --v3-text-secondary: #e6e6e6;
   --v3-text-muted: #cccccc;
+  --bg: #000000;
+  --bg-elevated: #0a0a0a;
+  --surface: #141414;
+  --surface2: #1c1c1c;
+  --surface3: #262626;
+  --border: #ffffff;
+  --border2: #e6e6e6;
+  --text: #ffffff;
+  --text2: #e6e6e6;
+  --text3: #cccccc;
 }
 
 /* Yoğunluk modları (plan 1.3.3): comfortable (varsayılan) / compact / cozy */
@@ -107,7 +131,7 @@ html,
 body {
   height: 100%;
   font-family: var(--sans);
-  background: radial-gradient(120% 80% at 50% -20%, #152238 0%, var(--bg) 55%);
+  background: radial-gradient(120% 80% at 50% -20%, var(--bg-elevated) 0%, var(--bg) 55%);
   color: var(--text);
   font-size: 13px;
   overflow: hidden;
@@ -501,7 +525,7 @@ details.acc-github[open] > .github-acc-sum .acc-chev::before {
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
 
 /* CHAT AREA */
-.chat-area{flex:1;overflow-y:auto;padding:28px 24px 24px;display:flex;flex-direction:column;gap:16px;background:linear-gradient(180deg,transparent 0%,rgba(8,12,18,.4) 100%);}
+.chat-area{flex:1;overflow-y:auto;padding:28px 24px 24px;display:flex;flex-direction:column;gap:16px;background:linear-gradient(180deg,var(--bg) 0%,var(--surface) 100%);}
 .welcome-screen{margin:auto;text-align:center;padding:48px 24px;opacity:.8;}
 .welcome-logo{width:84px;height:84px;margin-bottom:20px;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.5), 0 0 15px rgba(88,166,255,0.2);}
 .welcome-screen h1{font-size:22px;font-weight:700;margin-bottom:6px;}

@@ -75,6 +75,16 @@
     return canvas;
   }
 
+  function mountCanvas() {
+    const chatArea = $('#chat-area');
+    if (!chatArea || $('#agent-canvas')) return;
+    const canvas = buildCanvas();
+    chatArea.insertBefore(canvas, chatArea.firstChild);
+    refreshAll();
+    setCanvasVisible(false);
+  }
+  mountCanvas();
+
   function setCanvasVisible(v) {
     const canvas = $('#agent-canvas');
     if (!canvas) return;
@@ -420,6 +430,19 @@
       setCanvasVisible(!state._userCollapsed);
     } });
   }
+
+  // /goal slash komutu desteği: sendMessage öncesi çağrılır; true dönerse mesaj tüketilir
+  function tryGoalSlash(text) {
+    if (!text.startsWith('/goal')) return false;
+    const goal = text.replace(/^\/goal\s*/i, '').trim();
+    if (!goal) { setCanvasVisible(true); return true; }
+    state.goal = goal;
+    setCanvasVisible(true);
+    refreshGoalBand();
+    // Lead olmayan senaryoda hedef verildiğinde canvas üzerinden plan bekletilir
+    return true;
+  }
+  window.OllamaX.tryGoalSlash = tryGoalSlash;
 
   bind();
 })();

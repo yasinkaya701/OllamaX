@@ -414,10 +414,13 @@
           return;
         }
         for (const e of entries.slice(0, 150)) {
+          const ts = e.ts ?? e.time ?? e.createdAt;
+          const d = ts != null ? new Date(ts) : null;
+          const timeStr = d instanceof Date && Number.isFinite(d.getTime()) ? d.toLocaleString('tr-TR') : '';
           const tr = h('tr', {});
-          tr.appendChild(h('td', {}, new Date(e.ts).toLocaleString('tr-TR')));
+          tr.appendChild(h('td', {}, timeStr));
           tr.appendChild(h('td', {}, esc(e.actor || '')));
-          tr.appendChild(h('td', { className: 'audit-action' }, esc(String(e.action || '').slice(0, 40))));
+          tr.appendChild(h('td', { className: 'audit-action' }, esc(String(e.action || e.type || '').slice(0, 40))));
           tr.appendChild(h('td', {}, e.duration_ms != null ? `${e.duration_ms}ms` : ''));
           tbody.appendChild(tr);
         }

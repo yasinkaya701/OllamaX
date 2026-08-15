@@ -967,7 +967,7 @@ function exportChatJson() {
     api
       .invoke('export-to-path', { defaultName: 'ollamax-chat.json', content: payload })
       .then((r) => {
-        if (r.ok) toast(`Saved ${r.path}`, 'success');
+        if (r.ok) toast(`Kaydedildi: ${r.filePath || r.path || r.defaultName || 'ollamax-chat.json'}`, 'success');
         else if (!r.canceled) toast(r.error || 'Export failed', 'error');
       });
   } else {
@@ -987,7 +987,7 @@ function exportChatMarkdown() {
   });
   if (api) {
     api.invoke('export-to-path', { defaultName: 'ollamax-chat.md', content: md }).then((r) => {
-      if (r.ok) toast(`Saved ${r.path}`, 'success');
+      if (r.ok) toast(`Kaydedildi: ${r.filePath || r.path || r.defaultName || 'ollamax-chat.md'}`, 'success');
       else if (!r.canceled) toast(r.error || 'Export failed', 'error');
     });
   } else {
@@ -1239,35 +1239,39 @@ function addQuest(text) {
 
 function bindIPC() {
   api.on('models-list', (models) => {
-    MODEL_LISTS.ollama = models.map((m) => m.name);
-    const list = q('#local-models-list');
-    list.innerHTML = '';
-    if (!models.length) {
-      list.innerHTML = '<div class="empty-note">No models. Run: <code>ollama pull llama3.2:1b</code></div>';
+    const arr = Array.isArray(models) ? models : [];
+    MODEL_LISTS.ollama = arr.map((m) => (typeof m === 'string' ? m : m?.name || ''));
+    const domList = q('#local-models-list');
+    domList.innerHTML = '';
+    if (!arr.length) {
+      domList.innerHTML = '<div class="empty-note">No models. Run: <code>ollama pull llama3.2:1b</code></div>';
       return;
     }
     state.ollamaModelSizes = {};
-    models.forEach((m) => {
-      if (m?.name) state.ollamaModelSizes[m.name] = typeof m.size === 'number' ? m.size : 0;
+    arr.forEach((m) => {
+      const name = typeof m === 'string' ? m : m?.name || '';
+      const size = typeof m === 'string' ? 0 : m?.size || 0;
+      if (name) state.ollamaModelSizes[name] = typeof size === 'number' ? size : 0;
       const d = document.createElement('div');
       d.className = 'model-item';
-      const sz = m.size ? `${(m.size / 1e9).toFixed(1)} GB` : '';
-      d.innerHTML = `<span class="mi-name">${esc(m.name)}</span><span class="mi-size">${sz}</span>`;
+      d.dataset.model = name;
+      const sz = size ? `${(size / 1e9).toFixed(1)} GB` : '';
+      d.innerHTML = `<span class="mi-name">${esc(name)}</span><span class="mi-size">${sz}</span>`;
       d.addEventListener('click', () => {
         if (state.currentProvider === 'ollama') {
           populateModelSelect('ollama');
           setTimeout(() => {
-            q('#model-select').value = m.name;
-            state.currentModel = m.name;
+            q('#model-select').value = name;
+            state.currentModel = name;
             updateModelLabel();
           }, 30);
         }
-        log(`Model: ${m.name}`, 'info');
+        log(`Model: ${name}`, 'info');
       });
-      list.appendChild(d);
+      domList.appendChild(d);
     });
     if (state.currentProvider === 'ollama') populateModelSelect('ollama');
-    log(`${models.length} local models loaded`, 'success');
+    log(`${arr.length} local models loaded`, 'success');
     renderRamModelAdvisor();
   });
 
@@ -1574,6 +1578,12 @@ async function sendMessage() {
   inp.value = '';
   inp.style.height = 'auto';
   q('#char-count').textContent = '0';
+  if (window.OllamaX?.tryGoalSlash && window.OllamaX.tryGoalSlash(text)) {
+    state.processing = false;
+    setStatus('ready');
+    log('Canvas hedefi: ' + text, 'info');
+    return;
+  }
   q('#chat-area .welcome-screen')?.remove();
   addUserBubble(text);
   state.history.push({ role: 'user', content: text });
