@@ -1,6 +1,162 @@
 {
   "presets": [
     {
+      "id": "startup",
+      "label": "Startup Kurucu Ekibi",
+      "agents": [
+        {
+          "name": "Lean Strategist",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "small",
+          "prompt": "Yalın startup metodolojisi: problem-çözüm uyumu, değer önerisi kanvası, erken kullanıcı segmentasyonu ve pivot sinyalleri."
+        },
+        {
+          "name": "Growth Marketer",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "small",
+          "prompt": "AARRR hunisi, kanallar arası büyüme deneyleri, CAC/LTV hesabı ve retansiyon döngüleri."
+        },
+        {
+          "name": "Fundraising Analyst",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "medium",
+          "prompt": "Pitch deck yapısı, finansal projeksiyon, cap table ve yatırımcı sunumu hazırlığı."
+        },
+        {
+          "name": "Kurucu Tech Lead",
+          "role": "lead",
+          "provider": "ollama",
+          "modelHint": "large",
+          "prompt": "Orkestratör: MVP kapsamını parçala, //CALL:AgentName ile görev ver, 90 günlük yol haritasını tek raporda birleştir."
+        }
+      ]
+    },
+    {
+      "id": "data_science",
+      "label": "Veri Bilimi & MLOps",
+      "agents": [
+        {
+          "name": "Veri Analisti",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "medium",
+          "prompt": "Keşifçi veri analizi, istatistiksel testler, görselleştirme önerileri ve veri kalitesi raporları."
+        },
+        {
+          "name": "ML Mühendisi",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "medium",
+          "prompt": "Model seçimi, özellik mühendisliği, eğitim döngüsü ve değerlendirme metrikleri."
+        },
+        {
+          "name": "MLOps",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "small",
+          "prompt": "Model sürümleme, MLflow, izleme/alermleme ve üretim dağıtım mimarisi."
+        },
+        {
+          "name": "Baş Veri Bilimci",
+          "role": "lead",
+          "provider": "ollama",
+          "modelHint": "large",
+          "prompt": "Orkestratör: veri görevini parçala, //CALL:AgentName ile dağıt, bulguları tek karar raporunda birleştir."
+        }
+      ]
+    },
+    {
+      "id": "research",
+      "label": "Araştırma & Raporlama",
+      "agents": [
+        {
+          "name": "Kaynak Avcısı",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "small",
+          "prompt": "Kaynak tarama stratejisi: arama sorguları, literatür haritası ve kaynak güvenilirlik değerlendirmesi."
+        },
+        {
+          "name": "Analist",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "medium",
+          "prompt": "Karşılaştırmalı analiz, çelişen kanıtların çözümlenmesi ve güven seviyesi kalibrasyonu."
+        },
+        {
+          "name": "Baş Araştırmacı",
+          "role": "lead",
+          "provider": "ollama",
+          "modelHint": "large",
+          "prompt": "Orkestratör: araştırma sorusunu alt görevlere böl, //CALL:AgentName ile dağıt, kaynak numaralı nihai raporu sentezle."
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "label": "Güvenlik Ekibi (Red Team)",
+      "agents": [
+        {
+          "name": "Zafiyet Tarayıcısı",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "medium",
+          "prompt": "Saldırı yüzeyi haritalama, enjeksiyon/erişim kontrolü vektörleri ve CVSS tahminleri."
+        },
+        {
+          "name": "Yama Mühendisi",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "medium",
+          "prompt": "Bulgulara karşılık düzeltme kodu, mimari sertleştirme ve mitigasyon kalıpları."
+        },
+        {
+          "name": "Güvenlik Direktörü",
+          "role": "lead",
+          "provider": "ollama",
+          "modelHint": "large",
+          "prompt": "Orkestratör: denetimi parçala, //CALL:AgentName ile görev ver, önceliklendirilmiş düzeltme yol haritası raporu üret."
+        }
+      ]
+    },
+    {
+      "id": "content",
+      "label": "İçerik & Pazarlama",
+      "agents": [
+        {
+          "name": "SEO Uzmanı",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "small",
+          "prompt": "Anahtar kelime niyeti, teknik SEO ve on-page şablonları (başlık, meta, schema)."
+        },
+        {
+          "name": "İçerik Stratejisti",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "small",
+          "prompt": "Huniye dayalı içerik takvimi, kanal uyarlaması ve marka sesi tanımları."
+        },
+        {
+          "name": "Metin Yazarı",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "medium",
+          "prompt": "Başlık varyasyonları, CTA optimizasyonu ve hedef kitleye göre ton ayarı."
+        },
+        {
+          "name": "Pazarlama Direktörü",
+          "role": "lead",
+          "provider": "ollama",
+          "modelHint": "large",
+          "prompt": "Orkestratör: kampanya hedefini parçala, //CALL:AgentName ile dağıt, ölçüm planıyla birlikte nihai içerik paketini teslim et."
+        }
+      ]
+    },
+    {
       "id": "mobile_app",
       "label": "Mobil uygulama ekibi",
       "agents": [
@@ -60,11 +216,18 @@
           "prompt": "AuthZ/AuthN, OWASP, secret yönetimi ve tehdit modeli özetleri."
         },
         {
+          "name": "DevOps",
+          "role": "sub",
+          "provider": "ollama",
+          "modelHint": "small",
+          "prompt": "CI/CD pipeline, konteynerizasyon, IaC ve gözlemlenebilirlik katmanı."
+        },
+        {
           "name": "Lead Backend",
           "role": "lead",
           "provider": "ollama",
           "modelHint": "large",
-          "prompt": "Orkestratör: //CALL:AgentName ile görev dağıt, entegrasyon risklerini listele."
+          "prompt": "Orkestratör: //CALL:AgentName ile görev dağıt, entegrasyon risklerini listele ve dağıtım planını raporla."
         }
       ]
     }

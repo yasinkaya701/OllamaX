@@ -39,6 +39,7 @@
   </div>
   <div class="sidebar-section">
     <div class="sec-header"><span class="sec-label">Prompt Templates</span></div>
+    <div id="template-filter-bar" class="template-filter-bar"></div>
     <div id="template-list" class="template-list"></div>
   </div>
   <div class="sidebar-section">
@@ -500,6 +501,30 @@
       <button type="button" class="theme-chip" data-density="comfortable">Rahat</button>
       <button type="button" class="theme-chip" data-density="compact">Kompakt</button>
       <button type="button" class="theme-chip" data-density="cozy">Geniş</button>
+    </div>
+
+    <h4 style="margin:14px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--v3-text-muted)">Davranış Profili <span id="settings-behavior-label" style="color:var(--accent);font-weight:700;text-transform:lowercase;letter-spacing:0">precise</span></h4>
+    <div class="theme-chips" id="settings-profile-chips">
+      <button type="button" class="theme-chip" data-profile="precise">Hassas</button>
+      <button type="button" class="theme-chip" data-profile="balanced">Dengeli</button>
+      <button type="button" class="theme-chip" data-profile="creative">Yaratıcı</button>
+      <button type="button" class="theme-chip" data-profile="fast">Hızlı</button>
+    </div>
+
+    <h4 style="margin:14px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--v3-text-muted)">Model Parametreleri</h4>
+    <div class="adv-params-grid">
+      <div class="adv-param">
+        <label for="settings-temperature">Sıcaklık <span class="adv-val" id="adv-temp-val">0.7</span></label>
+        <input id="settings-temperature" type="range" min="0" max="2" step="0.05" value="0.7">
+      </div>
+      <div class="adv-param">
+        <label for="settings-top_p">Top-p <span class="adv-val" id="adv-top-p-val">1</span></label>
+        <input id="settings-top_p" type="range" min="0" max="1" step="0.05" value="1">
+      </div>
+      <div class="adv-param">
+        <label for="settings-max_tokens">Maks. Token <span class="adv-val" id="adv-max-val">8192</span></label>
+        <input id="settings-max_tokens" type="range" min="256" max="65536" step="256" value="8192">
+      </div>
     </div>
 
     <div class="modal-ftr">

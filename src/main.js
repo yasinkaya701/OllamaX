@@ -485,7 +485,7 @@ ipcMain.on('pull-model', (event, { host, model }) => {
   req.end();
 });
 
-ipcMain.on('chat', (event, { host, model, messages, agentId }) => {
+ipcMain.on('chat', (event, { host, model, messages, agentId, modelParams = {} }) => {
   const hostKey = normalizeOllamaHost(host) || 'localhost:11434';
   const t = splitOllamaHttpTarget(hostKey);
   if (!t) {
@@ -493,7 +493,16 @@ ipcMain.on('chat', (event, { host, model, messages, agentId }) => {
     event.reply('chat-done', { agentId });
     return;
   }
-  const body = JSON.stringify({ model, messages, stream: true });
+  const body = JSON.stringify({
+    model,
+    messages,
+    stream: true,
+    options: {
+      temperature: Number.isFinite(Number(modelParams.temperature)) ? Math.min(2, Math.max(0, Number(modelParams.temperature))) : 0.7,
+      top_p: Number.isFinite(Number(modelParams.top_p)) ? Math.min(1, Math.max(0, Number(modelParams.top_p))) : 1,
+      num_predict: Number.isFinite(Number(modelParams.max_tokens)) ? Math.min(131072, Math.max(16, Math.floor(Number(modelParams.max_tokens)))) : -1,
+    },
+  });
   const opts = {
     hostname: t.hostname,
     port: t.port,
@@ -550,7 +559,7 @@ ipcMain.on('chat', (event, { host, model, messages, agentId }) => {
   req.end();
 });
 
-ipcMain.on('openai-chat', (event, { model, messages, apiKey, agentId }) => {
+ipcMain.on('openai-chat', (event, { model, messages, apiKey, agentId, modelParams = {} }) => {
   if (!apiKey) {
     event.reply('chat-chunk', { agentId, content: '❌ OpenAI API key missing. Add it in Settings.' });
     event.reply('chat-done', { agentId });
@@ -558,8 +567,15 @@ ipcMain.on('openai-chat', (event, { model, messages, apiKey, agentId }) => {
   }
   const payload = { model, messages, stream: true };
   if (/^o[0-9]|^gpt-5/i.test(model)) {
-    payload.max_completion_tokens = 8192;
+    payload.max_completion_tokens = Number.isFinite(Number(modelParams.max_tokens)) ? Math.min(131072, Math.max(16, Math.floor(Number(modelParams.max_tokens)))) : 8192;
+  } else if (Number.isFinite(Number(modelParams.max_tokens))) {
+    payload.max_tokens = Math.min(131072, Math.max(16, Math.floor(Number(modelParams.max_tokens))));
   }
+  if (Number.isFinite(Number(modelParams.temperature))) payload.temperature = Math.min(2, Math.max(0, Number(modelParams.temperature)));
+  if (Number.isFinite(Number(modelParams.top_p))) payload.top_p = Math.min(1, Math.max(0, Number(modelParams.top_p)));
+  if (Number.isFinite(Number(modelParams.frequency_penalty))) payload.frequency_penalty = Math.min(2, Math.max(-2, Number(modelParams.frequency_penalty)));
+  if (Number.isFinite(Number(modelParams.presence_penalty))) payload.presence_penalty = Math.min(2, Math.max(-2, Number(modelParams.presence_penalty)));
+  if (/^o[0-9]/i.test(model)) delete payload.temperature; /* o-* modelleri temperature desteklemez */
   const body = JSON.stringify(payload);
   const req = https.request(
     {
@@ -607,7 +623,7 @@ ipcMain.on('openai-chat', (event, { model, messages, apiKey, agentId }) => {
   req.end();
 });
 
-ipcMain.on('anthropic-chat', (event, { model, messages, apiKey, agentId }) => {
+ipcMain.on('anthropic-chat', (event, { model, messages, apiKey, agentId, modelParams = {} }) => {
   if (!apiKey) {
     event.reply('chat-chunk', { agentId, content: '❌ Anthropic API key missing. Add it in Settings.' });
     event.reply('chat-done', { agentId });
@@ -619,7 +635,9 @@ ipcMain.on('anthropic-chat', (event, { model, messages, apiKey, agentId }) => {
     model,
     messages: msgs,
     ...(sys ? { system: sys.content } : {}),
-    max_tokens: 8096,
+    max_tokens: Number.isFinite(Number(modelParams.max_tokens)) ? Math.min(131072, Math.max(16, Math.floor(Number(modelParams.max_tokens)))) : 8096,
+    ...(Number.isFinite(Number(modelParams.temperature)) ? { temperature: Math.min(1, Math.max(0, Number(modelParams.temperature))) } : {}),
+    ...(Number.isFinite(Number(modelParams.top_p)) ? { top_p: Math.min(1, Math.max(0, Number(modelParams.top_p))) } : {}),
     stream: true,
   });
   const req = https.request(
@@ -664,7 +682,7 @@ ipcMain.on('anthropic-chat', (event, { model, messages, apiKey, agentId }) => {
   req.end();
 });
 
-ipcMain.on('gemini-chat', (event, { model, messages, apiKey, agentId }) => {
+ipcMain.on('gemini-chat', (event, { model, messages, apiKey, agentId, modelParams = {} }) => {
   if (!apiKey) {
     event.reply('chat-chunk', { agentId, content: '❌ Gemini API key missing. Add it in Settings.' });
     event.reply('chat-done', { agentId });
@@ -674,9 +692,14 @@ ipcMain.on('gemini-chat', (event, { model, messages, apiKey, agentId }) => {
   const contents = messages
     .filter((m) => m.role !== 'system')
     .map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
+  const generationConfig = {};
+  if (Number.isFinite(Number(modelParams.temperature))) generationConfig.temperature = Math.min(2, Math.max(0, Number(modelParams.temperature)));
+  if (Number.isFinite(Number(modelParams.top_p))) generationConfig.topP = Math.min(1, Math.max(0, Number(modelParams.top_p)));
+  if (Number.isFinite(Number(modelParams.max_tokens))) generationConfig.maxOutputTokens = Math.min(131072, Math.max(16, Math.floor(Number(modelParams.max_tokens))));
   const body = JSON.stringify({
     contents,
     ...(sys ? { systemInstruction: { parts: [{ text: sys.content }] } } : {}),
+    ...(Object.keys(generationConfig).length ? { generationConfig } : {}),
   });
   const req = https.request(
     {

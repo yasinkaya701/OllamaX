@@ -309,7 +309,21 @@ function extractAwsCreds(options = {}) {
 /* ------------------------------------------------------------------ */
 /* Stream: çoklu sağlayıcı chat akışı                                 */
 /* ------------------------------------------------------------------ */
-function runMultiChat(event, { provider, model, apiKey, options = {}, messages, agentId }) {
+const DEFAULT_MODEL_PARAMS = { temperature: 0.7, top_p: 1, max_tokens: 8192, frequency_penalty: 0 };
+function sanitizeParams(params = {}) {
+  const out = {};
+  const num = (v, min, max) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : null;
+  };
+  if (params.temperature !== undefined) out.temperature = num(params.temperature, 0, 2);
+  if (params.top_p !== undefined) out.top_p = num(params.top_p, 0, 1);
+  if (params.max_tokens !== undefined) out.max_tokens = num(params.max_tokens, 16, 131072);
+  if (params.frequency_penalty !== undefined) out.frequency_penalty = num(params.frequency_penalty, -2, 2);
+  if (params.presence_penalty !== undefined) out.presence_penalty = num(params.presence_penalty, -2, 2);
+  return out;
+}
+function runMultiChat(event, { provider, model, apiKey, options = {}, messages, agentId, modelParams }) {
   const reply = (channel, payload) => {
     if (event && event.sender && !event.sender.isDestroyed()) event.sender.send(channel, payload);
   };
@@ -326,22 +340,22 @@ function runMultiChat(event, { provider, model, apiKey, options = {}, messages, 
   const p = PROVIDERS[provider];
 
   if (p.authType === 'none') {
-    startOpenAICompatibleStream(event, { hostname: p.hostname, port: p.port, path: p.path, headers: {}, useHttp: true, messages, model, provider, agentId, reply });
+    startOpenAICompatibleStream(event, { hostname: p.hostname, port: p.port, path: p.path, headers: {}, useHttp: true, messages, model, provider, agentId, reply, modelParams });
     return;
   }
 
   if (provider === 'aws-bedrock') {
-    startBedrockStream(event, { model, options, messages, agentId, reply });
+    startBedrockStream(event, { model, options, messages, agentId, reply, modelParams });
     return;
   }
 
   if (provider === 'azure') {
-    startAzureStream(event, { model, apiKey, options, messages, agentId, reply });
+    startAzureStream(event, { model, apiKey, options, messages, agentId, reply, modelParams });
     return;
   }
 
   if (provider === 'custom') {
-    startCustomStream(event, { apiKey, options, messages, model, agentId, reply });
+    startCustomStream(event, { apiKey, options, messages, model, agentId, reply, modelParams });
     return;
   }
 
@@ -352,7 +366,7 @@ function runMultiChat(event, { provider, model, apiKey, options = {}, messages, 
   }
 
   if (p.format === 'cohere') {
-    startCohereStream(event, { apiKey, model, messages, agentId, reply });
+    startCohereStream(event, { apiKey, model, messages, agentId, reply, modelParams });
   } else {
     startOpenAICompatibleStream(event, {
       hostname: p.hostname,
@@ -364,6 +378,7 @@ function runMultiChat(event, { provider, model, apiKey, options = {}, messages, 
       provider,
       agentId,
       reply,
+      modelParams,
     });
   }
 }
@@ -380,9 +395,10 @@ function normalizeMessages(messages) {
 }
 
 /* ---- OpenAI-uyumlu SSE stream (11 sağlayıcı + LM Studio) ---- */
-function startOpenAICompatibleStream(event, { hostname, port, path: pathStr, headers, useHttp, messages, model, provider, agentId, reply }) {
+function startOpenAICompatibleStream(event, { hostname, port, path: pathStr, headers, useHttp, messages, model, provider, agentId, reply, modelParams = {} }) {
   const norm = normalizeMessages(messages);
-  const payload = JSON.stringify({ model, messages: norm, stream: true, max_tokens: 8192 });
+  const params = { ...DEFAULT_MODEL_PARAMS, ...sanitizeParams(modelParams) };
+  const payload = JSON.stringify({ model, messages: norm, stream: true, ...params });
   const allHeaders = {
     'Content-Type': 'application/json',
     'Content-Length': Buffer.byteLength(payload),
@@ -432,7 +448,7 @@ function startOpenAICompatibleStream(event, { hostname, port, path: pathStr, hea
 }
 
 /* ---- Azure OpenAI (resource bazlı URL) ---- */
-function startAzureStream(event, { model, apiKey, options, messages, agentId, reply }) {
+function startAzureStream(event, { model, apiKey, options, messages, agentId, reply, modelParams }) {
   const endpoint = (options.endpoint || '').trim();
   const apiVersion = (options.apiVersion || '2024-02-15-preview').trim();
   if (!endpoint || !apiKey) {
@@ -460,6 +476,7 @@ function startAzureStream(event, { model, apiKey, options, messages, agentId, re
     provider: 'azure',
     agentId,
     reply,
+    modelParams,
   });
 }
 
@@ -491,14 +508,16 @@ function startCustomStream(event, { apiKey, options, messages, model, agentId, r
     provider: 'custom',
     agentId,
     reply,
+    modelParams,
   });
 }
 
 /* ---- Cohere v2/chat stream ---- */
-function startCohereStream(event, { apiKey, model, messages, agentId, reply }) {
+function startCohereStream(event, { apiKey, model, messages, agentId, reply, modelParams }) {
   const norm = normalizeMessages(messages);
   const chatMessages = norm.map((m) => ({ role: m.role === 'user' ? 'user' : 'chatbot', content: m.content }));
-  const payload = JSON.stringify({ model, messages: chatMessages, stream: true, max_tokens: 4096 });
+  const params = { ...DEFAULT_MODEL_PARAMS, ...sanitizeParams(modelParams) };
+  const payload = JSON.stringify({ model, messages: chatMessages, stream: true, ...params });
   const req = https.request(
     {
       hostname: 'api.cohere.com',
@@ -551,7 +570,7 @@ function startCohereStream(event, { apiKey, model, messages, agentId, reply }) {
 }
 
 /* ---- Amazon Bedrock (Anthropic Messages streaming, SigV4) ---- */
-function startBedrockStream(event, { model, options, messages, agentId, reply }) {
+function startBedrockStream(event, { model, options, messages, agentId, reply, modelParams }) {
   const { region, accessKeyId, secretAccessKey } = extractAwsCreds(options);
   if (!region || !accessKeyId || !secretAccessKey) {
     reply('chat-chunk', { agentId, content: '❌ AWS Bedrock: bölge, access key ve secret key gerekli. Ayarlar → API panelinden girin.' });
@@ -569,9 +588,12 @@ function startBedrockStream(event, { model, options, messages, agentId, reply })
     reply('chat-done', { agentId });
     return;
   }
+  const params = { ...DEFAULT_MODEL_PARAMS, ...sanitizeParams(modelParams) };
   const body = JSON.stringify({
     anthropic_version: 'bedrock-2023-05-31',
-    max_tokens: 4096,
+    max_tokens: params.max_tokens,
+    temperature: params.temperature,
+    top_p: params.top_p,
     messages: anthropicMsgs,
     ...(options.bedrockSystemPrompt ? { system: options.bedrockSystemPrompt } : {}),
   });
