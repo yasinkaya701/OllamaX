@@ -94,7 +94,7 @@ function isLikelyOpenAIChatModel(id) {
   if (x.includes('embedding') || x.includes('moderation')) return false;
   if (x.startsWith('tts-') || x.startsWith('whisper')) return false;
   if (x.includes('dall-e') || x.includes('dall·e')) return false;
-  if (x.startsWith('gpt-') || x.startsWith('o1') || x.startsWith('o3') || x.startsWith('o4')) return true;
+  if (x.startsWith('gpt-') || x.startsWith('o1') || x.startsWith('o3') || x.startsWith('o4') || x.startsWith('o5')) return true;
   if (x.startsWith('chatgpt-')) return true;
   return false;
 }

@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.7.0 — 2026-08-15
+
+### Güvenlik ve bağımlılıklar
+
+- **Electron `43.4.0`** — 0 güvenlik açığı (önceki sürümde 15 açık, 1 kritik vardı).
+- **electron-builder `26.x`** ile dağıtım zinciri güncellendi.
+- ESLint **v9** ve **flat config** (`eslint.config.js`) desteği.
+- Jest v29 ailesinde tutuldu (v30.4.x modül çözünürlük hatası); tüm testler yeşil.
+- `npm audit` artık **0 açık** raporluyor.
+
+### Modeller
+
+- **`src/shared/model-catalog.json`** güncellendi: OpenAI `gpt-5.5`, `gpt-5.3`, `gpt-5.x`, `o5` ailesi; Anthropic Claude Sonnet 5 / Opus 4.6–4.8; Gemini 3.x (3.7 Flash dahil).
+- `isLikelyOpenAIChatModel` artık `o5*` modellerini de sohbet modeli olarak kabul ediyor.
+- Renderer `MODEL_FALLBACK` listeleri yeni nesil model kimlikleriyle güncellendi.
+
+### Kalite
+
+- Lint uyarıları temizlendi (`no-unused-vars` / `escapedCode`).
+- Güvenlik testleri genişletildi: metadata/host engelleme (169.254.x.x, CR injection, geçersiz port), git-clone whitelist ve `sanitizeGeminiModelId` senaryoları (13 test, hepsi geçiyor).
+- `test:ci` scripti (coverage destekli) eklendi.
+
+## 2.6.0 — 2026-05-11
+
+- CSS senkronizasyonu, kod kopyalama butonu, markdown tabloları, tam README.
+- Ghost Mode (saydamlık) ve Quest Log (görev takipçisi) mantığı.
+- Profesyonel logolar ve görsel iyileştirmeler; profesyonel README.
+
 ## 2.5.0 — 2026-05-11
 
 ### Modeller ve sürüm öncesi kalite

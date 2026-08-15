@@ -12,7 +12,7 @@
 1. **PowerShell** veya **cmd** ile proje klasörüne gidin:
 
 ```powershell
-cd C:\path\to\OllamaX-Ultra-Proje
+cd C:\path\to\OllamaX
 npm install
 npm start
 ```

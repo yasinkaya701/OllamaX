@@ -9,7 +9,7 @@
 ## A) Kaynak koddan çalıştırma (geliştirme)
 
 ```bash
-cd /path/to/OllamaX-Ultra-Proje
+cd /path/to/OllamaX
 npm install
 npm start
 ```

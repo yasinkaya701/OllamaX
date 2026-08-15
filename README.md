@@ -48,7 +48,7 @@ GitHub sayfasındaki yeşil **"Code"** butonuna basın ve **"Download ZIP"** dey
 
 #### 3. Klasöre Gidin ve Kurun
 ```cmd
-cd Desktop\OllamaX-Ultra-Proje
+cd Desktop\OllamaX
 npm install
 ```
 *Bu aşamada bağımlılıklar internetten indirilecektir.*
@@ -73,8 +73,8 @@ brew install node git
 
 #### 2. Klonlayın ve Çalıştırın
 ```bash
-git clone https://github.com/yasinkaya701/OllamaX-Ultra-Pro.git
-cd OllamaX-Ultra-Pro
+git clone https://github.com/yasinkaya701/OllamaX.git
+cd OllamaX
 npm install
 npm start
 ```

@@ -78,9 +78,9 @@ const FEATURED_REPOS = [
 const MODEL_LISTS = { ollama: [], openai: [], anthropic: [], gemini: [] };
 
 const MODEL_FALLBACK = {
-  openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'o3-mini', 'o4-mini'],
-  anthropic: ['claude-3-5-sonnet-20241022', 'claude-sonnet-4-20250514'],
-  gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-flash'],
+  openai: ['gpt-5.5', 'gpt-5.3', 'gpt-5', 'gpt-5-mini', 'gpt-4o', 'gpt-4.1', 'o5-mini', 'o4-mini'],
+  anthropic: ['claude-sonnet-5-20260630', 'claude-opus-4-8', 'claude-sonnet-4-20250514'],
+  gemini: ['gemini-3.7-flash', 'gemini-3-pro', 'gemini-2.5-flash', 'gemini-2.5-pro'],
 };
 
 const state = {
@@ -978,7 +978,7 @@ function bindAll() {
     try {
       const h = await api.invoke('app-health', { ollamaHost: defaultOllamaHost() });
       if (h.userData) await api.invoke('open-path', h.userData);
-    } catch (e) {
+    } catch {
       toast('Klasör açılamadı', 'error');
     }
   });
@@ -1664,7 +1664,6 @@ function md(raw) {
       }
     }
     const idx = blocks.length;
-    const escapedCode = esc(code).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     blocks.push(
       `<pre class="hljs" style="position:relative"><button class="code-copy-btn" onclick="(function(btn){const t=btn.nextElementSibling?.textContent||'';navigator.clipboard.writeText(t).then(()=>{btn.textContent='✓ Copied';setTimeout(()=>{btn.textContent='Copy'},1800)}).catch(()=>{});})(this)">Copy</button><code class="language-${esc((lang || 'plaintext').trim())}">${highlighted}</code></pre>`
     );
