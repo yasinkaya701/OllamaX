@@ -6,6 +6,8 @@ const SEND = new Set([
   'open-folder-dialog', 'get-workspaces', 'get-stats',
   'terminal-input', 'terminal-resize', 'terminal-close',
   'tool-approval-response', // AgentLoop onay köprüsü (F2.4)
+  'agent-run', // Orkestrasyon: lokal ajana görev gönder (F3)
+  'agent-chain', // Orkestrasyon: zincir modu (Claude → Codex → Antigravity)
 ]);
 
 const ON = new Set([
@@ -14,6 +16,9 @@ const ON = new Set([
   'pull-done', 'workspaces-list', 'terminal-data',
   'tool-approval-request', // AgentLoop: write/exec araç onayı (F2.4)
   'event:token', 'event:thinking', 'event:tool-call', 'event:tool-result', // EventChannel akışı
+  'agent-discover', // Orkestrasyon: lokal ajan keşfi sonucu
+  'agent-output', // Orkestrasyon: ajan çıktı akışı
+  'agent-chain-progress', // Orkestrasyon: zincir ilerleme akışı
 ]);
 
 const INVOKE = new Set([
@@ -32,6 +37,7 @@ const INVOKE = new Set([
   'terminal-create',
   'composer-file-read',
   'get-behavior-profiles',
+  'agent-discover-all', // Orkestrasyon: tüm lokal ajanları keşfet
 ]);
 
 contextBridge.exposeInMainWorld('ollamaxApi', {

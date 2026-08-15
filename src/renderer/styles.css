@@ -1606,3 +1606,61 @@ body.ghost-active .tools-panel {
 .repo-freshness::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent);margin-right:3px;vertical-align:middle;opacity:.8;}
 .rcr-open{font-size:11px;line-height:1;color:var(--accent);text-decoration:none;margin-left:5px;opacity:.55;transition:opacity .15s;}
 .rcr-open:hover{opacity:1;}
+
+/* ================================================================ */
+/* V3.12: Orkestrasyon paneli (lokal ajanlar + zincir)              */
+/* ================================================================ */
+#acc-orchestration { border-top: 1px solid var(--border2, rgba(255,255,255,0.06)); }
+.orch-agents { display: flex; flex-direction: column; gap: 3px; padding: 6px 10px 8px; }
+.orch-agent-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--text2, rgba(255,255,255,0.72));
+  padding: 3px 0;
+}
+.orch-agent-row .oa-status {
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+  background: var(--text3, rgba(255,255,255,0.35));
+}
+.orch-agent-row .oa-status.up { background: #00a878; }
+.orch-agent-row .oa-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.orch-agent-row .oa-sub { font-size: 10px; color: var(--text3, rgba(255,255,255,0.4)); font-family: 'JetBrains Mono', monospace; }
+
+.orch-zone { padding: 0 10px 10px; display: flex; flex-direction: column; gap: 6px; }
+.orch-zone .ta-sm { font-size: 12px; line-height: 1.5; min-height: 60px; resize: vertical; }
+
+.orch-chain-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.orch-chain-label { font-size: 10.5px; color: var(--text3, rgba(255,255,255,0.4)); text-transform: uppercase; letter-spacing: 0.08em; }
+.orch-chain-toggles { display: flex; gap: 4px; flex-wrap: wrap; }
+.orch-chain-toggle {
+  font-size: 10.5px; padding: 3px 8px; border-radius: 10px;
+  border: 1px solid var(--border2, rgba(255,255,255,0.12));
+  color: var(--text2, rgba(255,255,255,0.6));
+  cursor: pointer; user-select: none;
+  background: transparent;
+  transition: all 0.15s ease;
+}
+.orch-chain-toggle.active {
+  background: rgba(0,168,120,0.18); border-color: #00a878; color: #00a878; font-weight: 600;
+}
+.orch-chain-toggle:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.orch-run-btn {
+  background: linear-gradient(135deg, #00a878 0%, #008f66 100%);
+  color: #fff; border: none; font-weight: 600; font-size: 12px;
+  padding: 8px 0; cursor: pointer;
+  transition: all 0.2s ease;
+}
+.orch-run-btn:hover { filter: brightness(1.12); }
+.orch-run-btn:active { transform: scale(0.97); }
+.orch-run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Orkestrasyon çıktısı — chat alanına akan ajan kartları */
+.orch-stream-card {
+  margin: 6px 0; padding: 10px 12px;
+  background: rgba(0,168,120,0.04); border: 1px solid rgba(0,168,120,0.15);
+  border-radius: 8px; font-size: 13px; line-height: 1.6;
+}
+.orch-stream-card .osc-agent {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: #00a878; margin-bottom: 4px;
+}

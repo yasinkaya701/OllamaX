@@ -1,3 +1,15 @@
 node_modules
 .DS_Store
 *.log
+
+dist/
+out/
+*.AppImage
+latest-linux.yml
+builder-debug.yml
+linux-unpacked/
+win-unpacked/
+mac-unpacked/
+*.exe
+*.dmg
+*.deb

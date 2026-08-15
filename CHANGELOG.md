@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.12.0 — 2026-08-16
+
+### Orkestrasyon (F3)
+
+- **Orkestrasyon paneli** (sidebar): lokal ajan keşfi — Claude Code, Codex, Antigravity, Ollama, Shell; durum göstergesi (erişilebilir/erişilemiyor), gerçek zamanlı yenileme.
+- **Zincir çalıştırma**: çoklu ajan sıralı görev yürütme (Claude Code → Codex → Antigravity), toggle ile ajan seçimi.
+- **Canlı ilerleme**: zincir çıktısı chat alanına stream card olarak akar; sistem başlangıç/bitiş mesajları.
+- Yeni IPC kanalları: `agent-discover-all` (invoke), `agent-run`, `agent-chain` (send), `agent-output`, `agent-chain-progress` (on).
+- `orchestrator.js` modülü artık UI'dan tam erişilebilir.
+
 ## 3.11.0 — 2026-08-16
 
 ### Otomatik GitHub Repo Keşfi (featured-discover)

@@ -1208,3 +1208,36 @@ app.on('before-quit', () => {
   });
   ptySessions.clear();
 });
+
+/* ================================================================ */
+/* Orkestrasyon (F3): lokal ajan keşfi, zincir çalıştırma            */
+/* ================================================================ */
+const { discoverAll: orchDiscoverAll, runAgent: orchRunAgent, runChain: orchRunChain } = require('./main/agents/orchestrator');
+
+/* Tüm lokal ajanları keşfet (Claude Code, Codex, Antigravity, Ollama, Shell) */
+ipcMain.handle('agent-discover-all', async () => {
+  try {
+    const result = await orchDiscoverAll();
+    return { ok: true, agents: result };
+  } catch (e) {
+    return { ok: false, error: String(e.message).slice(0, 200), agents: {} };
+  }
+});
+
+/* Tek ajan çalıştır */
+ipcMain.on('agent-run', (event, { agentId, task, model }) => {
+  orchRunAgent(agentId, task || '', { model })
+    .then((res) => event.reply('agent-output', { agentId, result: res }))
+    .catch((e) => event.reply('agent-output', { agentId, result: { ok: false, error: String(e.message).slice(0, 200) } }));
+});
+
+/* Zincir çalıştır (Claude → Codex → Antigravity vb.) */
+ipcMain.on('agent-chain', (event, { order, task }) => {
+  const sendProgress = (agent, text) => event.reply('agent-chain-progress', { agent, text });
+  orchRunChain(order, task || '')
+    .then((res) => {
+      res.steps.forEach((s) => { sendProgress(s.agent, JSON.stringify(s.result)); });
+      event.reply('agent-chain-progress', { done: true, result: res });
+    })
+    .catch((e) => event.reply('agent-chain-progress', { done: true, error: String(e.message).slice(0, 200) }));
+});

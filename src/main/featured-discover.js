@@ -28,6 +28,9 @@ const MAX_REPO_PER_CAT = 6;
 
 /* Kategori sorguları: GitHub search qualifiers ile tanımlanır */
 const CATEGORY_QUERIES = [
+  { id: 'learning-path', label: 'Learning Path', icon: 'sparkle',
+    query: 'topic:machine-learning topic:education stars:>3000',
+    keywords: ['zero to', 'zero-to-hero', 'nn-', 'course', 'lecture', 'tutorial', 'from scratch', 'book', 'handbook'] },
   { id: 'ai-foundations', label: 'AI Foundations', icon: 'chip',
     query: 'topic:llm OR topic:gpt stars:>5000 pushed:>2025-01-01',
     keywords: ['nanoGPT', 'llama2', 'llama3', 'gpt', 'transformer', 'karpathy', 'tiny', 'minigpt', 'minillama'] },
@@ -37,9 +40,6 @@ const CATEGORY_QUERIES = [
   { id: 'local-inference', label: 'Local Inference', icon: 'terminal',
     query: 'topic:llm-inference OR topic:local-llm stars:>10000 pushed:>2025-01-01',
     keywords: ['llama.cpp', 'ollama', 'gguf', 'lmstudio', 'vllm', 'mlx', 'llamafile', 'exllamav2'] },
-  { id: 'learning-path', label: 'Learning Path', icon: 'sparkle',
-    query: 'topic:machine-learning topic:education stars:>3000',
-    keywords: ['zero to', 'course', 'lecture', 'tutorial', 'from scratch', 'book', 'handbook'] },
   { id: 'rag-data', label: 'RAG & Data', icon: 'database',
     query: 'topic:rag OR topic:embeddings stars:>2000 pushed:>2025-01-01',
     keywords: ['rag', 'retrieval', 'embedding', 'vector', 'chroma', 'weaviate', 'qdrant', 'llamaindex'] },
