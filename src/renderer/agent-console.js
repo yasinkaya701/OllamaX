@@ -215,7 +215,9 @@
     }
 
     if (useReal) {
-      ac.invoke('ipc:3:code-agent-run', { agentId: a.id, task: task.trim(), chain: chain.running ? { root: chain.rootTask, pos: chain.index } : null })
+      const useOrchestra = chain.running; // zincir modunda backend handoff protokolünü kullan
+      const channel = useOrchestra ? 'ipc:3:orchestra-run' : 'ipc:3:code-agent-run';
+      ac.invoke(channel, { agentId: a.id, task: task.trim(), chain: useOrchestra ? { root: chain.rootTask, pos: chain.index } : null })
         .then((res) => {
           if (res && res.ok && Array.isArray(res.steps)) {
             let i = 0;
@@ -231,7 +233,12 @@
               setTimeout(realTick, 650);
             };
             realTick();
+          } else if (res && res.missing) {
+            appendLogLine(card, `Gerçek CLI bulunamadı: ${res.error || 'kurulu değil'}. Simülasyon moduna geçiliyor.`, 'sonuç');
+            toast(`${a.label} CLI bulunamadı — simülasyon modu`, 'warn');
+            playSimulation();
           } else {
+            appendLogLine(card, `Gerçek köprü döndü: ${res && res.error ? res.error : 'bilinmeyen yanıt'}. Simülasyon moduna geçiliyor.`, 'sonuç');
             playSimulation();
           }
         })
@@ -281,6 +288,42 @@
     chain.index = 0;
     chain.rootTask = task;
     chain.order = [firstAgent, ...chain.order.filter((id) => id !== firstAgent)];
+    const ac = getApi();
+    // Backend handoff protokolü varsa (orchestra-chain) tüm zincir anahtarsız lokal ajanlarla backend'de koşar
+    if (ac && typeof ac.invoke === 'function') {
+      ac.invoke('ipc:3:orchestra-chain', { order: chain.order, task: task.trim() })
+        .then((res) => {
+          if (res && res.ok && Array.isArray(res.steps)) {
+            res.steps.forEach((s) => {
+              const a = AGENTS.find((x) => x.id === s.agent) || { id: s.agent, label: s.agent };
+              const card = $(`[data-agent="${s.agent}"]`);
+              if (s.result && Array.isArray(s.result.steps)) {
+                s.result.steps.forEach((st) => {
+                  if (card) appendLogLine(card, `${a.label}: ${st.text || st}`, st.kind || 'plan');
+                });
+                appendLogLine(card || $('[data-agent="claude-code"]'), `${a.label} adımı tamamlandı`, 'sonuç');
+              } else if (s.result && !s.result.ok) {
+                if (card) appendLogLine(card, `${a.label} hatası: ${s.result.error || 'bilinmeyen'}`, 'sonuç');
+                toast(`${a.label} adımında zincir durdu`, 'warn');
+              }
+            });
+            chain.running = false;
+            chain.index = chain.order.length;
+            refreshChainBadges();
+            const leader = $('[data-agent="claude-code"]');
+            if (leader) appendLogLine(leader, 'Zincir tamamlandı: tüm ajanlar görevini tamamladı.', 'sonuç');
+            toast('Zincir tamamlandı', 'info');
+          } else {
+            fallbackChain(firstAgent, task);
+          }
+        })
+        .catch(() => fallbackChain(firstAgent, task));
+      return;
+    }
+    fallbackChain(firstAgent, task);
+  }
+
+  function fallbackChain(firstAgent, task) {
     runAgentTask(AGENTS.find((a) => a.id === firstAgent), task);
   }
 
@@ -304,6 +347,34 @@
       }
       badge.classList.remove('hidden');
     });
+  }
+
+  async function detectAgentConnections() {
+    const ac = getApi();
+    if (!ac || typeof ac.invoke !== 'function') return;
+    try {
+      const res = await ac.invoke('ipc:3:orchestra-discover', null);
+      if (res && res.ok && res.agents) {
+        for (const [id, info] of Object.entries(res.agents)) {
+          const card = $(`[data-agent="${id}"]`);
+          const dot = card?.querySelector('[data-dot="status"]');
+          const statusText = card?.querySelector('[data-text="status"]');
+          if (!dot) continue;
+          const reachable = info.connected === true || info.reachable === true || info.executable;
+          if (reachable) {
+            dot.classList.remove('off');
+            dot.classList.add('ok');
+            if (statusText) statusText.textContent = info.kind === 'http' ? 'bağlı (Ollama)' : 'bağlı (CLI)';
+          } else {
+            dot.classList.remove('ok');
+            dot.classList.add('off');
+            if (statusText) statusText.textContent = 'CLI yok';
+          }
+        }
+      }
+    } catch {
+      /* tesir ortamında algılama sessizce geçer */
+    }
   }
 
   function toggleChain(enabled) {
@@ -352,7 +423,7 @@
     pane.appendChild(head);
 
     const sub = h('div', { className: 'ac-sub' });
-    sub.textContent = 'Claude Code · Codex · Antigravity — üç kod ajanı tek konsoldan.';
+    sub.textContent = 'Claude Code · Codex · Antigravity · Ollama — anahtarsız lokal orkestra, tek konsol.';
     pane.appendChild(sub);
 
     const chainRow = h('div', { className: 'ac-chain-row' });
@@ -376,6 +447,7 @@
       grid.appendChild(card);
     }
     pane.appendChild(grid);
+    detectAgentConnections();
   }
 
   /* ------------------------------------------------------------------ */

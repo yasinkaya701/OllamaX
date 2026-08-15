@@ -24,6 +24,8 @@ const { getMemoryStore } = require('./memory/store');
 const { compactContext } = require('./memory/compaction');
 const { loadAll, uninstallPlugin, listPlugins } = require('./plugins/loader');
 const { startServer, stopServer, listServers } = require('./mcp/client');
+const { runCodeAgent } = require('./agents/code-agent-bridge');
+const orchestrator = require('./agents/orchestrator');
 
 const IMG_PROVIDERS = {
   openai: {
@@ -388,6 +390,40 @@ function registerIpcV3Handlers(mainWindow) {
       }
       if (hosts.length === 0) resolve({ ok: true, machines: [] });
     });
+  });
+
+  /* ------------------------------ KOD AJANLARI (anahtarsız CLI köprüsü) ------------------------------ */
+
+  handler('code-agent-detect', async () => {
+    const detected = await discoverAgents();
+    const orch = await orchestrator.discoverAll();
+    // Orchestrator keşfi CLI + HTTP ajanları birleştirir (Ollama dahil)
+    return { ok: true, agents: { ...detected, ...orch } };
+  });
+
+  handler('code-agent-run', async (_e, payload) => {
+    if (!payload || typeof payload.agentId !== 'string') return { ok: false, error: 'agentId gerekli.' };
+    const { agentId, task, chain } = payload;
+    const result = await runCodeAgent(agentId, String(task || ''), chain || null);
+    return result;
+  });
+
+  handler('orchestra-discover', async () => {
+    const orch = await orchestrator.discoverAll();
+    return { ok: true, agents: orch };
+  });
+
+  handler('orchestra-run', async (_e, payload) => {
+    if (!payload || typeof payload.agentId !== 'string') return { ok: false, error: 'agentId gerekli.' };
+    const { agentId, task, chain } = payload;
+    const result = await orchestrator.runAgent(agentId, String(task || ''), { chain: chain || null, model: payload.model });
+    return result;
+  });
+
+  handler('orchestra-chain', async (_e, payload) => {
+    if (!payload || !Array.isArray(payload.order) || payload.order.length === 0) return { ok: false, error: 'order gerekli.' };
+    const result = await orchestrator.runChain(payload.order, String(payload.task || ''));
+    return result;
   });
 
   /* ------------------------------ PLUGIN LOADING (açalışta) ------------------------------ */
