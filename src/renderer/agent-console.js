@@ -60,8 +60,15 @@
     },
   ];
 
-  const state = new Map(); // agentId -> { running, step, history[] }
+  const state = new Map(); // agentId -> { running, step, history[], output }
   let api = null;
+  const chain = { enabled: false, order: ['claude-code', 'codex', 'antigravity'], running: false, index: 0, rootTask: '' };
+
+  function buildChainPrompt(a, prevAgent, prevTask, prevOutput) {
+    const prev = AGENTS.find((x) => x.id === prevAgent);
+    const out = Array.isArray(prevOutput) ? prevOutput.map((o) => o.text).filter(Boolean).join(' | ') : String(prevOutput || '').slice(0, 300);
+    return `${prev.label} sonuçları: ${out} — ${prevTask} — devamı: ${a.label} bu çıktıyı işleyip ilerlet.`;
+  }
 
   function $(sel) {
     return document.querySelector(sel);
@@ -87,6 +94,15 @@
     return api;
   }
 
+  function toast(msg, kind = 'info') {
+    const stack = document.querySelector('#toast-stack') || document.body;
+    const el = document.createElement('div');
+    el.className = `toast toast-${kind}`;
+    el.textContent = msg;
+    stack.appendChild(el);
+    setTimeout(() => el.remove(), 4500);
+  }
+
   function initAgent(a) {
     state.set(a.id, { running: false, step: 0, history: [] });
   }
@@ -105,6 +121,8 @@
 
     const meta = h('div', { className: 'ac-meta' });
     meta.appendChild(h('span', { className: 'ac-model', 'data-model': true }, `model: ${a.modelDefault}`));
+    const nextBadge = h('span', { className: 'ac-next hidden', 'data-next': true }, '');
+    meta.appendChild(nextBadge);
 
     const inputRow = h('div', { className: 'ac-input-row' });
     const input = h('input', {
@@ -134,6 +152,7 @@
     if (!s) return;
     s.running = running;
     s.step = 0;
+    if (!running) s.output = null;
     const card = $(`[data-agent="${a.id}"]`);
     if (!card) return;
     const runBtn = card.querySelector('[data-run]');
@@ -171,7 +190,8 @@
     setRunning(a, true);
     const card = $(`[data-agent="${a.id}"]`);
     if (!card) return;
-    appendLogLine(card, `Görev alındı: ${task.slice(0, 120)}`, 'görev');
+    const isChainStep = chain.running;
+    appendLogLine(card, `${isChainStep ? `Zincir adımı (${chain.index + 1}/${chain.order.length}) — ` : ''}Görev alındı: ${task.slice(0, 120)}`, 'görev');
 
     const ac = getApi();
     const useReal = ac && typeof ac.invoke === 'function';
@@ -184,6 +204,7 @@
             appendLogLine(card, 'Görev tamamlandı.', 'sonuç');
           }
           setRunning(a, false);
+          onAgentDone(a, card);
           return;
         }
         appendLogLine(card, a.simulateSteps[i], 'plan');
@@ -194,7 +215,7 @@
     }
 
     if (useReal) {
-      ac.invoke('ipc:3:code-agent-run', { agentId: a.id, task: task.trim() })
+      ac.invoke('ipc:3:code-agent-run', { agentId: a.id, task: task.trim(), chain: chain.running ? { root: chain.rootTask, pos: chain.index } : null })
         .then((res) => {
           if (res && res.ok && Array.isArray(res.steps)) {
             let i = 0;
@@ -202,6 +223,7 @@
               if (i >= res.steps.length || !state.get(a.id).running) {
                 if (state.get(a.id).running) appendLogLine(card, 'Görev tamamlandı.', 'sonuç');
                 setRunning(a, false);
+                onAgentDone(a, card);
                 return;
               }
               appendLogLine(card, res.steps[i].text || res.steps[i], res.steps[i].kind || 'plan');
@@ -217,6 +239,79 @@
     } else {
       playSimulation();
     }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Zincir orkestrasyonu: lider ajan sonuçlarını sonraki ajana aktarır  */
+  /* ------------------------------------------------------------------ */
+  function onAgentDone(a, _card) {
+    if (!chain.running) return;
+    const s = state.get(a.id);
+    if (s) s.output = s.history.slice(-6);
+    scheduleNext();
+  }
+
+  function scheduleNext() {
+    chain.index += 1;
+    if (chain.index >= chain.order.length || chain.running === false) {
+      chain.running = false;
+      chain.index = 0;
+      refreshChainBadges();
+      appendLogLine($('[data-agent="claude-code"]'), 'Zincir tamamlandı: tüm ajanlar görevini tamamladı.', 'sonuç');
+      toast('Zincir tamamlandı', 'info');
+      return;
+    }
+    setTimeout(runNextInChain, 900);
+  }
+
+  function runNextInChain() {
+    const nextId = chain.order[chain.index];
+    const next = AGENTS.find((x) => x.id === nextId);
+    if (!next) { scheduleNext(); return; }
+    refreshChainBadges();
+    const prevId = chain.order[chain.index - 1];
+    const prevOut = (state.get(prevId) || {}).output || [];
+    const prompt = buildChainPrompt(next, prevId, chain.rootTask, prevOut);
+    runAgentTask(next, prompt);
+  }
+
+  function startChain(firstAgent, task) {
+    if (chain.running) return;
+    chain.running = true;
+    chain.index = 0;
+    chain.rootTask = task;
+    chain.order = [firstAgent, ...chain.order.filter((id) => id !== firstAgent)];
+    runAgentTask(AGENTS.find((a) => a.id === firstAgent), task);
+  }
+
+  function refreshChainBadges() {
+    AGENTS.forEach((a) => {
+      const card = $(`[data-agent="${a.id}"]`);
+      const badge = card?.querySelector('[data-next]');
+      if (!badge) return;
+      if (!chain.enabled || !chain.running) {
+        badge.classList.add('hidden');
+        return;
+      }
+      const idx = chain.order.indexOf(a.id);
+      if (idx === -1) { badge.classList.add('hidden'); return; }
+      const nextId = chain.order[idx + 1];
+      if (!nextId) {
+        badge.textContent = 'zincirin sonu';
+      } else {
+        const next = AGENTS.find((x) => x.id === nextId);
+        badge.textContent = `sonraki: ${next ? next.label : nextId}`;
+      }
+      badge.classList.remove('hidden');
+    });
+  }
+
+  function toggleChain(enabled) {
+    chain.enabled = enabled;
+    const grid = $('[data-chain-grid]');
+    if (grid) grid.classList.toggle('ac-chain-on', enabled);
+    refreshChainBadges();
+    toast(enabled ? 'Zincir modu açık: ajanlar sırayla birbirine prompt aktarır' : 'Zincir modu kapalı', 'info');
   }
 
   function wireCard(card, a) {
@@ -260,7 +355,20 @@
     sub.textContent = 'Claude Code · Codex · Antigravity — üç kod ajanı tek konsoldan.';
     pane.appendChild(sub);
 
-    const grid = h('div', { className: 'ac-grid' });
+    const chainRow = h('div', { className: 'ac-chain-row' });
+    const chainLabel = h('span', { className: 'ac-chain-label' }, 'Zincir modu: lider ajan sonucu sonraki ajana otomatik prompt olarak aktarır');
+    const chainToggle = h('button', { className: 'ac-chain-switch', type: 'button', 'aria-pressed': 'false' }, h('span', { className: 'ac-chain-knob' }, ''));
+    chainToggle.addEventListener('click', () => {
+      const on = !chain.enabled;
+      chainToggle.classList.toggle('ac-chain-on', on);
+      chainToggle.setAttribute('aria-pressed', String(on));
+      toggleChain(on);
+    });
+    chainRow.appendChild(chainLabel);
+    chainRow.appendChild(chainToggle);
+    pane.appendChild(chainRow);
+
+    const grid = h('div', { className: 'ac-grid', 'data-chain-grid': true });
     for (const a of AGENTS) {
       initAgent(a);
       const card = buildAgentCard(a);
@@ -270,6 +378,30 @@
     pane.appendChild(grid);
   }
 
+  /* ------------------------------------------------------------------ */
+  /* /chain slash komutu: /chain claude-code → antigravity: <görev>       */
+  /* ------------------------------------------------------------------ */
+  function tryChainSlash(raw) {
+    const m = /^\/chain\s+(.+)$/.exec(raw.trim());
+    if (!m) return false;
+    const rest = m[1];
+    const colonIdx = rest.indexOf(':');
+    if (colonIdx === -1) return false;
+    const agentsPart = rest.slice(0, colonIdx).trim();
+    const task = rest.slice(colonIdx + 1).trim();
+    if (!task) return false;
+    const order = agentsPart.split(/→|->|,| /).map((s) => s.trim()).filter(Boolean).filter((s) => AGENTS.some((a) => a.id === s));
+    if (order.length === 0) return false;
+    const pane = $('#ttab-code-agents');
+    if (pane && !pane.classList.contains('active')) {
+      const tab = $('[data-ttab="code-agents"]');
+      if (tab) tab.click();
+    }
+    chain.order = order;
+    startChain(order[0], task);
+    return true;
+  }
+
   window.OllamaX = window.OllamaX || {};
   window.OllamaX.agentConsole = {
     TAB_ID: 'code-agents',
@@ -277,5 +409,9 @@
     TAB_ICON: 'M4 6h16M4 12h10M4 18h6',
     render: renderAgentConsolePanel,
     agents: AGENTS,
+    tryChainSlash,
+    startChain,
+    toggleChain,
+    chain,
   };
 })();

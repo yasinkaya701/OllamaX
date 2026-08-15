@@ -605,8 +605,17 @@ details.acc-github[open] > .github-acc-sum .acc-chev::before {
 
 /* AI CODING CONSOLE (Claude Code · Codex · Antigravity) — Tricolor Pro */
 .ac-sub{font-size:10.5px;color:var(--text3);margin:2px 0 10px;line-height:1.5;letter-spacing:0.01em;}
+.ac-chain-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface3);border:1px solid var(--border2);border-radius:var(--r-sm);padding:7px 10px;margin-bottom:10px;}
+.ac-chain-label{font-size:10px;color:var(--text3);line-height:1.4;}
+.ac-chain-switch{background:var(--surface2);border:1px solid var(--border);border-radius:10px;width:30px;height:16px;padding:2px;cursor:pointer;position:relative;flex-shrink:0;transition:border-color .15s;} 
+.ac-chain-switch.ac-chain-on{border-color:var(--accent);}
+.ac-chain-knob{display:block;width:10px;height:10px;border-radius:50%;background:var(--text3);transition:transform .15s cubic-bezier(.4,0,.2,1),background .15s;}
+.ac-chain-switch.ac-chain-on .ac-chain-knob{transform:translateX(14px);background:var(--accent);}
+.ac-next{font-size:9px;color:var(--accent);font-family:var(--mono);letter-spacing:.03em;background:rgba(0,168,120,.12);border:1px solid rgba(0,168,120,.3);border-radius:3px;padding:0 5px;white-space:nowrap;}
 .ac-grid{display:flex;flex-direction:column;gap:10px;}
 .ac-card{background:var(--surface3);border:1px solid var(--border2);border-radius:var(--r);padding:10px;transition:border-color .15s,box-shadow .15s;}
+.ac-chain-on .ac-card{position:relative;}
+.ac-chain-on .ac-card::before{content:'';position:absolute;left:-5px;top:30%;bottom:30%;width:1px;background:linear-gradient(180deg,transparent,rgba(0,168,120,.45),transparent);}
 .ac-card:hover{border-color:var(--border);}
 .ac-card.busy{border-color:rgba(0,168,120,.35);}
 .ac-head{display:flex;align-items:center;gap:7px;margin-bottom:6px;}

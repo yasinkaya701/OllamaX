@@ -1584,6 +1584,12 @@ async function sendMessage() {
     log('Canvas hedefi: ' + text, 'info');
     return;
   }
+  if (window.OllamaX?.agentConsole?.tryChainSlash && window.OllamaX.agentConsole.tryChainSlash(text)) {
+    state.processing = false;
+    setStatus('ready');
+    log('Zincir ajan görevi: ' + text, 'info');
+    return;
+  }
   q('#chat-area .welcome-screen')?.remove();
   addUserBubble(text);
   state.history.push({ role: 'user', content: text });
