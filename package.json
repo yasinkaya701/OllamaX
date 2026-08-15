@@ -41,7 +41,9 @@
       "target": [
         "AppImage"
       ],
-      "category": "Development"
+      "category": "Development",
+      "icon": "assets/icon-512.png",
+      "syncDesktopName": true
     }
   },
   "keywords": [],
