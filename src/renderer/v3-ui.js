@@ -433,9 +433,14 @@
   /* EventChannel streaming bağlayıcıları                                */
   /* ------------------------------------------------------------------ */
   function bindEventStream() {
+    // V3.1: Token akışını raf başına tek güncellemede batch'le (plan 1.8.2)
+    const batcher = window.OllamaX?.perf?.StreamBatcher
+      ? new window.OllamaX.perf.StreamBatcher((sessionId, chunk) => appendToAgentBubble(sessionId, 'token', chunk))
+      : null;
     api.on('event:token', (d) => {
       if (!d || !d.sessionId) return;
-      appendToAgentBubble(d.sessionId, 'token', d.delta || '');
+      if (batcher) batcher.push(d.sessionId, d.delta || '');
+      else appendToAgentBubble(d.sessionId, 'token', d.delta || '');
     });
     api.on('event:thinking', (d) => {
       if (!d || !d.sessionId) return;
@@ -587,6 +592,19 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* Orkestrasyon paneli (plan 2.6)                                      */
+  /* ------------------------------------------------------------------ */
+  function renderOrchestratorPanel() {
+    const pane = $('#ttab-orchestrator');
+    if (!pane) return;
+    pane.innerHTML = '';
+    pane.appendChild(h('div', { className: 'sec-label' }, 'Sub-agent orkestrasyonu'));
+    const root = h('div', { id: 'orchestrator-root', className: 'task-timeline' });
+    pane.appendChild(root);
+    if (window.OllamaX?.orchestrator) window.OllamaX.orchestrator.render(root);
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Kurulum: DOM'a enjekte et ve bağla                                  */
   /* ------------------------------------------------------------------ */
   function mount() {
@@ -638,6 +656,7 @@
       toolsPanel.appendChild(h('div', { className: 'ttab-pane', id: 'ttab-plugins' }));
       toolsPanel.appendChild(h('div', { className: 'ttab-pane', id: 'ttab-audit' }));
       toolsPanel.appendChild(h('div', { className: 'ttab-pane', id: 'ttab-tools-exec' }));
+      toolsPanel.appendChild(h('div', { className: 'ttab-pane', id: 'ttab-orchestrator' }));
       // Sekme geçişlerine yeni id'leri de dahil et
       document.querySelectorAll('.ttab').forEach((b) => {
         b.addEventListener('click', () => {
@@ -652,12 +671,36 @@
       renderPluginsPanel();
       renderAuditPanel();
       renderToolExecutionPanel();
+      renderOrchestratorPanel();
     }
 
     // 5. Streaming bağla
     bindEventStream();
 
-    // 6. /image komutunu mesaj kutusuna bağla (Enter'a basmadan önce kontrol)
+    // 6. V3.1: Temayı persist edilmiş konfigürasyondan uygula
+    if (window.OllamaX?.theme) {
+      const cfg = window.OllamaX.theme.getThemeConfig();
+      if (cfg.theme && cfg.theme !== 'dark') window.OllamaX.theme.apply(cfg.theme);
+      if (cfg.accent) window.OllamaX.theme.applyAccent(cfg.accent);
+    }
+
+    // 7. V3.1: Komut paletine kanallarını kaydet
+    if (window.OllamaX?.palette) {
+      const p = window.OllamaX.palette;
+      p.register({ group: 'actions', label: 'Sohbet kutusuna odaklan', run: () => $('#msg-input')?.focus() });
+      p.register({ group: 'actions', label: 'Araçlar panelini aç/kapat', run: () => $('#tools-panel')?.classList.toggle('hidden') });
+      p.register({ group: 'actions', label: 'Ayarları aç', run: () => { if (typeof openModal === 'function') openModal('settings-modal'); } });
+      p.register({ group: 'actions', label: 'Temayı değiştir (koyu/açık)', run: () => window.OllamaX?.theme?.toggle() });
+      p.register({ group: 'actions', label: 'Bellekte ara', run: () => { const t = $('[data-ttab="memory"]'); if (t) t.click(); $('#memory-search-input')?.focus(); } });
+      p.register({ group: 'actions', label: 'Oturumu kaydet', run: async () => { await v3.invoke('session-save', { title: `Oturum ${new Date().toLocaleString('tr-TR')}` }); toast('Oturum kaydedildi', 'info'); refreshSessions(); } });
+      p.register({ group: 'actions', label: 'Terminali aç/kapat', run: () => { const dock = $('#terminal-dock'); if (dock) dock.classList.toggle('collapsed'); } });
+      p.register({ group: 'actions', label: 'Sohbeti temizle', run: () => { const btn = $('#btn-clear-chat'); if (btn) btn.click(); } });
+      p.register({ group: 'memory', label: 'Bellek adaylarını yenile', run: () => renderMemoryPanel() });
+      p.register({ group: 'workflows', label: 'İş akışlarını yenile', run: () => renderWorkflowPanel() });
+      p.register({ group: 'audit', label: 'Denetim kaydını yenile', run: () => renderAuditPanel() });
+    }
+
+    // 8. /image komutunu mesaj kutusuna bağla (Enter'a basmadan önce kontrol)
     const input = $('#msg-input');
     if (input) {
       input.addEventListener('keydown', (e) => {

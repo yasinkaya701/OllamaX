@@ -120,6 +120,7 @@
     <button type="button" class="conn-refresh" id="btn-open-userdata" title="Oturum dosyalarının klasörü">Veri klasörü</button>
   </div>
 
+  <div id="agent-status-bar-container"></div>
   <div class="chat-area" id="chat-area">
     <div class="welcome-screen">
       <img src="../../assets/logo.png" class="welcome-logo" alt="OllamaX">
@@ -318,6 +319,20 @@
     <p class="settings-lead">Her satır bir <strong>host:port</strong> (örn. <code>localhost:11434</code> veya LAN’daki başka bir PC). Varsayılan makine, üst çubuktaki model listesi ve sağlık pingi için kullanılır.</p>
     <div id="ollama-machines-list" class="ollama-machines-list"></div>
     <button type="button" id="btn-add-ollama-machine" class="small-btn full-w machine-add-btn">＋ Makine ekle</button>
+
+    <h4 style="margin:18px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--v3-text-muted)">Görünüm</h4>
+    <div class="theme-chips" id="settings-theme-chips">
+      <button type="button" class="theme-chip" data-theme="dark">Koyu</button>
+      <button type="button" class="theme-chip" data-theme="light">Açık</button>
+      <button type="button" class="theme-chip" data-theme="high-contrast">Yüksek kontrast</button>
+    </div>
+    <h4 style="margin:14px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--v3-text-muted)">Yoğunluk</h4>
+    <div class="theme-chips" id="settings-density-chips">
+      <button type="button" class="theme-chip" data-density="comfortable">Rahat</button>
+      <button type="button" class="theme-chip" data-density="compact">Kompakt</button>
+      <button type="button" class="theme-chip" data-density="cozy">Geniş</button>
+    </div>
+
     <div class="modal-ftr">
       <button class="ghost-btn modal-x-btn">İptal</button>
       <button id="btn-save-settings" class="primary-btn">Kaydet</button>
@@ -344,6 +359,15 @@
 <script src="https://cdn.jsdelivr.net/npm/xterm@5.5.0/lib/xterm.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.10.0/lib/xterm-addon-fit.js"></script>
 <script src="lib/delegate-parse.js"></script>
+<script src="theme-registry.js"></script>
+<script src="keymap.js"></script>
+<script src="workspace-layout.js"></script>
+<script src="command-palette.js"></script>
+<script src="virtual-list.js"></script>
+<script src="perf.js"></script>
+<script src="agent-canvas.js"></script>
+<script src="orchestrator-view.js"></script>
+<script src="onboarding-tour.js"></script>
 <script src="v3-ui.js"></script>
 <script src="app.js"></script>
 </body>

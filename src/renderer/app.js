@@ -364,18 +364,40 @@ async function bootstrapCloudModels() {
 function bindKeyboardShortcuts() {
   document.addEventListener('keydown', (e) => {
     const mod = e.metaKey || e.ctrlKey;
-    if (mod && e.key.toLowerCase() === 'k') {
-      e.preventDefault();
-      q('#msg-input')?.focus();
+    // V3.1 klavye katmanı (keymap.js) komutlarına devret
+    if (window.OllamaX?.keymap) {
+      if (mod && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        void window.OllamaX.keymap.execute('composer.focus');
+        return;
+      }
+      if (mod && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        void window.OllamaX.keymap.execute('sidebar.tools.toggle');
+        return;
+      }
+      if (mod && e.key === ',') {
+        e.preventDefault();
+        void window.OllamaX.keymap.execute('settings.open');
+        return;
+      }
+      if (mod && e.key.toLowerCase() === 'd' && e.shiftKey) {
+        e.preventDefault();
+        void window.OllamaX.keymap.execute('theme.toggle');
+        return;
+      }
+      if (mod && e.key.toLowerCase() === 'm' && e.shiftKey) {
+        e.preventDefault();
+        void window.OllamaX.keymap.execute('memory.search');
+        return;
+      }
+      if (mod && e.key === 'Enter') {
+        e.preventDefault();
+        void window.OllamaX.keymap.execute('composer.send');
+        return;
+      }
     }
-    if (mod && e.key.toLowerCase() === 'l') {
-      e.preventDefault();
-      q('#tools-panel')?.classList.toggle('hidden');
-    }
-    if (mod && e.key === ',') {
-      e.preventDefault();
-      openModal('settings-modal');
-    }
+    // Legacy davranışlar (geriye uyumluluk)
     if (mod && (e.key === '`' || e.code === 'Backquote')) {
       e.preventDefault();
       const dock = q('#terminal-dock');
@@ -390,6 +412,23 @@ function bindKeyboardShortcuts() {
         }
       }
     }
+  });
+}
+
+/* V3.1 keymap komut tanımları (Plan 1.5) */
+if (window.OllamaX?.keymap) {
+  window.OllamaX.keymap.on('composer.focus', () => q('#msg-input')?.focus());
+  window.OllamaX.keymap.on('sidebar.tools.toggle', () => q('#tools-panel')?.classList.toggle('hidden'));
+  window.OllamaX.keymap.on('settings.open', () => openModal('settings-modal'));
+  window.OllamaX.keymap.on('theme.toggle', () => window.OllamaX?.theme?.toggle());
+  window.OllamaX.keymap.on('composer.send', () => q('#btn-send')?.click());
+  window.OllamaX.keymap.on('onboarding.replay', () => window.OllamaX?.onboarding?.replay());
+  window.OllamaX.keymap.on('memory.search', () => {
+    // Bellek paneli varsa sekmeyi aç ve arama kutusuna odaklan
+    const memTab = document.querySelector('[data-ttab="memory"]');
+    if (memTab) void memTab.click();
+    const memInput = q('#memory-search-input') || q('#mem-search');
+    memInput?.focus();
   });
 }
 
@@ -1047,7 +1086,22 @@ function bindAll() {
 
   on('btn-settings', 'click', () => {
     renderSettingsMachinesList();
+    refreshAppearanceSettings();
     openModal('settings-modal');
+  });
+
+  // V3.1: Görünüm çip seçimleri
+  qa('#settings-theme-chips .theme-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      qa('#settings-theme-chips .theme-chip').forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+    });
+  });
+  qa('#settings-density-chips .theme-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      qa('#settings-density-chips .theme-chip').forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+    });
   });
   on('btn-add-ollama-machine', 'click', () => {
     ensureOllamaMachines();
@@ -1444,6 +1498,14 @@ async function saveApiKeys() {
   populateModelSelect(state.currentProvider);
 }
 
+/* V3.1: Ayarlar modalı açıldığında mevcut tema/yoğunluk seçili çipleri işaretler */
+function refreshAppearanceSettings() {
+  const theme = window.OllamaX?.theme?.current?.() || 'dark';
+  qa('#settings-theme-chips .theme-chip').forEach((c) => c.classList.toggle('active', c.dataset.theme === theme));
+  const density = window.OllamaX?.layout?.get?.().density || 'comfortable';
+  qa('#settings-density-chips .theme-chip').forEach((c) => c.classList.toggle('active', c.dataset.density === density));
+}
+
 async function saveSettings() {
   ensureOllamaMachines();
   if (api) {
@@ -1465,6 +1527,17 @@ async function saveSettings() {
     if (defRadio?.value) state.settings.defaultOllamaMachineId = defRadio.value;
   }
   syncOllamaHostFromDefaultMachine();
+
+  // V3.1 görünüm ayarları: tema ve yoğunluk
+  if (window.OllamaX?.theme) {
+    const themeChip = q('#settings-theme-chips .theme-chip.active');
+    if (themeChip?.dataset.theme) window.OllamaX.theme.apply(themeChip.dataset.theme);
+  }
+  if (window.OllamaX?.layout) {
+    const densityChip = q('#settings-density-chips .theme-chip.active');
+    if (densityChip?.dataset.density) window.OllamaX.layout.setDensity(densityChip.dataset.density);
+  }
+
   save();
   closeModal('settings-modal');
   if (api) {
