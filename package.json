@@ -1,6 +1,6 @@
 {
   "name": "ollamax",
-  "version": "3.10.0",
+  "version": "3.11.0",
   "description": "OllamaX Ultra - Local AI Agent Studio",
   "main": "src/main.js",
   "scripts": {

@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.11.0 — 2026-08-16
+
+### Otomatik GitHub Repo Keşfi (featured-discover)
+
+- **Canlı keşif motoru** (`src/main/featured-discover.js`): statik katalog yerine GitHub Search API'den beş kategori sorgusu parallel çekilir; otomatik kategori atama (anahtar kelime kuralları), disk cache (`userData/featured-cache.json`), 4 saat TTL.
+- **Otomatik yenileme**: açılıştan 60 sn sonra + 4 saatte bir arka plan yenileme; çevrimdışı/rate-limit'te cache servis edilir, statik katalog son yedek.
+- **Canlılık rozeti**: Featured Repos başlığında "X dk önce · canlı/yedek" göstergesi; kartlarda GitHub'da açış (↗) linki.
+- 7 birim testi eklendi (`tests/featured-discover.test.js`); rate-limit dostu `User-Agent`, escape'li sorgular.
+
+### Kalite
+
+- **133 test** (hepsi yeşil), ESLint v9 uyarısız, sürüm `3.11.0`.
+
 ## 3.10.0 — 2026-08-16
 
 ### GitHub Repo Keşfi — kategorili, canlı entegre keşif sistemi

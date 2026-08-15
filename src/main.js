@@ -24,6 +24,7 @@ const { registerIpcV3Handlers } = require('./main/ipc-v3-handlers');
 const { registerProviderChatHandlers, runMultiChat } = require('./main/agents/provider-chat');
 const { registerIpcBridge } = require('./main/ipc-bridge');
 const configStore = require('./main/config/config-store');
+const { loadFeaturedReposAuto, refreshAll } = require('./main/featured-discover');
 
 const isWin = process.platform === 'win32';
 
@@ -860,20 +861,13 @@ ipcMain.on('gemini-chat', (event, { model, messages, apiKey, agentId, modelParam
   req.end();
 });
 
-/* V3.10: zenginleştirilmiş keşif reposu kataloğu */
-let featuredReposCache = null;
-function loadFeaturedRepos() {
-  if (featuredReposCache) return featuredReposCache;
-  try {
-    featuredReposCache = JSON.parse(fs.readFileSync(path.join(__dirname, 'shared', 'featured-repos.json'), 'utf8'));
-  } catch {
-    featuredReposCache = { categories: [] };
-  }
-  return featuredReposCache;
-}
-ipcMain.on('get-featured-repos', (event) => {
-  event.reply('featured-repos', loadFeaturedRepos());
+/* V3.10/V3.11: keşif kataloğu — otomatik GitHub çekimi + disk cache + statik yedek */
+ipcMain.on('get-featured-repos', async (event) => {
+  event.reply('featured-repos', await loadFeaturedReposAuto());
 });
+/* Periyodik otomatik yenileme (açılışta 60 sn sonra + 4 saatte bir) */
+setTimeout(() => { refreshAll().catch(() => {}); }, 60000);
+setInterval(() => { refreshAll().catch(() => {}); }, 4 * 3600 * 1000);
 ipcMain.on('github-search', (event, { query }) => {
   if (!query) return;
   const opts = {

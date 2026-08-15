@@ -1600,3 +1600,9 @@ body.ghost-active .tools-panel {
 .ctp-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);}
 .ctp-clear{background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0 4px;}
 .ctp-clear:hover{color:var(--red);}
+
+/* V3.11: canlılık rozeti + GitHub açış linki */
+.repo-freshness{font-size:8.5px;font-weight:600;color:var(--text3);margin-left:6px;white-space:nowrap;}
+.repo-freshness::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent);margin-right:3px;vertical-align:middle;opacity:.8;}
+.rcr-open{font-size:11px;line-height:1;color:var(--accent);text-decoration:none;margin-left:5px;opacity:.55;transition:opacity .15s;}
+.rcr-open:hover{opacity:1;}

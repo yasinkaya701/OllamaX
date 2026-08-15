@@ -1502,10 +1502,11 @@ function renderFeaturedRepos() {
       b.className = 'repo-chip repo-chip-rich';
       b.type = 'button';
       b.title = `${r.name} — ${r.desc}`;
+      const isLive = FEATURED_REPOS_CATALOG.source === 'live';
       b.innerHTML = `
         <span class="chip-icon">${iconSvg(cat.icon || '')}</span>
         <div class="rcr-body">
-          <div class="rcr-name">${esc(r.name.replace(/^.+\//, ''))}</div>
+          <div class="rcr-name">${esc(r.name.replace(/^.+\//, ''))}${isLive && r.url ? `<a class="rcr-open" href="${esc(r.url)}" target="_blank" rel="noopener" title="GitHub'da aç" tabindex="-1">↗</a>` : ''}</div>
           <div class="rcr-desc">${esc(r.desc)}</div>
           <div class="rcr-meta">${r.stars ? `★ ${(r.stars / 1000).toFixed(0)}k` : ''}${r.lang ? ` · ${esc(r.lang)}` : ''}</div>
         </div>`;
@@ -1522,6 +1523,18 @@ function openFeaturedRepo(query, fullName) {
   showToolsTab('github');
   if (q('#tools-panel').classList.contains('hidden')) q('#tools-panel').classList.remove('hidden');
   runGithubSearch();
+}
+/* V3.11: canlılık rozeti — katalog GitHub'dan mı yoksa yedekten mi geldi */
+function renderFeaturedRepoFreshness() {
+  const el = q('#repo-freshness');
+  if (!el) return;
+  if (FEATURED_REPOS_CATALOG?.updated) {
+    const ago = Math.round((Date.now() - FEATURED_REPOS_CATALOG.updated) / 60000);
+    const src = FEATURED_REPOS_CATALOG.source === 'live' ? 'canlı' : 'yedek';
+    el.textContent = ago < 1 ? `● ${src}` : `${ago} dk önce · ${src}`;
+  } else {
+    el.textContent = '● yedek';
+  }
 }
 /* V3.10: kataloğu ana süreçten yükle (çevrimdışı yedekle) */
 function loadFeaturedReposCatalog() {
@@ -2054,6 +2067,7 @@ function bindIPC() {
   api.on('featured-repos', (data) => {
     if (data?.categories?.length) FEATURED_REPOS_CATALOG = data;
     renderFeaturedRepos();
+    renderFeaturedRepoFreshness();
   });
   api.on('exec-output', (d) => log(d.data.trimEnd(), d.type === 'stderr' ? 'warn' : 'info'));
 
