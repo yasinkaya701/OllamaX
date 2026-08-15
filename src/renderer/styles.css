@@ -603,6 +603,41 @@ details.acc-github[open] > .github-acc-sum .acc-chev::before {
 .ttab-pane{display:none;flex:1;overflow-y:auto;padding:12px 10px;}
 .ttab-pane.active{display:block;}
 
+/* AI CODING CONSOLE (Claude Code · Codex · Antigravity) — Tricolor Pro */
+.ac-sub{font-size:10.5px;color:var(--text3);margin:2px 0 10px;line-height:1.5;letter-spacing:0.01em;}
+.ac-grid{display:flex;flex-direction:column;gap:10px;}
+.ac-card{background:var(--surface3);border:1px solid var(--border2);border-radius:var(--r);padding:10px;transition:border-color .15s,box-shadow .15s;}
+.ac-card:hover{border-color:var(--border);}
+.ac-card.busy{border-color:rgba(0,168,120,.35);}
+.ac-head{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.ac-name{font-weight:700;font-size:11.5px;letter-spacing:-0.01em;color:var(--text);}
+.ac-vendor{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:0 5px;}
+.ac-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);border:1.5px solid var(--border);flex-shrink:0;transition:background .3s,box-shadow .3s;}
+.ac-dot.ok{background:var(--green);border-color:var(--green);box-shadow:0 0 0 2px rgba(0,168,120,.15);}
+.ac-dot.running{background:var(--green);border-color:var(--green);animation:pulse 1s infinite;}
+.ac-status-text{font-size:9.5px;color:var(--text3);font-family:var(--mono);letter-spacing:0.02em;}
+.ac-meta{margin-bottom:7px;}
+.ac-model{font-size:9.5px;color:var(--text3);font-family:var(--mono);letter-spacing:0.02em;}
+.ac-input-row{display:flex;gap:6px;margin-bottom:7px;}
+.ac-input{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 9px;border-radius:var(--r-sm);outline:none;transition:border-color .15s,box-shadow .15s;min-width:0;}
+.ac-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,168,120,.1);}
+.ac-input::placeholder{color:var(--text3);}
+.ac-input:disabled{opacity:.6;}
+.ac-run{background:var(--accent);border:none;color:#fff;font-size:10.5px;font-weight:700;padding:6px 10px;border-radius:var(--r-sm);cursor:pointer;transition:background .15s cubic-bezier(.4,0,.2,1),transform .12s;box-shadow:0 2px 8px rgba(0,168,120,.25);letter-spacing:0.01em;}
+.ac-run:hover{background:var(--accent-h);}
+.ac-run:active{transform:scale(.95);}
+.ac-stop{background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:10.5px;font-weight:600;padding:6px 10px;border-radius:var(--r-sm);cursor:pointer;transition:background .15s,color .15s;}
+.ac-stop:hover{color:var(--red);border-color:var(--red);}
+.ac-log{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);max-height:140px;overflow-y:auto;padding:6px;font-family:var(--mono);font-size:10px;line-height:1.55;}
+.ac-log-empty{color:var(--text3);text-align:center;padding:14px 6px;font-family:var(--sans);font-size:10.5px;}
+.ac-log-line{display:flex;align-items:flex-start;gap:6px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.03);}
+.ac-stamp{color:var(--text3);flex-shrink:0;letter-spacing:0.03em;}
+.ac-tag{flex-shrink:0;font-size:8.5px;font-weight:700;border-radius:3px;padding:0 4px;letter-spacing:.04em;}
+.ac-tag-görev{background:rgba(0,168,120,.15);color:var(--accent);border:1px solid rgba(0,168,120,.35);}
+.ac-tag-plan{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+.ac-tag-sonuç{background:rgba(0,168,120,.15);color:var(--accent);border:1px solid rgba(0,168,120,.35);font-weight:700;}
+.ac-line-text{color:var(--text2);word-break:break-word;white-space:pre-wrap;}
+
 /* API CARDS */
 .api-provider-card{background:var(--surface3);border:1px solid var(--border2);border-radius:var(--r);padding:12px;margin-bottom:10px;}
 .api-prov-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}

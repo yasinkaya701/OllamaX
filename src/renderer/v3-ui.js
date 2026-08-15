@@ -112,6 +112,7 @@
       { id: 'memory', label: 'Bellek', icon: 'M12 2v4m0 12v4m10-10h-4M6 12H2m15.07-7.07l-2.83 2.83M9.76 14.24l-2.83 2.83m11.14 0l-2.83-2.83M9.76 9.76L6.93 6.93' },
       { id: 'plugins', label: 'Eklentiler', icon: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' },
       { id: 'audit', label: 'Denetim', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
+      { id: 'code-agents', label: 'Kod Ajanları', icon: 'M4 6h16M4 12h10M4 18h6' },
     ];
     return tabs.map((t) =>
       h('button', { className: 'ttab', 'data-ttab': t.id, type: 'button' }, hSvgIcon(t.icon), t.label),
@@ -660,6 +661,7 @@
       toolsPanel.appendChild(h('div', { className: 'ttab-pane', id: 'ttab-audit' }));
       toolsPanel.appendChild(h('div', { className: 'ttab-pane', id: 'ttab-tools-exec' }));
       toolsPanel.appendChild(h('div', { className: 'ttab-pane', id: 'ttab-orchestrator' }));
+      toolsPanel.appendChild(h('div', { className: 'ttab-pane', id: 'ttab-code-agents' }));
       // Sekme geçişlerine yeni id'leri de dahil et
       document.querySelectorAll('.ttab').forEach((b) => {
         b.addEventListener('click', () => {
@@ -675,6 +677,7 @@
       renderAuditPanel();
       renderToolExecutionPanel();
       renderOrchestratorPanel();
+      if (window.OllamaX?.agentConsole?.render) window.OllamaX.agentConsole.render();
     }
 
     // 5. Streaming bağla
