@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.16.1 — 2026-08-16
+
+### CI Düzeltmesi
+
+- pnpm artık resmi `pnpm/action-setup@v4` ile kuruluyor (runner PATH sorununu çözer).
+
+
 ## 3.16.0 — 2026-08-16
 
 ### Orkestrasyon 2.0 (F3-2: Prompt Bayrağı + Şef Ajan)
