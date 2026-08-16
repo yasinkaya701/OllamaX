@@ -17,14 +17,27 @@
   const customThemes = new Map();
 
   const ThemeRegistry = {
-    /** Mevcut tema adını döndürür (varsayılan OS tercihi fallback) */
+    /** Mevcut tema adını döndürür (varsayılan her zaman 'dark'; OS tercihi yalnızca 'system' seçildiğinde)
+     *  v3.18.1: Krevyx'in marka kimliği koyu tema — ilk açılışta ASLA aydınlık tema gösterilmez.
+     */
     current() {
       const stored = localStorage.getItem(THEME_STORAGE_KEY);
       if (stored && (BUILTIN_THEMES.includes(stored) || stored.startsWith('custom:'))) return stored;
+      // İlk açılış: OS tercihine BAKILMAZ — ürün kimliği koyu tema (site ile tutarlı)
+      return 'dark';
+    },
+
+    /** OS şemasını dinleyen 'system' modu için: koyu/açık hangisi etkin? */
+    effectiveSystemTheme() {
       if (typeof window.matchMedia === 'function' && window.matchMedia('(prefers-color-scheme: light)').matches) {
         return 'light';
       }
       return 'dark';
+    },
+
+    /** 'system' seçiliyse OS şemasını uygular; diğer durumda verilen adı kullanır */
+    applySystemOr(name) {
+      return this.apply(name === 'system' ? this.effectiveSystemTheme() : name);
     },
 
     /** Temayı uygula. Özel tema adları 'custom:' önekiyle verilir. */

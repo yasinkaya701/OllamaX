@@ -1705,3 +1705,14 @@ body.ghost-active .tools-panel {
 .orch-forward-label { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--v3-text-secondary); cursor: pointer; padding: 4px 8px; border: 1px solid var(--v3-border-subtle); border-radius: 6px; background: var(--v3-bg-elevated, rgba(255,255,255,0.03)); white-space: nowrap; }
 .orch-forward-label:hover { border-color: rgba(63, 185, 80, 0.4); color: var(--v3-ok); }
 .orch-forward-label input[type="checkbox"] { accent-color: var(--v3-ok, #3fb950); }
+
+/* v3.18.1: geri uç erişilemiyorken gönder butonu devre dışı */
+.send-btn[disabled],.send-btn.blocked{background:var(--v3-bg-tertiary);color:var(--v3-text-muted);cursor:not-allowed;box-shadow:none;opacity:.55;}
+.send-btn[disabled]:hover{background:var(--v3-bg-tertiary);}
+/* v3.18.1: satır içi gönderme engeli açıklaması */
+.send-blocked-hint{font-size:var(--v3-size-1);color:var(--v3-warn);margin-left:8px;animation:fadeIn .2s ease;}
+
+/* v3.18.1: kısayol ipuçları platforma göre mod tuşu — varsayılan Ctrl (mod), macOS'ta ⌘ */
+.kbd-mac{display:none;}
+body[data-platform="darwin"] .kbd-mac{display:inline;}
+body[data-platform="darwin"] .mod-kbd{display:none;}

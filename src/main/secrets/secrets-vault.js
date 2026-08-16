@@ -121,8 +121,27 @@ async function removeKey(provider) {
 
 /**
  * Kasa durum özeti — UI için tek çağrı.
+ * v3.18.1: Linux'ta Secret Service (dbus) daemonu yokken keytar operasyonları
+ * asla tamamlanmaz; ilk erişimde gerçek bir probe yapılıp ulaşılamıyorsa
+ * kasadan haberdar ama 'memory' moduna düşülür (sonsuz askıyı engeller).
  */
+let probeDone = false;
+async function probeKeytar() {
+  if (probeDone || !keytar) return;
+  probeDone = true;
+  try {
+    // Hızlı probe: var olmayan bir account'u sorgula — dbus yoksa bu asla dönmez.
+    await Promise.race([
+      keytar.getPassword(SERVICE, '__krevyx__probe__'),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('probe-timeout')), 2000)),
+    ]);
+  } catch {
+    setAvailability('memory');
+  }
+}
+
 async function vaultStatus() {
+  await probeKeytar();
   const nativeAvailable = keytar !== null && availability !== 'error';
   return {
     available: nativeAvailable || availability === 'memory',

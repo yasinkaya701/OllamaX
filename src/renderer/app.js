@@ -1948,7 +1948,7 @@ function bindAll() {
     chip.addEventListener('click', () => {
       qa('#settings-theme-chips .theme-chip').forEach((c) => c.classList.remove('active'));
       chip.classList.add('active');
-      if (chip.dataset.theme && window.Krevyx?.theme?.apply) window.Krevyx.theme.apply(chip.dataset.theme);
+      if (chip.dataset.theme && window.Krevyx?.theme?.apply) window.Krevyx.theme.applySystemOr(chip.dataset.theme);
     });
   });
   qa('#settings-density-chips .theme-chip').forEach((chip) => {
@@ -2638,11 +2638,18 @@ async function refreshSecurityPanel() {
   const vaultEl = q('#security-vault-value');
   const netEl = q('#security-network-value');
   const chips = qa('#security-mode-chips .theme-chip');
+  // v3.18.1: Linux'ta keyring daemon yokken keytar çağrısı asla tamamlanmaz —
+  // 2.5 sn zaman aşımı ile 'okunamadı' durumuna düşür (sonsuz 'Yükleniyor…' bug'ının önü).
+  const withTimeout = (promise, ms = 2500) =>
+    Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+    ]);
   if (!api) return;
   try {
     const [vaultRes, netRes] = await Promise.all([
-      api.invoke('vault-status', {}),
-      api.invoke('network-mode-get', {}),
+      withTimeout(api.invoke('vault-status', {})),
+      withTimeout(api.invoke('network-mode-get', {})),
     ]);
     if (vaultEl) {
       const mode = vaultRes?.mode || 'memory';
@@ -2664,7 +2671,9 @@ async function refreshSecurityPanel() {
 
 /* V3.1: Ayarlar modalı açıldığında mevcut tema/yoğunluk seçili çipleri işaretler */
 function refreshAppearanceSettings() {
-  const theme = window.Krevyx?.theme?.current?.() || 'dark';
+  // v3.18.1: 'system' modu OS şemasıyla eşleşir; aktif çipi ona göre işaretle
+  let theme = window.Krevyx?.theme?.current?.() || 'dark';
+  if (theme === 'system') theme = window.Krevyx?.theme?.effectiveSystemTheme?.() || 'dark';
   qa('#settings-theme-chips .theme-chip').forEach((c) => c.classList.toggle('active', c.dataset.theme === theme));
   const density = window.Krevyx?.layout?.get?.().density || 'comfortable';
   qa('#settings-density-chips .theme-chip').forEach((c) => c.classList.toggle('active', c.dataset.density === density));
@@ -2845,6 +2854,28 @@ function updateApiDots() {
   }
 }
 
+/* v3.18.1: Ollama/geri uç durumu — sessiz gönderme hatasını engeller.
+ * `state.backendHealthy` son sağlık kontrolünden gelir; bilinmiyorsa bir kez
+ * senkron şekilde doğrulanır (zaman aşımına karşı race'li). */
+let backendHealthy = null;
+function getBackendHealthy() {
+  return backendHealthy;
+}
+async function preflightBackend() {
+  if (!api) return true;
+  try {
+    const h = await Promise.race([
+      api.invoke('app-health', { ollamaHost: defaultOllamaHost() }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('health-timeout')), 3000)),
+    ]);
+    backendHealthy = Boolean(h?.ollamaReachable) && Number(h?.modelCount || 0) > 0;
+    return backendHealthy;
+  } catch {
+    backendHealthy = false;
+    return false;
+  }
+}
+
 async function sendMessage() {
   const inp = q('#msg-input');
   const text = inp.value.trim();
@@ -2852,6 +2883,17 @@ async function sendMessage() {
   const active = state.agents.filter((a) => a.active);
   if (!active.length) {
     toast('Select at least one agent', 'warn');
+    return;
+  }
+  /* v3.18.1: Model/Ollama yokken göndermeyi sessizce değil, açıkça reddet */
+  if (getBackendHealthy() === false || (getBackendHealthy() === null && !(await preflightBackend()))) {
+    const hint = q('#send-blocked-hint');
+    if (hint) {
+      hint.textContent = "Ollama erişilemiyor veya model yüklenmedi — Ayarlar → Makineler'den kontrol edin.";
+      hint.classList.remove('hidden');
+      setTimeout(() => hint.classList.add('hidden'), 6000);
+    }
+    toast('Ollama erişilemiyor — gönderilemedi (ayarları kontrol edin)', 'error');
     return;
   }
   const isComposer = COMPOSER.mode === 'code' && (state.history.length === 0 || !window.__composerTaskSent);
@@ -3210,6 +3252,11 @@ async function runHealthCheck() {
     const h = await api.invoke('app-health', { ollamaHost: defaultOllamaHost() });
     if (h.platform) document.body.dataset.platform = h.platform;
     const ok = h.ollamaReachable;
+    /* v3.18.1: sağlık durumu gönderme ön kontrolünde kullanılır */
+    backendHealthy = Boolean(ok) && Number(h?.modelCount || 0) > 0;
+    /* v3.18.1: erişilemiyorken gönder butonunu görsel olarak devre dışı bırak */
+    const sendBtn = q('#btn-send');
+    if (sendBtn) sendBtn.disabled = !backendHealthy;
     if (dot) dot.className = `conn-dot ${ok ? 'ok' : 'err'}`;
     if (label) {
       label.textContent = ok
