@@ -119,10 +119,28 @@ function saveTemplate(tpl) {
   }
 }
 
+/**
+ * Bir kullanıcı şablonunu siler. Gömülü şablonlar silinemez (override'i silinir).
+ */
+function deleteTemplate(id) {
+  if (typeof id !== 'string' || !id) return { ok: false, error: 'Geçersiz şablon kimliği.' };
+  const safe = String(id).replace(/[^A-Za-z0-9_-]+/g, '').slice(0, 64);
+  try {
+    const dir = templateDir();
+    const file = path.join(dir, `${safe}.json`);
+    if (!fs.existsSync(file)) return { ok: false, error: 'Şablon bulunamadı.' };
+    fs.unlinkSync(file);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
 module.exports = {
   interpolatePrompt,
   listTemplates,
   saveTemplate,
+  deleteTemplate,
   templateDir,
   bundledTemplateDir,
 };

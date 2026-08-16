@@ -18,11 +18,11 @@ const auditLog = require('./audit-log');
 const { getToolManifest, listTools } = require('./tools/registry');
 const { executeTool } = require('./tools/executor');
 const { AgentLoop, getLoop, registerLoop } = require('./agents/loop');
-const { interpolatePrompt, listTemplates, saveTemplate } = require('./agents/templates');
+const { interpolatePrompt, listTemplates, saveTemplate, deleteTemplate } = require('./agents/templates');
 const { runWorkflow, loadWorkflows, saveWorkflow, deleteWorkflow } = require('./workflow/engine');
 const { getMemoryStore } = require('./memory/store');
 const { compactContext } = require('./memory/compaction');
-const { loadAll, uninstallPlugin, listPlugins } = require('./plugins/loader');
+const { loadAll, uninstallPlugin, installPlugin, listPlugins } = require('./plugins/loader');
 const { startServer, stopServer, listServers } = require('./mcp/client');
 const { runCodeAgent } = require('./agents/code-agent-bridge');
 const orchestrator = require('./agents/orchestrator');
@@ -312,6 +312,21 @@ function registerIpcV3Handlers(mainWindow) {
     return saveTemplate(template);
   });
 
+  handler('templates-delete', (_e, { id }) => deleteTemplate(id));
+
+  handler('templates-import', (_e, { payload }) => {
+    if (!payload || typeof payload !== 'object') return { ok: false, error: 'Geçersiz paket.' };
+    if (typeof payload.id !== 'string' || !payload.id.trim()) return { ok: false, error: 'Şablon kimliği gerekli.' };
+    if (typeof payload.prompt !== 'string' || !payload.prompt.trim()) return { ok: false, error: 'Prompt gerekli.' };
+    const tpl = {
+      id: String(payload.id).replace(/[^A-Za-z0-9_-]+/g, '').slice(0, 64),
+      label: String(payload.label || payload.id).slice(0, 80),
+      category: payload.category ? String(payload.category).slice(0, 40) : '',
+      prompt: payload.prompt,
+    };
+    return saveTemplate(tpl);
+  });
+
   /* ------------------------------ MCP ------------------------------ */
 
   handler('mcp-servers', () => ({ ok: true, servers: listServers() }));
@@ -328,6 +343,12 @@ function registerIpcV3Handlers(mainWindow) {
   handler('plugins-list', () => ({ ok: true, plugins: listPlugins() }));
 
   handler('plugins-uninstall', (_e, { id }) => uninstallPlugin(id));
+
+  handler('plugins-install', (_e, { payload }) => {
+    if (!payload || typeof payload !== 'object') return { ok: false, error: 'Eksik eklenti paketi.' };
+    if (!payload.manifest || typeof payload.code !== 'string') return { ok: false, error: 'manifest + code gerekli.' };
+    return installPlugin({ manifest: payload.manifest, code: payload.code });
+  });
 
   /* ------------------------------ AUDIT ------------------------------ */
 

@@ -131,6 +131,13 @@ class PluginSandbox {
  */
 const plugins = new Map();
 
+// loadAll tarafından ayarlanan global ipcInvoke tutucu (installPlugin için)
+let globalIpcInvoke = null;
+
+function setIpcInvoke(fn) {
+  globalIpcInvoke = fn;
+}
+
 function pluginsDir() {
   return configStore.pluginsDir();
 }
@@ -148,6 +155,7 @@ function listPluginDirs() {
 }
 
 function loadAll(ipcInvoke) {
+  setIpcInvoke(ipcInvoke);
   const results = [];
   for (const dir of listPluginDirs()) {
     const manifestPath = path.join(dir, 'manifest.json');
@@ -197,11 +205,47 @@ function listPlugins() {
   }));
 }
 
+/**
+ * Eklentiyi şablon paketinden (manifest + main.js kodu) kurar.
+ * Payload: { manifest: {...}, code: "js source" }
+ * Doğrulanır, `plugins/<id>/` altına yazılır ve anında yüklenir.
+ */
+function installPlugin(payload) {
+  if (!payload || typeof payload !== 'object') return { ok: false, error: 'Eksik paket.' };
+  const manifest = payload.manifest;
+  const code = payload.code;
+  const err = validateManifest(manifest);
+  if (err) return { ok: false, error: err };
+  if (typeof code !== 'string' || !code.trim()) return { ok: false, error: 'Eklenti kodu boş.' };
+  const id = manifest.id;
+  if (plugins.has(id)) return { ok: false, error: 'Eklenti zaten kurulu.' };
+  try {
+    const dir = pluginsDir();
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const target = path.join(dir, id);
+    if (fs.existsSync(target)) fs.rmSync(target, { recursive: true, force: true });
+    fs.mkdirSync(target, { recursive: true });
+    fs.writeFileSync(path.join(target, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
+    fs.writeFileSync(path.join(target, manifest.main), code, 'utf8');
+    const sandbox = new PluginSandbox(id, manifest, target);
+    plugins.set(id, sandbox);
+    const inv = globalIpcInvoke || ipcInvoke;
+    void sandbox.load(inv || ipcInvoke).then((r) => {
+      auditLog.logEntry('user', 'plugin:installed', { id, ...(r.ok ? {} : { error: r.error }) });
+    });
+    auditLog.logEntry('user', 'plugin:installing', { id });
+    return { ok: true, id };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+
 module.exports = {
   validateManifest,
   PluginSandbox,
   loadAll,
   uninstallPlugin,
+  installPlugin,
   listPlugins,
   pluginsDir,
 };
