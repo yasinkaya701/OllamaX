@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.15.1 — 2026-08-16
+
+### CI Düzeltmesi
+
+- `release-build.yml` artık `npm ci` yerine `pnpm install --frozen-lockfile` kullanıyor (stale `package-lock.json` kaldırıldı; canonical `pnpm-lock.yaml` ile uyum).
+- Linux runner'a `libsecret-1-dev` (keytar native build) eklendi.
+
 ## 3.15.0 — 2026-08-16
 
 ### Cost Command (A2 fazı: Bütçe Motoru + Maliyet Paneli)
