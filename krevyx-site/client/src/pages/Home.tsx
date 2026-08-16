@@ -4,6 +4,7 @@
  * Siyah zemin + emerald #00A878 imza rengi. Space Grotesk display / Public Sans / JetBrains Mono.
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Link } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import Reveal, { RevealWithRef } from "@/components/Reveal";
@@ -993,7 +994,7 @@ function Footer() {
         </div>
         <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm text-muted-foreground">
           <a href={REPO} target="_blank" rel="noopener noreferrer" className="underline-shift hover:text-foreground transition-colors">{t.nav_github}</a>
-          <a href="/docs" className="underline-shift hover:text-foreground transition-colors">{t.docs_title}</a>
+          <Link href="/docs" className="underline-shift hover:text-foreground transition-colors">{t.docs_title}</Link>
           <a href={`${REPO}/blob/main/CHANGELOG.md`} target="_blank" rel="noopener noreferrer" className="underline-shift hover:text-foreground transition-colors">{t.footer_changelog}</a>
           <a href={`${REPO}/blob/main/docs/ARCHITECTURE.md`} target="_blank" rel="noopener noreferrer" className="underline-shift hover:text-foreground transition-colors">{t.footer_architecture}</a>
         </div>
