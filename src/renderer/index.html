@@ -608,6 +608,28 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">
       <button type="button" id="btn-plugin-install" class="small-btn">＋ Eklenti kur (JSON paket)</button>
     </div>
+
+    <!-- V3.18: Profil paketi -->
+    <h4 style="margin:18px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--v3-text-muted)">Profil Paketi (.krevyxprofile)</h4>
+    <p style="font-size:11px;color:var(--v3-text-muted);margin:0 0 6px">Tüm ayarlarını, ajanlarını, sağlayıcılarını, şablonlarını ve MCP sunucularını tek dosyada paketle.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+      <button type="button" id="btn-profile-export" class="small-btn">⬇ Paket olarak dışa aktar</button>
+      <button type="button" id="btn-profile-import" class="small-btn">⬆ Paketten içe aktar</button>
+    </div>
+
+    <!-- V3.18: Ajan başına MCP ataması -->
+    <h4 style="margin:18px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--v3-text-muted)">MCP — Ajan Atamaları</h4>
+    <p style="font-size:11px;color:var(--v3-text-muted);margin:0 0 6px">Her ajana yalnızca kendi araç setini ver: checkbox boşsa ajan tüm sunucuları görür.</p>
+    <div id="settings-mcp-agent-sets" style="max-height:160px;overflow-y:auto;margin-top:4px"></div>
+    <button type="button" id="btn-mcp-sets-save" class="small-btn" style="margin-top:8px">Atamaları kaydet</button>
+
+    <!-- V3.18: Denetim dışa aktarma -->
+    <h4 style="margin:18px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--v3-text-muted)">Denetim Günlüğü</h4>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+      <button type="button" id="btn-audit-export-json" class="small-btn">⬇ JSON</button>
+      <button type="button" id="btn-audit-export-csv" class="small-btn">⬇ CSV</button>
+      <button type="button" id="btn-audit-export-sarif" class="small-btn">⬇ SARIF</button>
+    </div>
     <div class="modal-ftr">
       <button class="ghost-btn modal-x-btn">İptal</button>
       <button id="btn-save-settings" class="primary-btn">Kaydet</button>
@@ -646,6 +668,7 @@
 <script src="agent-prompt-builder.js"></script>
 <script src="onboarding-tour.js"></script>
 <script src="v3-ui.js"></script>
+<script src="v318-panels.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

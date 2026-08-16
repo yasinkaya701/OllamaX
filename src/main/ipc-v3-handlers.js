@@ -24,6 +24,9 @@ const { getMemoryStore } = require('./memory/store');
 const { compactContext } = require('./memory/compaction');
 const { loadAll, uninstallPlugin, installPlugin, listPlugins } = require('./plugins/loader');
 const { startServer, stopServer, listServers } = require('./mcp/client');
+const profilePackage = require('./profile-package');
+const auditExport = require('./audit-export');
+const { getAgentMcpSets, setAgentMcpSets } = require('./mcp/broker');
 const { runCodeAgent } = require('./agents/code-agent-bridge');
 const orchestrator = require('./agents/orchestrator');
 /* V3.14 (A1-1/A1-2): gizli anahtar kasası + air-gapped ağ modu */
@@ -327,6 +330,20 @@ function registerIpcV3Handlers(mainWindow) {
     return saveTemplate(tpl);
   });
 
+  /* ------------------------------ PROFILE PAKETLERİ (v3.18 C-1) ------------------------------ */
+
+  handler('profile-export', (_e, { name, templates: tplIds, includeProviders } = {}) => {
+    const pkg = profilePackage.exportProfile({ name, templates: tplIds, includeProviders });
+    return { ok: true, package: pkg };
+  });
+
+  handler('profile-import', (_e, { payload }) => {
+    if (!payload || typeof payload !== 'object') return { ok: false, error: 'Geçersiz paket.' };
+    const result = profilePackage.importProfile(payload);
+    if (!result.ok) return result;
+    return { ok: true, imported: result.imported };
+  });
+
   /* ------------------------------ MCP ------------------------------ */
 
   handler('mcp-servers', () => ({ ok: true, servers: listServers() }));
@@ -336,6 +353,17 @@ function registerIpcV3Handlers(mainWindow) {
   handler('mcp-server-stop', (_e, { name }) => {
     stopServer(name);
     return { ok: true };
+  });
+
+  handler('mcp-agent-sets-get', () => ({ ok: true, sets: getAgentMcpSets() }));
+  handler('mcp-agent-sets-set', (_e, { sets } = {}) => {
+    const cleaned = {};
+    for (const [agentId, servers] of Object.entries(sets || {})) {
+      const arr = Array.isArray(servers) ? servers.filter((s) => typeof s === 'string' && s.trim()) : [];
+      if (arr.length) cleaned[agentId] = arr;
+    }
+    setAgentMcpSets(cleaned);
+    return { ok: true, sets: cleaned };
   });
 
   /* ------------------------------ PLUGINS ------------------------------ */
@@ -351,6 +379,11 @@ function registerIpcV3Handlers(mainWindow) {
   });
 
   /* ------------------------------ AUDIT ------------------------------ */
+
+  handler('audit-export', (_e, { format } = {}) => {
+    const fmt = format === 'csv' ? 'csv' : format === 'sarif' ? 'sarif' : 'json';
+    return { ok: true, format: fmt, ...auditExport.exportAs(fmt) };
+  });
 
   handler('audit-log', (_e, { actor, action, limit, offset } = {}) => {
     return auditLog.query({ actor, action, limit: limit || 100, offset: offset || 0 });

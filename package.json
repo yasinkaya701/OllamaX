@@ -1,8 +1,11 @@
 {
   "name": "Krevyx",
-  "version": "3.16.4",
+  "version": "3.18.0",
   "description": "Krevyx Ultra - Local AI Agent Studio",
   "main": "src/main.js",
+  "bin": {
+    "krevyx": "bin/krevyx.js"
+  },
   "scripts": {
     "start": "node scripts/start-electron.js",
     "build": "electron-builder",
@@ -48,7 +51,7 @@
   },
   "keywords": [],
   "author": "Yasin Kaya",
-  "license": "Proprietary",
+  "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "electron": "^43.4.0",

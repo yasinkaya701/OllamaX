@@ -12,9 +12,9 @@
 
 'use strict';
 
-const READ_ONLY_TOOLS = ['read_file', 'list_dir', 'scan_project', 'search_memory', 'git_info', 'get_model_catalog', 'list_sessions', 'session_meta'];
+const READ_ONLY_TOOLS = ['read_file', 'list_dir', 'scan_project', 'search_memory', 'git_info', 'get_model_catalog', 'list_sessions', 'session_meta', 'browser_screenshot'];
 const WRITE_TOOLS = ['create_file', 'edit_file', 'append_file', 'delete_file', 'write_session', 'memory_add', 'memory_accept'];
-const EXEC_TOOLS = ['terminal_execute', 'git_clone', 'generate_image', 'web_fetch'];
+const EXEC_TOOLS = ['terminal_execute', 'git_clone', 'generate_image', 'web_fetch', 'browser_navigate', 'browser_click', 'browser_type'];
 
 const DANGEROUS_COMMANDS = new Set([
   'sudo', 'su', 'rm', 'chmod', 'chown', 'mkfs', 'dd', 'shutdown', 'reboot',
@@ -231,6 +231,70 @@ const manifestById = new Map([
           size: { type: 'string' },
         },
         required: ['prompt'],
+      },
+    },
+  ],
+  /* V3.18: tarayıcı kontrol ajan araçları (CDP tabanlı, yerel) */
+  [
+    'browser_navigate',
+    {
+      name: 'browser_navigate',
+      display_name: 'Tarayıcıda Git',
+      tier: 'exec',
+      description: 'Headless Chromium ile sayfaya gider; başlık ve metin özetini döndürür. Yalnızca http/https.',
+      sandbox: null,
+      timeout_ms: 60000,
+      input_schema: {
+        type: 'object',
+        properties: { url: { type: 'string' } },
+        required: ['url'],
+      },
+    },
+  ],
+  [
+    'browser_screenshot',
+    {
+      name: 'browser_screenshot',
+      display_name: 'Ekran Görüntüsü',
+      tier: 'read',
+      description: 'Açık tarayıcı sayfasının ekran görüntüsünü (base64 PNG) alır.',
+      sandbox: null,
+      timeout_ms: 30000,
+      input_schema: { type: 'object', properties: {} },
+    },
+  ],
+  [
+    'browser_click',
+    {
+      name: 'browser_click',
+      display_name: 'Tarayıcıda Tıkla',
+      tier: 'exec',
+      description: 'Açık sayfada seçiciye veya görünen metne tıklar. Kullanıcı onayı gerekir.',
+      sandbox: null,
+      timeout_ms: 30000,
+      input_schema: {
+        type: 'object',
+        properties: { target: { type: 'string', description: 'CSS seçici veya görünür metin' } },
+        required: ['target'],
+      },
+    },
+  ],
+  [
+    'browser_type',
+    {
+      name: 'browser_type',
+      display_name: 'Tarayıcıda Yaz',
+      tier: 'exec',
+      description: 'Açık sayfada seçili alana metin yazar. Kullanıcı onayı gerekir.',
+      sandbox: null,
+      timeout_ms: 30000,
+      input_schema: {
+        type: 'object',
+        properties: {
+          selector: { type: 'string' },
+          text: { type: 'string' },
+        },
+        required: ['selector', 'text'],
       },
     },
   ],

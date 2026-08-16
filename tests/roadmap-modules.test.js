@@ -84,7 +84,7 @@ describe('audit-log zinciri', () => {
 describe('tools/registry', () => {
   test('12 araç manifesti mevcut', () => {
     const tools = listTools();
-    expect(tools.length).toBe(12);
+    expect(tools.length).toBe(16);
     expect(getToolManifest('read_file').tier).toBe('read');
     expect(getToolManifest('create_file').tier).toBe('write');
     expect(getToolManifest('terminal_execute').tier).toBe('exec');

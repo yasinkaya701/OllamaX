@@ -221,6 +221,31 @@ async function executeTool(manifest, args, context = {}) {
         result = { content: `IMG_READY:${JSON.stringify({ prompt: args.prompt, provider: args.provider || 'openai', size: args.size || '1024x1024' })}`, type: 'img_ready' };
         break;
       }
+      /* V3.18: tarayıcı kontrol araçları */
+      case 'browser_navigate': {
+        const browser = require('./browser');
+        const navRes = await browser.navigate(args.url);
+        result = { content: `NAV:${JSON.stringify(navRes)}`, type: 'browser_nav', ...navRes };
+        break;
+      }
+      case 'browser_screenshot': {
+        const browser = require('./browser');
+        const shotRes = await browser.screenshot();
+        result = { content: `[EKRAN] base64 PNG alındı (${shotRes.base64 ? Math.round((shotRes.base64.length * 3) / 4 / 1024) : 0} KB)`, type: 'browser_shot', ...shotRes };
+        break;
+      }
+      case 'browser_click': {
+        const browser = require('./browser');
+        const clickRes = await browser.click(args.target);
+        result = { content: `[TIKLAMA] ${clickRes.status}`, type: 'browser_click', ...clickRes };
+        break;
+      }
+      case 'browser_type': {
+        const browser = require('./browser');
+        const typeRes = await browser.typeText(args.selector, args.text);
+        result = { content: `[YAZMA] ${typeRes.status}`, type: 'browser_type', ...typeRes };
+        break;
+      }
       default:
         result = { content: `[HATA] Desteklenmeyen araç: ${manifest.name}`, error: 'unsupported' };
     }
