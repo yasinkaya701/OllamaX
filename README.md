@@ -2,12 +2,16 @@
 
 <img src="assets/preview.png" alt="Krevyx Ultra Preview" width="800">
 
-# 🤖 Krevyx Ultra Pro
-### Industrial-Grade AI Operating System & Agent Studio
+# 🤖 Krevyx — Open-Source AI Agent Studio
+### Local Ollama + 18 Cloud Providers, Tek Stüdyoda Agent Orkestrasyonu
 
-**Krevyx Ultra**, yerel gücü (Ollama) ve bulut zekasını (OpenAI, Claude, Gemini) hibrit bir mimaride birleştiren, çoklu ajan orkestrasyonuna odaklanmış profesyonel bir yapay zeka işletim sistemidir.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Release](https://img.shields.io/github/v/release/yasinkaya701/OllamaX?label=Latest&color=green)](https://github.com/yasinkaya701/OllamaX/releases/latest)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](https://github.com/yasinkaya701/OllamaX/releases/latest)
 
-[Özellikler](#-özellikler) • [Kurulum Rehberi](#-kurulum-rehberi) • [Windows](#-windows-kurulum) • [macOS](#-macos-kurulum) • [Kullanım](#-kullanım-kılavuzu)
+**Krevyx**, yerel gücü (Ollama) ve bulut zekasını (OpenAI, Claude, Gemini, 18+ sağlayıcı) hibrit bir mimaride birleştiren, tamamen açık kaynak (MIT) bir yapay zeka ajan stüdyosudur. Ajanlar, ekipler, Composer modu, MCP sunucuları ve CLI modu tek uygulamada birleşir.
+
+[Özellikler](#-özellikler) • [CLI](#-krevyx-cli-v318) • [Kurulum Rehberi](#-kurulum-rehberi) • [Windows](#-windows-kurulum) • [macOS](#-macos-kurulum) • [Kullanım](#-kullanım-kılavuzu)
 
 </div>
 
@@ -15,12 +19,41 @@
 
 ## ✨ Özellikler
 
-- **🛡️ Red Team / Security Audit:** MITRE ATT&CK tabanlı sızma testi ve güvenlik analizi.
-- **🏗️ Cloud Architecture:** Dağıtık sistem tasarımı ve altyapı dökümantasyonu.
-- **💻 Senior Engineering:** SOLID ve Clean Code standartlarında kod üretimi.
-- **🪄 Meta-Prompting:** Karmaşık görevler için optimize edilmiş ajan talimatları.
-- **👻 Ghost Mode:** Saydam arayüz ile arka planda çalışma desteği.
+- **🎭 Ajan Orkestrasyonu:** Çoklu ajanlar, ekipler ve Head-Agent tabanlı zincir yürütme (v3.16+).
+- **🔗 18+ Bulut Sağlayıcı + Ollama:** Tek stüdyoda yerel ve bulut modelleri, anahtarsız Ollama keşfi.
+- **🖼️ Composer Modu:** Proje dosyalarını bağlayan, çok adımlı görev yürüten kompozisyon katmanı.
+- **🔌 MCP Ekosistemi:** Sunucu yönetimi + ajan başına MCP setleri (her ajan kendi araç kümesini taşır).
+- **📦 Şablon & Eklenti Sistemi:** Prompt şablonları (CRUD + import/export) ve JS eklenti yükleyici (v3.17).
+- **🖥️ Krevyx CLI:** Penceresiz (headless) `krevyx run` ile CI/CD entegrasyonu (v3.18).
+- **📋 Audit Log:** Zincir doğrulaması + JSON/CSV/SARIF export (v3.18).
+- **🌐 Browser Control:** Headless Chromium CDP ile ajanlara tarayıcı kontrolü (v3.18).
+- **🔒 Keychain Vault & Air-Gapped Mod:** Anahtar kasası + ağ modları (v3.14).
 - **📜 Quest Log:** Ajanlara atanan görevlerin gerçek zamanlı takibi.
+
+---
+
+## 🖥️ Krevyx CLI (v3.18)
+
+Uygulamayı açmadan terminalden ajan çalıştırın — CI/CD boru hatlarına ve sunucu ortamlarına uygundur.
+
+```bash
+# Doğrudan klon ile
+pnpm install
+cd OllamaX && node bin/krevyx.js run "projenin README'sini özetle" --mode local
+
+# Profil paketi paylaşımı
+node bin/krevyx.js profile export my-studio.krevyxprofile
+node bin/krevyx.js profile import /tmp/my-studio.krevyxprofile
+```
+
+**`.krevyxprofile`** formatı; ajan profillerini, şablonları, provider (anahtarsız) config'lerini ve MCP tanımlarını tek dosyada paketler. API anahtarları asla paketlenmez.
+
+---
+
+## 🛡️ Enterprise / Denetim (v3.18)
+
+- **Ajan–MCP Broker:** Her ajana ayrı MCP sunucu seti atanır; baş ajan (Head-Agent) diğer ajana promt yönlendirir.
+- **Denetim Export:** Etkinlik günlüğü `JSON`, `CSV` veya GitHub Actions ile uyumlu `SARIF` olarak dışa aktarılabilir; zincir bütünlüğü hash doğrulamasıyla garantilenir.
 
 ---
 
