@@ -976,6 +976,121 @@ function Roadmap() {
   );
 }
 
+/* ========== Feedback ========== */
+function Feedback() {
+  const { t } = useLanguage();
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setStatus("sending");
+  };
+
+  return (
+    <section id="geri-bildirim" className="py-24 md:py-32 border-t border-border/60 relative overflow-hidden">
+      <div className="glow-spot" style={{ width: 520, height: 520, bottom: "-12%", left: "-10%", opacity: 0.35 }} />
+      <div className="container relative">
+        <div className="grid md:grid-cols-2 gap-12 items-start">
+          <div>
+            <Reveal>
+              <div className="flex items-center gap-4 mb-6 font-mono text-xs tracking-[0.18em] uppercase text-primary">
+                <span className="text-muted-foreground">{t.feedback_index}</span>
+                <span className="h-px w-10 bg-primary/50" />
+                <span>{t.feedback_label}</span>
+              </div>
+              <h2 className="text-3xl md:text-5xl font-display font-semibold mb-5">{t.feedback_title}</h2>
+              <p className="text-muted-foreground leading-relaxed max-w-md">{t.feedback_sub}</p>
+              <div className="mt-8 flex items-center gap-3 font-mono text-[11px] text-muted-foreground tracking-[0.12em] uppercase">
+                <span className="w-2 h-2 rounded-full bg-primary/70 animate-pulse" />
+                <span>yk7016903@gmail.com</span>
+              </div>
+            </Reveal>
+          </div>
+          <Reveal delay={80}>
+            <form
+              action="https://formsubmit.co/yk7016903@gmail.com"
+              method="POST"
+              onSubmit={handleSubmit}
+              className="glow-card border border-border/70 rounded-2xl p-7 bg-card/40 backdrop-blur-sm space-y-4"
+              aria-label={t.aria_feedback}
+            >
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground mb-2" htmlFor="fb-name">
+                    {t.feedback_name}
+                  </label>
+                  <input
+                    id="fb-name"
+                    name="name"
+                    type="text"
+                    className="w-full bg-background/60 border border-border/70 rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-colors"
+                    placeholder="Ada Lovelace"
+                  />
+                </div>
+                <div>
+                  <label className="block font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground mb-2" htmlFor="fb-email">
+                    {t.feedback_email}
+                  </label>
+                  <input
+                    id="fb-email"
+                    name="email"
+                    type="email"
+                    className="w-full bg-background/60 border border-border/70 rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-colors"
+                    placeholder="ada@example.com"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground mb-2" htmlFor="fb-subject">
+                  {t.feedback_subject}
+                </label>
+                <input
+                  id="fb-subject"
+                  name="subject"
+                  type="text"
+                  required
+                  className="w-full bg-background/60 border border-border/70 rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-colors"
+                  placeholder={t.feedback_subject_placeholder}
+                />
+              </div>
+              <div>
+                <label className="block font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground mb-2" htmlFor="fb-message">
+                  {t.feedback_message}
+                </label>
+                <textarea
+                  id="fb-message"
+                  name="message"
+                  required
+                  rows={5}
+                  className="w-full bg-background/60 border border-border/70 rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-colors resize-y"
+                  placeholder={t.feedback_message_placeholder}
+                />
+              </div>
+              {/* FormSubmit configurasyon */}
+              <input type="hidden" name="_subject" value="Krevyx Site Feedback" />
+              <input type="hidden" name="_captcha" value="false" />
+              <input type="hidden" name="_template" value="table" />
+              <button
+                type="submit"
+                disabled={status === "sending"}
+                className="w-full bg-primary text-primary-foreground font-display font-semibold text-sm tracking-wide rounded-lg py-3.5 hover:bg-primary/90 active:scale-[0.98] transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {status === "sending" ? t.feedback_sending : t.feedback_submit}
+              </button>
+              {status === "sent" && (
+                <p className="text-xs text-primary font-mono tracking-wide">{t.feedback_sent}</p>
+              )}
+              {status === "error" && (
+                <p className="text-xs text-destructive font-mono tracking-wide">{t.feedback_error}</p>
+              )}
+            </form>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ========== Footer ========== */
 function Footer() {
   const { t } = useLanguage();
@@ -1099,6 +1214,7 @@ export default function Home() {
         <Faq />
         <Changelog />
         <Roadmap />
+        <Feedback />
       </main>
       <Footer />
     </div>

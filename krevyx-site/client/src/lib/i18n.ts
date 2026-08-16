@@ -326,6 +326,23 @@ export const translations = {
     aria_github: "GitHub deposu",
     aria_faq: "Sıkça sorulan sorular",
     downloads_recommended: "Sistemine önerilir",
+
+    // Geri Bildirim
+    feedback_index: "— 04",
+    feedback_label: "Geri Bildirim",
+    feedback_title: "Fikrini duyur.",
+    feedback_sub: "Krevyx topluluk geri bildirimiyle şekilleniyor. Önerin, hatan veya övgün — doğrudan geliştiriciye ulaşır. E-posta zorunlu değil.",
+    feedback_name: "Ad (opsiyonel)",
+    feedback_email: "E-posta (opsiyonel)",
+    feedback_subject: "Konu",
+    feedback_subject_placeholder: "Öneri · Hata · Genel",
+    feedback_message: "Mesajın",
+    feedback_message_placeholder: "Düşüncelerini yaz…",
+    feedback_submit: "Gönder",
+    feedback_sending: "Gönderiliyor…",
+    feedback_sent: "Teşekkürler! Geri bildirimin ulaştı.",
+    feedback_error: "Bir şeyler ters gitti — lütfen tekrar dene.",
+    aria_feedback: "Geri bildirim gönder",
   },
 
   en: {
@@ -648,6 +665,23 @@ export const translations = {
     aria_github: "GitHub repository",
     aria_faq: "Frequently asked questions",
     downloads_recommended: "Recommended for your system",
+
+    // Feedback
+    feedback_index: "— 04",
+    feedback_label: "Feedback",
+    feedback_title: "Make your voice heard.",
+    feedback_sub: "Krevyx is shaped by community feedback. Your suggestion, bug report or praise — it reaches the developer directly. Email is optional.",
+    feedback_name: "Name (optional)",
+    feedback_email: "Email (optional)",
+    feedback_subject: "Subject",
+    feedback_subject_placeholder: "Suggestion · Bug · General",
+    feedback_message: "Your message",
+    feedback_message_placeholder: "Write your thoughts…",
+    feedback_submit: "Send",
+    feedback_sending: "Sending…",
+    feedback_sent: "Thanks! Your feedback reached us.",
+    feedback_error: "Something went wrong — please try again.",
+    aria_feedback: "Send feedback",
   },
 };
 
