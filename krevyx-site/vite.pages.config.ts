@@ -8,7 +8,9 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  base: "./",
+  // Must match the exact casing of the GitHub repo path (repo casing is
+  // significant on Pages). The 404.html fallback and fix-pages-meta use this.
+  base: "/OllamaX/",
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
