@@ -192,3 +192,10 @@
 - `src/` layout (`src/main.js`, `src/preload.js`, `src/renderer/`).
 - Jest (`tests/delegate-parse.test.js`), ESLint, Prettier, GitHub Actions CI.
 - Docs: `CONTRIBUTING.md`, `docs/API.md`, `docs/TROUBLESHOOTING.md`, `docs/DEVELOPMENT.md`, issue/PR templates.
+
+## 3.16.2 — 2026-08-16
+
+### CI Düzeltmesi
+
+- `pnpm/action-setup` artık `actions/setup-node`dan ÖNCE çalışıyor (setup-node `cache: pnpm` ön doğrulaması).
+
