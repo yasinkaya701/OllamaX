@@ -13,3 +13,4 @@ mac-unpacked/
 *.exe
 *.dmg
 *.deb
+!krevyx-site/dist

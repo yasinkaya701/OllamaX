@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Krevyx — AI Agent Studio</title>
+<meta name="robots" content="noindex" />
+<!-- GitHub Pages SPA fallback: the requested route lives in the client-side
+     router (index.html). This page redirects to the app root while preserving
+     the intended path so the SPA can handle it on first load. -->
+<script>
+  var path = window.location.pathname;
+  var base = "/OllamaX";
+  // strip the Pages base from the path so the SPA receives the clean route
+  var clean = path.indexOf(base) === 0 ? path.slice(base.length) : path;
+  sessionStorage.setItem("krevyx.redirectTo", clean || "/");
+  window.location.replace(base + "/");
+</script>
+<noscript>
+  <p>Redirecting to the Krevyx app… <a href="/OllamaX/">Go home</a></p>
+</noscript>
+</head>
+<body></body>
+</html>

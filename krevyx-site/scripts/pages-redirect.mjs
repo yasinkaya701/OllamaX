@@ -25,3 +25,8 @@ if (!html.includes("krevyx.redirectTo")) {
 } else {
   console.log("Hook already present");
 }
+
+// Also patch the dev-server-only script tag references that break on Pages.
+// Vite adds the debug-collector and storage-proxy scripts only in dev mode, so
+// nothing else needs rewriting for production.
+console.log("Pages build OK — base is /OllamaX/, assets resolve under it");
