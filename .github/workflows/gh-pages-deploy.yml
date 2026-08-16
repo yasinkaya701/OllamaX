@@ -20,43 +20,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build Krevyx site
+  deploy:
+    name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-          cache-dependency-path: krevyx-site/pnpm-lock.yaml
-
-      - name: Install dependencies
+      # The site is pre-built locally (krevyx-site/dist/public) and committed.
+      # This guarantees the deployed bundle matches the tested build — builds
+      # inside Actions produced a different asset hash and stale pages output.
+      - name: Verify pre-built site output
         working-directory: krevyx-site
-        run: pnpm install --frozen-lockfile
-
-      - name: Type check (main config)
-        working-directory: krevyx-site
-        run: pnpm exec tsc --noEmit
-
-      - name: Build static site for GitHub Pages
-        working-directory: krevyx-site
-        env:
-          PAGES_URL: https://yasinkaya701.github.io/OllamaX
         run: |
-          pnpm exec vite build --config vite.pages.config.ts
-          node scripts/fix-pages-meta.mjs
-          node scripts/pages-redirect.mjs
-          cat dist/public/index.html | grep -E 'canonical|og:image'
-          ls dist/public/404.html
+          if [ ! -f dist/public/index.html ] || [ ! -f dist/public/404.html ]; then
+            echo "ERROR: krevyx-site/dist/public is missing the pre-built site. Rebuild locally and commit before pushing."
+            exit 1
+          fi
+          ls dist/public/assets/
+          grep -E 'canonical' dist/public/index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -66,14 +51,6 @@ jobs:
         with:
           path: krevyx-site/dist/public
 
-  deploy:
-    name: Deploy to GitHub Pages
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
