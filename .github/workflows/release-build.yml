@@ -48,8 +48,10 @@ jobs:
       - name: Verify pnpm
         run: pnpm --version
 
-      - name: Allow native module build scripts
-        run: echo 'onlyBuiltDependencies[]="electron-winstaller"' >> .npmrc && echo 'onlyBuiltDependencies[]="keytar"' >> .npmrc && echo 'onlyBuiltDependencies[]="node-pty"' >> .npmrc
+      - name: Approve native module build scripts (pnpm v11)
+        run: printf 'y\n' | pnpm approve-builds --all
+        env:
+          CI: "true"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
