@@ -206,3 +206,10 @@
 
 - pnpm v11 varsayılan `onlyBuiltDependencies` kısıtına native modüller (keytar, node-pty, electron-winstaller) eklendi (`pnpm approve-builds` sorunu çözüldü).
 
+
+## 3.16.4 — 2026-08-16
+
+### CI Düzeltmesi
+
+- Native modül build script onayı `.npmrc` üzerinden `onlyBuiltDependencies[]` ile veriliyor.
+
