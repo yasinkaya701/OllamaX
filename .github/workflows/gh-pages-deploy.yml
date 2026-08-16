@@ -1,0 +1,75 @@
+name: Deploy Krevyx website to GitHub Pages
+
+on:
+  # Runs on pushes to main that touch the website, and on demand
+  push:
+    branches: [main]
+    paths:
+      - "krevyx-site/**"
+      - ".github/workflows/gh-pages-deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment, skip stale runs, and cancel in-progress runs
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Krevyx site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: krevyx-site/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: krevyx-site
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check (main config)
+        working-directory: krevyx-site
+        run: pnpm exec tsc --noEmit
+
+      - name: Build static site for GitHub Pages
+        working-directory: krevyx-site
+        run: |
+          pnpm exec vite build --config vite.pages.config.ts
+          node scripts/fix-pages-meta.mjs
+          cat dist/public/index.html | grep -E 'canonical|og:image'
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload build artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: krevyx-site/dist/public
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
