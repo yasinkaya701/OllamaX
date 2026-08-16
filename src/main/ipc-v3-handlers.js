@@ -334,6 +334,7 @@ function registerIpcV3Handlers(mainWindow) {
   handler('audit-log', (_e, { actor, action, limit, offset } = {}) => {
     return auditLog.query({ actor, action, limit: limit || 100, offset: offset || 0 });
   });
+  handler('audit-verify', () => ({ ok: true, ...auditLog.verifyChain() }));
 
   /* ------------------------------ IMAGE GENERATION ------------------------------ */
 
@@ -460,6 +461,32 @@ function registerIpcV3Handlers(mainWindow) {
     return result;
   });
 
+  handler('cost-totals', (_e, { month } = {}) => {
+    const costEngine = require('./cost/cost-engine');
+    return { ok: true, month: month || costEngine.monthKey(), ...costEngine.totalsFor(month || costEngine.monthKey()) };
+  });
+  handler('cost-budgets-get', () => {
+    const costEngine = require('./cost/cost-engine');
+    return { ok: true, budgets: costEngine.readBudgets(configStore) };
+  });
+  handler('cost-budgets-set', (_e, { budgets } = {}) => {
+    const costEngine = require('./cost/cost-engine');
+    const clean = {};
+    for (const [p, v] of Object.entries(budgets || {})) {
+      const n = Number(v);
+      if (Number.isFinite(n) && n > 0) clean[p] = Math.round(n * 100) / 100;
+    }
+    costEngine.writeBudgets(configStore, clean);
+    return { ok: true, budgets: clean };
+  });
+  handler('cost-check', (_e, { provider } = {}) => {
+    const costEngine = require('./cost/cost-engine');
+    return { ok: true, ...costEngine.checkBudget(configStore, provider) };
+  });
+  handler('cost-csv', (_e, { month } = {}) => {
+    const costEngine = require('./cost/cost-engine');
+    return { ok: true, csv: costEngine.exportCsv(month) };
+  });
   handler('orchestra-chain', async (_e, payload) => {
     if (!payload || !Array.isArray(payload.order) || payload.order.length === 0) return { ok: false, error: 'order gerekli.' };
     const result = await orchestrator.runChain(payload.order, String(payload.task || ''));

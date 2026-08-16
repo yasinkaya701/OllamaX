@@ -397,8 +397,12 @@
     if (!pane) return;
     pane.innerHTML = '';
     const wrap = h('div', { className: 'audit-wrap' });
+    /* V3.15 (A1-3): zincir bütünlük özeti */
+    const verifyBar = h('div', { className: 'audit-verify-bar', id: 'audit-verify-bar' });
+    verifyBar.textContent = 'Zincir kontrol ediliyor…';
+    wrap.appendChild(verifyBar);
     const table = h('table', { className: 'audit-table' });
-    table.innerHTML = `<thead><tr><th>Zaman</th><th>Aktör</th><th>İşlem</th><th>Süre</th></tr></thead><tbody></tbody>`;
+    table.innerHTML = `<thead><tr><th>Zaman</th><th>Aktör</th><th>İşlem</th><th>Süre</th><th title="SHA-256 zincir bütünlük karması">Karma</th></tr></thead><tbody></tbody>`;
     wrap.appendChild(table);
     const refreshBtn = h('button', { className: 'small-btn full-w', type: 'button' }, 'Yenile');
     pane.appendChild(wrap);
@@ -410,8 +414,24 @@
       try {
         const res = await v3.invoke('audit-log', 200);
         const entries = (res && res.ok && Array.isArray(res.entries)) ? res.entries : [];
+        /* V3.15 (A1-3): SHA-256 zincir bütünlüğü kontrolü */
+        if (verifyBar) {
+          try {
+            const v = await v3.invoke('audit-verify', 200);
+            if (v?.valid) {
+              verifyBar.textContent = `✓ Zincir bütünlüğü doğrulandı · ${v.total || entries.length} kayıt`;
+              verifyBar.className = 'audit-verify-bar sec-ok';
+            } else {
+              verifyBar.textContent = `✗ Zincir kırık (satır ${v.badLine}) — kayıtlar değiştirilmiş olabilir`;
+              verifyBar.className = 'audit-verify-bar sec-warn';
+            }
+          } catch {
+            verifyBar.textContent = 'Zincir kontrolü yapılamadı';
+            verifyBar.className = 'audit-verify-bar sec-warn';
+          }
+        }
         if (!entries.length) {
-          tbody.appendChild(h('tr', {}, h('td', { colSpan: '4', className: 'empty-note' }, 'Denetim kaydı yok.')));
+          tbody.appendChild(h('tr', {}, h('td', { colSpan: '5', className: 'empty-note' }, 'Denetim kaydı yok.')));
           return;
         }
         for (const e of entries.slice(0, 150)) {
@@ -423,10 +443,22 @@
           tr.appendChild(h('td', {}, esc(e.actor || '')));
           tr.appendChild(h('td', { className: 'audit-action' }, esc(String(e.action || e.type || '').slice(0, 40))));
           tr.appendChild(h('td', {}, e.duration_ms != null ? `${e.duration_ms}ms` : ''));
+          /* V3.15 (A1-3): zincir karması — tıklanınca tam hash kopyalanır */
+          const hashCell = h('td', { className: 'audit-hash-cell', title: e.hash ? 'Tam hash için tıkla' : '' }, e.hash ? esc(String(e.hash).slice(0, 10)) + '…' : '—');
+          if (e.hash) {
+            hashCell.style.cursor = 'pointer';
+            hashCell.addEventListener('click', () => {
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                void navigator.clipboard.writeText(String(e.hash));
+                if (typeof toast === 'function') toast('Hash panoya kopyalandı', 'success');
+              }
+            });
+          }
+          tr.appendChild(hashCell);
           tbody.appendChild(tr);
         }
       } catch {
-        tbody.appendChild(h('tr', {}, h('td', { colSpan: '4', className: 'empty-note' }, 'Yüklenemedi.')));
+        tbody.appendChild(h('tr', {}, h('td', { colSpan: '5', className: 'empty-note' }, 'Yüklenemedi.')));
       }
     }
     refreshBtn.addEventListener('click', refresh);

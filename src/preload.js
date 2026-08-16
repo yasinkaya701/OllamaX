@@ -43,6 +43,12 @@ const INVOKE = new Set([
   'vault-get', // V3.14 (A1-1): kasa anahtar kontrolü
   'network-mode-get', // V3.14 (A1-2): ağ modu okuma
   'network-mode-set', // V3.14 (A1-2): ağ modu (air-gapped) geçişi
+  'cost-totals', // V3.15 (A2): aylık maliyet toplamları
+  'cost-budgets-get', // V3.15 (A2-1): bütçe limitleri okuma
+  'cost-budgets-set', // V3.15 (A2-1): bütçe limiti yazma
+  'cost-check', // V3.15 (A2-1): istek öncesi bütçe kontrolü
+  'cost-csv', // V3.15 (A2-4): kullanım raporu CSV export
+  'audit-verify', // V3.15 (A1-3): SHA-256 zincir bütünlük doğrulaması
 ]);
 
 contextBridge.exposeInMainWorld('krevyxApi', {

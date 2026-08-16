@@ -1847,7 +1847,100 @@ function bindAll() {
     renderSettingsMachinesList();
     refreshAppearanceSettings();
     refreshAdvancedParams();
+    refreshCostPanel();
+    refreshSecurityPanel();
     openModal('settings-modal');
+  });
+
+  /* V3.15 (A2-2): bütçe limitleri kaydetme */
+  on('btn-cost-save-budgets', 'click', async () => {
+    if (!api) return;
+    const inputs = qa('#cost-budget-inputs input');
+    const budgets = {};
+    for (const inp of inputs) {
+      const v = Number((inp.value || '').trim());
+      if (Number.isFinite(v) && v > 0) budgets[inp.dataset.provider] = v;
+    }
+    try {
+      const res = await api.invoke('cost-budgets-set', { budgets });
+      if (res?.ok) {
+        toast('Bütçe limitleri kaydedildi · soft stop etkin', 'success');
+        void refreshCostPanel();
+      } else {
+        toast(res?.error || 'Kaydedilemedi', 'error');
+      }
+    } catch {
+      toast('Bütçe kaydı başarısız', 'error');
+    }
+  });
+
+  /* V3.15 (A2-4): CSV raporu indir */
+  on('btn-cost-csv', 'click', async () => {
+    if (!api) return;
+    try {
+      const res = await api.invoke('cost-csv', { month: q('#cost-month-label')?.textContent?.trim() || undefined });
+      const csv = res?.csv;
+      if (typeof csv === 'string' && csv.length) {
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'krevyx-cost-report.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast('Rapor indirildi', 'success');
+      } else {
+        toast('Bu ay için veri yok', 'info');
+      }
+    } catch {
+      toast('Rapor oluşturulamadı', 'error');
+    }
+  });
+
+  /* V3.14 (A1): ağ modu çip geçişi */
+  qa('#security-mode-chips .theme-chip').forEach((chip) => {
+    chip.addEventListener('click', async () => {
+      if (!api) return;
+      const mode = chip.dataset.netmode;
+      try {
+        const res = await api.invoke('network-mode-set', { mode });
+        if (res?.ok) {
+          toast(mode === 'local-only' ? 'Air-gapped mod etkin · yalnız yerel sağlayıcılar' : 'Normal mod · bulut sağlayıcılar açık', 'success');
+          qa('#security-mode-chips .theme-chip').forEach((c) => c.classList.remove('active'));
+          chip.classList.add('active');
+          void refreshSecurityPanel();
+        } else {
+          toast(res?.error || 'Mod değiştirilemedi', 'error');
+        }
+      } catch {
+        toast('Ağ modu değiştirilemedi', 'error');
+      }
+    });
+  });
+
+  /* V3.14 (A1-1): düz metin anahtarları kasaya taşı */
+  on('btn-security-carry-keys', 'click', async () => {
+    if (!api) return;
+    const moved = [];
+    try {
+      for (const p of ['openai', 'anthropic', 'gemini', 'openrouter', 'xai', 'mistral', 'deepseek', 'cohere', 'perplexity', 'together', 'groq', 'cerebras', 'fireworks', 'replicate']) {
+        const raw = state.settings[p] || '';
+        if (typeof raw === 'string' && raw.trim() && !raw.startsWith('VAULT:')) {
+          const ref = await api.invoke('vault-set', { provider: p, key: raw.trim() });
+          if (ref?.ok) moved.push(p);
+        }
+      }
+      if (moved.length) {
+        toast(`${moved.length} sağlayıcı anahtarı kasaya taşındı (${moved.join(', ')})`, 'success');
+        void refreshSecurityPanel();
+      } else {
+        toast('Taşınacak düz metin anahtar bulunamadı', 'info');
+      }
+    } catch {
+      toast('Anahtar taşıma başarısız', 'error');
+    }
   });
 
   // V3.1: Görünüm çip seçimleri — anında önizleme (saveSettings'te de kalıcı kaydedilir)
@@ -2459,6 +2552,88 @@ async function saveApiKeys() {
   await bootstrapCloudModels();
   buildApiModelRows();
   populateModelSelect(state.currentProvider);
+}
+
+/* V3.15 (A2-2): maliyet ve bütçe panelini yeniler */
+const COST_COMPARE = { cursorPro: 40, claudeMax: 200 }; // $/ay sabit karşılaştırma referansları
+async function refreshCostPanel() {
+  const totalEl = q('#cost-total-amount');
+  const monthEl = q('#cost-month-label');
+  const rowsEl = q('#cost-provider-rows');
+  const inputsEl = q('#cost-budget-inputs');
+  if (!api || !totalEl) return;
+  try {
+    const [totalsRes, budgetsRes] = await Promise.all([
+      api.invoke('cost-totals', {}),
+      api.invoke('cost-budgets-get', {}),
+    ]);
+    const totals = totalsRes?.ok ? totalsRes : { total: 0, byProvider: {}, requests: 0 };
+    const budgets = (budgetsRes?.ok && budgetsRes.budgets) ? budgetsRes.budgets : {};
+    if (monthEl) monthEl.textContent = totals.month || '';
+    totalEl.textContent = totals.total > 0 ? `≈$${totals.total.toFixed(2)}` : '$0 · kullanım yok';
+    /* A2-2 karşılaştırma kartı */
+    if (rowsEl) {
+      const alt = COST_COMPARE.cursorPro + COST_COMPARE.claudeMax;
+      rowsEl.innerHTML = '';
+      for (const [p, v] of Object.entries(totals.byProvider || {})) {
+        const ratio = Number(budgets[p]) > 0 ? (v.cost / budgets[p]) : 0;
+        const div = h('div', { className: 'cost-provider-row' });
+        div.innerHTML = `<span class="cpr-name">${esc(p)}</span><span class="cpr-nums">≈$${v.cost.toFixed(2)} · ${v.requests} istek${Number(budgets[p]) > 0 ? ` · limit $${Number(budgets[p])}` : ''}</span>${ratio > 0 ? `<div class="cpr-bar-track"><div class="cpr-bar-fill${ratio >= 1 ? ' cpr-over' : ratio >= 0.8 ? ' cpr-warn' : ''}" style="width:${Math.min(100, ratio * 100).toFixed(0)}%"></div></div>` : ''}`;
+        rowsEl.appendChild(div);
+      }
+      if (totals.total > 0) {
+        const cmp = h('div', { className: 'cost-compare-note' });
+        cmp.textContent = `Aynı dönemde aynı sağlayıcılar klasik planlarla (Cursor Pro + Claude Max) ≈$${alt}/ay olurdu.`;
+        rowsEl.appendChild(cmp);
+      } else if (!rowsEl.querySelector('.cost-provider-row')) {
+        const note = h('div', { className: 'empty-note' });
+        note.textContent = 'Bu ay için kayıtlanan kullanım yok.';
+        rowsEl.appendChild(note);
+      }
+    }
+    /* bütçe inputları */
+    if (inputsEl) {
+      const providers = ['openai', 'anthropic', 'gemini', 'openrouter', 'xai', 'mistral', 'deepseek', 'groq', 'cerebras', 'fireworks', 'together', 'cohere', 'perplexity', 'replicate', 'azure', 'aws-bedrock'];
+      inputsEl.innerHTML = '';
+      for (const p of providers) {
+        const v = budgets[p] || '';
+        const div = h('div', {});
+        div.innerHTML = `<label style="font-size:11px;color:var(--v3-text-muted)">${p} $/ay</label><input type="number" min="1" step="1" placeholder="limit yok" data-provider="${p}" value="${v !== '' ? Number(v) : ''}" class="text-input">`;
+        inputsEl.appendChild(div);
+      }
+    }
+  } catch {
+    if (totalEl) totalEl.textContent = '—';
+  }
+}
+
+/* V3.14 (A1) + V3.15: güvenlik durumu panelini yeniler */
+async function refreshSecurityPanel() {
+  const vaultEl = q('#security-vault-value');
+  const netEl = q('#security-network-value');
+  const chips = qa('#security-mode-chips .theme-chip');
+  if (!api) return;
+  try {
+    const [vaultRes, netRes] = await Promise.all([
+      api.invoke('vault-status', {}),
+      api.invoke('network-mode-get', {}),
+    ]);
+    if (vaultEl) {
+      const mode = vaultRes?.mode || 'memory';
+      const label = mode === 'keychain' ? '✓ OS keychain (kasa aktif)' : mode === 'memory' ? '⚠ Yalnızca bellek (keytar yok)' : '✗ Kapalı';
+      vaultEl.textContent = label;
+      vaultEl.className = `security-value ${mode === 'keychain' ? 'sec-ok' : 'sec-warn'}`;
+    }
+    if (netEl) {
+      const mode = netRes?.mode || 'normal';
+      netEl.textContent = mode === 'local-only' ? '🔒 Air-gapped — yalnız yerel' : 'Normal — bulut açık';
+      netEl.className = `security-value ${mode === 'local-only' ? 'sec-ok' : ''}`;
+      chips.forEach((c) => c.classList.toggle('active', c.dataset.netmode === mode));
+    }
+  } catch {
+    if (vaultEl) vaultEl.textContent = 'okunamadı';
+    if (netEl) netEl.textContent = 'okunamadı';
+  }
 }
 
 /* V3.1: Ayarlar modalı açıldığında mevcut tema/yoğunluk seçili çipleri işaretler */

@@ -141,6 +141,21 @@ function readSlashSettings() {
     return {};
   }
 }
+/* V3.15 (A2-1): maliyet motoru — bulut sağlayıcılarda token sayacı */
+const costEngine = require('./main/cost/cost-engine');
+const CLOUD_PROVIDERS = ['openai', 'anthropic', 'gemini', 'openrouter', 'xai', 'mistral', 'deepseek', 'cohere', 'perplexity', 'together', 'groq', 'cerebras', 'fireworks', 'replicate', 'azure', 'aws-bedrock'];
+function recordChatUsage({ provider, model, inputTokens, outputTokens }) {
+  if (!CLOUD_PROVIDERS.includes(provider)) return; // yerel sağlayıcılarda maliyet ~0, kayıt gerekmez
+  if (!Number.isFinite(inputTokens) || !Number.isFinite(outputTokens)) return;
+  try {
+    const result = costEngine.recordUsage(configStore, { provider, model, inputTokens, outputTokens });
+    if (result.state === 'warn') {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('cost-budget-warn', { provider, ratio: result.ratio, limit: result.limit });
+      }
+    }
+  } catch { /* kayıt hatası akışı bloklamaz */ }
+}
 function defaultOllamaHostForSlash() {
   const settings = readSlashSettings();
   const machines = Array.isArray(settings.ollamaMachines) ? settings.ollamaMachines : [];
@@ -208,6 +223,10 @@ ipcMain.on('slash-tool', (event, { tool, msgs, prov, model }) => {
             const j = JSON.parse(l);
             if (j.message?.content) event.reply('chat-chunk', { agentId, content: j.message.content });
             if (j.done === true) event.reply('chat-done', { agentId });
+            /* V3.15 (A2): Ollama streaming son parçasında eval_count ile tahmini token sayacı */
+            if (j.done === true && Number.isFinite(j.eval_count)) {
+              recordChatUsage({ provider: 'ollama', model, inputTokens: 0, outputTokens: j.eval_count });
+            }
           } catch { /* parça atlandı */ }
         }
       });
@@ -225,7 +244,10 @@ ipcMain.on('slash-tool', (event, { tool, msgs, prov, model }) => {
     runMultiChat(event, { provider: prov, model, apiKey, options, messages: msgs, agentId, modelParams });
   }
 });
-
+/* V3.15 (A2-1): bulut sağlayıcılarda token sayacı — provider-chat 'chat-usage' akışı */
+ipcMain.on('chat-usage', (_e, { provider, model, inputTokens, outputTokens } = {}) => {
+  recordChatUsage({ provider, model, inputTokens, outputTokens });
+});
 ipcMain.handle('set-window-opacity', (event, opacity) => {
   if (mainWindow) {
     mainWindow.setOpacity(opacity);

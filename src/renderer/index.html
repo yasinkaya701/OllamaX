@@ -554,6 +554,38 @@
       </div>
     </div>
 
+    <!-- V3.15 (A2-2): Maliyet ve Bütçe paneli -->
+    <h4 style="margin:18px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--v3-text-muted)">Maliyet &amp; Bütçe <span id="cost-month-label" style="color:var(--accent);font-weight:700;text-transform:lowercase;letter-spacing:0"></span></h4>
+    <div id="cost-summary-card" class="cost-summary-card">
+      <div class="cost-summary-main">
+        <div class="cost-summary-label">Bu ay tahmini bulut kullanım maliyeti</div>
+        <div class="cost-summary-amount" id="cost-total-amount">—</div>
+      </div>
+      <div id="cost-provider-rows"></div>
+    </div>
+    <div id="cost-budget-inputs" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;"></div>
+    <button type="button" id="btn-cost-save-budgets" class="small-btn full-w" style="margin-top:8px">Bütçe limitlerini kaydet</button>
+    <button type="button" id="btn-cost-csv" class="ghost-btn full-w" style="margin-top:6px">Aylık raporu indir (.csv)</button>
+    <p class="empty-note" style="margin-top:8px">Maliyetler yaklaşık/tahminidir; gerçek API faturalarıyla birebir karşılaştırma değildir.</p>
+
+    <!-- V3.14 (A1) + V3.15: Güvenlik durumu paneli -->
+    <h4 style="margin:18px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--v3-text-muted)">Güvenlik</h4>
+    <div id="security-status-panel" class="security-status-panel">
+      <div class="security-row">
+        <span class="security-label">Gizli anahtar kasası</span>
+        <span class="security-value" id="security-vault-value">Yükleniyor…</span>
+      </div>
+      <div class="security-row">
+        <span class="security-label">Ağ modu</span>
+        <span class="security-value" id="security-network-value">Yükleniyor…</span>
+      </div>
+    </div>
+    <div class="theme-chips" id="security-mode-chips" style="margin-top:8px">
+      <button type="button" class="theme-chip" data-netmode="normal">Normal (bulut açık)</button>
+      <button type="button" class="theme-chip" data-netmode="local-only">Air-gapped (yalnız yerel)</button>
+    </div>
+    <button type="button" id="btn-security-carry-keys" class="ghost-btn full-w" style="margin-top:6px">API anahtarlarını kasaya taşı</button>
+
     <div class="modal-ftr">
       <button class="ghost-btn modal-x-btn">İptal</button>
       <button id="btn-save-settings" class="primary-btn">Kaydet</button>

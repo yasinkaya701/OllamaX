@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.15.0 — 2026-08-16
+
+### Cost Command (A2 fazı: Bütçe Motoru + Maliyet Paneli)
+
+- **Yeni `src/main/cost/cost-engine.js`**: provider bazlı aylık bütçe motoru. Temsili USD/1M token fiyat tablosu (16 sağlayıcı), istek başına token sayacı → tahmini dolar maliyeti; %80 eşiğinde sarı uyarı, %100'de soft stop (kullanıcı onayıyla devam edilebilir).
+- **Kalıcılık**: `userData/cost-usage.jsonl` günlük satırlar; config'te `app.cost.budgets = { provider: limit }`.
+- **Yeni IPC uçları**: `cost-totals`, `cost-budgets-get`, `cost-budgets-set`, `cost-check`, `cost-csv`, `audit-verify`.
+- **Chat entegrasyonu**: `chat-usage` kanalı ile Ollama eval_count ve bulut sağlayıcı usage alanları (input/output token) kaydedilir; `runMultiChat` istek öncesi bütçe denetimi yapar.
+- **Renderer (Ayarlar modalı)**: "Maliyet & Bütçe" bölümü — aylık toplam kartı, provider satırı + limit barları, bütçe girdileri, CSV indirme ve karşılaştırma notu (Cursor Pro + Claude Max referansı).
+- **Denetim paneli yükseltmesi**: 5. sütun "Karma" (SHA-256 zincir bütünlük karması, tıkla → panoya kopyala); zincir doğrulama barı (`audit-verify`) panel üstünde ✓/✗ durumu gösterir.
+- **Güvenlik paneli (Ayarlar modalı)**: kasa modu + ağ modu durumu, air-gapped çip geçişi, "API anahtarlarını kasaya taşı" tek tıkla taşıma.
+
 ## 3.14.0 — 2026-08-16
 
 ### Güvenlik Katmanı v1 (A1 fazı: Kasa + Air-Gapped)

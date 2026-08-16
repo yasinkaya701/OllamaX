@@ -346,6 +346,19 @@ async function runMultiChat(event, { provider, model, apiKey, options = {}, mess
     reply('chat-done', { agentId });
     return;
   }
+  /* V3.15 (A2-1): bütçe motoru — soft stop; kullanıcı onayıyla devam edebilir */
+  if (networkMode.isCloudProviderAllowed(provider) && configStore) {
+    const { costEngine } = require('../cost/cost-engine-wire');
+    const budgetCheck = costEngine.checkBudget(configStore, provider);
+    if (budgetCheck && !budgetCheck.ok && budgetCheck.state === 'stopped') {
+      reply('chat-chunk', { agentId, content: `⚠️ Bütçe durduruldu: '${provider}' için aylık limit (≈$${budgetCheck.limit}) dolmuş. Ayarlar → Bütçe panelinden limiti artırmak ya da onayla devam etmek için “Maliyet” bölümünü kullanın.` });
+      reply('chat-done', { agentId });
+      return;
+    }
+    if (budgetCheck && budgetCheck.state === 'warn') {
+      reply('chat-chunk', { agentId, content: `⚠️ Bütçe uyarısı: '${provider}' kullanımı ≈$${budgetCheck.spent} / $${budgetCheck.limit}.` });
+    }
+  }
   if (!Array.isArray(messages) || !messages.length) {
     reply('chat-chunk', { agentId, content: '❌ Mesaj listesi boş.' });
     reply('chat-done', { agentId });
@@ -452,6 +465,11 @@ function startOpenAICompatibleStream(event, { hostname, port, path: pathStr, hea
             const j = JSON.parse(d);
             const txt = j.choices?.[0]?.delta?.content || j.choices?.[0]?.message?.content;
             if (txt) reply('chat-chunk', { agentId, content: txt });
+            /* V3.15 (A2): token sayacı — son [DONE] parçası usage alanı taşır */
+            const u = j.usage;
+            if (u && Number.isFinite(u.prompt_tokens) && Number.isFinite(u.completion_tokens)) {
+              reply('chat-usage', { agentId, provider, model, inputTokens: u.prompt_tokens, outputTokens: u.completion_tokens });
+            }
           } catch {
             /* ignore malformed chunk */
           }
