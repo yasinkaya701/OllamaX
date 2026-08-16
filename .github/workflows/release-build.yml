@@ -49,7 +49,7 @@ jobs:
         run: pnpm --version
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Install pty native module deps (Linux)
         if: matrix.platform == 'linux'
