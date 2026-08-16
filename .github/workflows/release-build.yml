@@ -48,6 +48,12 @@ jobs:
       - name: Verify pnpm
         run: pnpm --version
 
+      - name: Allow native module build scripts
+        run: |
+          pnpm config set --location=project onlyBuiltDependencies[] electron-winstaller
+          pnpm config set --location=project onlyBuiltDependencies[] keytar
+          pnpm config set --location=project onlyBuiltDependencies[] node-pty
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 

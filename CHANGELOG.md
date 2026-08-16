@@ -199,3 +199,10 @@
 
 - `pnpm/action-setup` artık `actions/setup-node`dan ÖNCE çalışıyor (setup-node `cache: pnpm` ön doğrulaması).
 
+
+## 3.16.3 — 2026-08-16
+
+### CI Düzeltmesi
+
+- pnpm v11 varsayılan `onlyBuiltDependencies` kısıtına native modüller (keytar, node-pty, electron-winstaller) eklendi (`pnpm approve-builds` sorunu çözüldü).
+
