@@ -22,6 +22,14 @@ const STREAM_TIMEOUT_MS = 180000;
 
 const CATALOG_PATH = path.join(__dirname, '..', '..', 'shared', 'model-catalog.json');
 
+/* V3.14 (A1-2/A1-1): air-gapped ağ modu + kasa anahtar çözücü */
+const networkMode = require('../network/network-mode');
+const secretsVault = require('../secrets/secrets-vault');
+let configStore = null;
+function setProviderChatConfigStore(store) {
+  configStore = store;
+}
+
 function readCatalog() {
   try {
     return JSON.parse(fs.readFileSync(CATALOG_PATH, 'utf8'));
@@ -323,7 +331,7 @@ function sanitizeParams(params = {}) {
   if (params.presence_penalty !== undefined) out.presence_penalty = num(params.presence_penalty, -2, 2);
   return out;
 }
-function runMultiChat(event, { provider, model, apiKey, options = {}, messages, agentId, modelParams }) {
+async function runMultiChat(event, { provider, model, apiKey, options = {}, messages, agentId, modelParams }) {
   const reply = (channel, payload) => {
     if (event && event.sender && !event.sender.isDestroyed()) event.sender.send(channel, payload);
   };
@@ -332,10 +340,24 @@ function runMultiChat(event, { provider, model, apiKey, options = {}, messages, 
     reply('chat-done', { agentId });
     return;
   }
+  /* V3.14 (A1-2): air-gapped modda yalnızca yerel sağlayıcılara izin */
+  if (!networkMode.isCloudProviderAllowed(provider)) {
+    reply('chat-chunk', { agentId, content: `❌ Air-gapped mod: '${provider}' bulut sağlayıcısı kapalı. Yalnızca Ollama/yerel modeller kullanılır.` });
+    reply('chat-done', { agentId });
+    return;
+  }
   if (!Array.isArray(messages) || !messages.length) {
     reply('chat-chunk', { agentId, content: '❌ Mesaj listesi boş.' });
     reply('chat-done', { agentId });
     return;
+  }
+  /* V3.14 (A1-1): anahtar boşsa kasadan çözmeyi dene */
+  if (!apiKey && configStore) {
+    const ref = configStore.readConfig?.()?.providers?.[provider]?.apiKey || '';
+    if (typeof ref === 'string' && ref.startsWith('VAULT:')) {
+      const account = ref.split(':')[2] || provider;
+      apiKey = await secretsVault.getKey(account);
+    }
   }
   const p = PROVIDERS[provider];
 

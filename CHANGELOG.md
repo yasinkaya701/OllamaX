@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.14.0 — 2026-08-16
+
+### Güvenlik Katmanı v1 (A1 fazı: Kasa + Air-Gapped)
+
+- **Gizli Anahtar Kasası** (`src/main/secrets/secrets-vault.js`): OS-native keychain desteği (macOS Keychain / Windows DPAPI / Linux libsecret) ile API anahtarları artık düz metin olarak diskte saklanmaz. `keytar` isteğe bağlı native bağımlılığa eklendi.
+- **Graceful degradation**: keytar kurulu değilse anahtarlar yalnızca bellekte (memory-only) tutulur — düz metin hiçbir durumda diske yazılmaz, kapanınca uçur. `vault-status` mod durumu: `native` / `memory` / `error`.
+- Config'te anahtarlar `VAULT:keytar:provider.<ad>` referansı olarak saklanır; çözümü `resolveVaultKey`/`storeApiKeyInVault` (config-store) ve kasa modülü yapar.
+- Yeni IPC uçları: `ipc:3:vault-status`, `ipc:3:vault-set`, `ipc:3:vault-get` (preload izin listesine eklendi).
+- **Air-Gapped mod** (`src/main/network/network-mode.js`): `app.network.mode = 'local-only'` ile tüm bulut sağlayıcıları (OpenAI/Anthropic/Gemini + 12 çoklu sağlayıcı) kapatılır; yalnızca Ollama/LM Studio/yerel endpoint'ler çalışır. Otomatik keşif yenilemesi ve periyodik GitHub pull devre dışı kalır, yerel cache servis edilir.
+- Bulut chat uçları (`openai-chat`, `anthropic-chat`, `gemini-chat`, `multi-chat`/runMultiChat) her istek öncesi `isCloudProviderAllowed` denetiminden geçer; yerel adres doğrulaması `isHostLocal` ile (loopback + RFC1918 + link-local + IPv6).
+- Yeni IPC uçları: `ipc:3:network-mode-get`, `ipc:3:network-mode-set`.
+- 2 yeni test dosyası (network-mode, secrets-vault); **144/144 test yeşil**, ESLint temiz.
+
 ## 3.12.0-rebrand — 2026-08-16
 
 ### Marka Yenilemesi (OllamaX → Krevyx)

@@ -25,6 +25,9 @@ const { registerProviderChatHandlers, runMultiChat } = require('./main/agents/pr
 const { registerIpcBridge } = require('./main/ipc-bridge');
 const configStore = require('./main/config/config-store');
 const { loadFeaturedReposAuto, refreshAll } = require('./main/featured-discover');
+/* V3.14 (A1-2): air-gapped ağ modu — cloud provider ve outbound engeli */
+const networkMode = require('./main/network/network-mode');
+networkMode.setConfigStore(configStore);
 
 const isWin = process.platform === 'win32';
 
@@ -678,6 +681,12 @@ ipcMain.on('chat', (event, { host, model, messages, agentId, modelParams = {} })
 });
 
 ipcMain.on('openai-chat', (event, { model, messages, apiKey, agentId, modelParams = {} }) => {
+  /* V3.14 (A1-2): air-gapped modda bulut sağlayıcıları kapalı */
+  if (!networkMode.isCloudProviderAllowed('openai')) {
+    event.reply('chat-chunk', { agentId, content: '❌ Air-gapped mod: bulut sağlayıcıları kapalı. Yalnızca Ollama/yerel modeller kullanılır.' });
+    event.reply('chat-done', { agentId });
+    return;
+  }
   if (!apiKey) {
     event.reply('chat-chunk', { agentId, content: '❌ OpenAI API key missing. Add it in Settings.' });
     event.reply('chat-done', { agentId });
@@ -742,6 +751,12 @@ ipcMain.on('openai-chat', (event, { model, messages, apiKey, agentId, modelParam
 });
 
 ipcMain.on('anthropic-chat', (event, { model, messages, apiKey, agentId, modelParams = {} }) => {
+  /* V3.14 (A1-2): air-gapped modda bulut sağlayıcıları kapalı */
+  if (!networkMode.isCloudProviderAllowed('anthropic')) {
+    event.reply('chat-chunk', { agentId, content: '❌ Air-gapped mod: bulut sağlayıcıları kapalı. Yalnızca Ollama/yerel modeller kullanılır.' });
+    event.reply('chat-done', { agentId });
+    return;
+  }
   if (!apiKey) {
     event.reply('chat-chunk', { agentId, content: '❌ Anthropic API key missing. Add it in Settings.' });
     event.reply('chat-done', { agentId });
@@ -801,6 +816,12 @@ ipcMain.on('anthropic-chat', (event, { model, messages, apiKey, agentId, modelPa
 });
 
 ipcMain.on('gemini-chat', (event, { model, messages, apiKey, agentId, modelParams = {} }) => {
+  /* V3.14 (A1-2): air-gapped modda bulut sağlayıcıları kapalı */
+  if (!networkMode.isCloudProviderAllowed('gemini')) {
+    event.reply('chat-chunk', { agentId, content: '❌ Air-gapped mod: bulut sağlayıcıları kapalı. Yalnızca Ollama/yerel modeller kullanılır.' });
+    event.reply('chat-done', { agentId });
+    return;
+  }
   if (!apiKey) {
     event.reply('chat-chunk', { agentId, content: '❌ Gemini API key missing. Add it in Settings.' });
     event.reply('chat-done', { agentId });
@@ -861,13 +882,23 @@ ipcMain.on('gemini-chat', (event, { model, messages, apiKey, agentId, modelParam
   req.end();
 });
 
-/* V3.10/V3.11: keşif kataloğu — otomatik GitHub çekimi + disk cache + statik yedek */
+/* V3.10/V3.11: keşif kataloğu — otomatik GitHub çekimi + disk cache + statik yedek
+   V3.14 (A1-2): 'local-only' modda tüm outbound yenilemeler engellenir; yerel
+   cache her durumda döndürülür. */
 ipcMain.on('get-featured-repos', async (event) => {
+  if (!networkMode.isOutboundAllowed('featured-refresh')) {
+    const cache = (await loadFeaturedReposAuto()) || { repos: [], categories: [] };
+    event.reply('featured-repos', { ...cache, networkMode: 'local-only' });
+    return;
+  }
   event.reply('featured-repos', await loadFeaturedReposAuto());
 });
-/* Periyodik otomatik yenileme (açılışta 60 sn sonra + 4 saatte bir) */
-setTimeout(() => { refreshAll().catch(() => {}); }, 60000);
-setInterval(() => { refreshAll().catch(() => {}); }, 4 * 3600 * 1000);
+/* Periyodik otomatik yenileme (açılışta 60 sn sonra + 4 saatte bir) — air-gapped modda skip */
+function scheduleRefresh(delayMs, intervalMs) {
+  setTimeout(() => { if (networkMode.isOutboundAllowed('featured-refresh')) refreshAll().catch(() => {}); }, delayMs);
+  setInterval(() => { if (networkMode.isOutboundAllowed('featured-refresh')) refreshAll().catch(() => {}); }, intervalMs);
+}
+scheduleRefresh(60000, 4 * 3600 * 1000);
 ipcMain.on('github-search', (event, { query }) => {
   if (!query) return;
   const opts = {

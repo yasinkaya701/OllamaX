@@ -38,6 +38,11 @@ const INVOKE = new Set([
   'composer-file-read',
   'get-behavior-profiles',
   'agent-discover-all', // Orkestrasyon: tüm lokal ajanları keşfet
+  'vault-status', // V3.14 (A1-1): kasa durumu
+  'vault-set', // V3.14 (A1-1): kasaya anahtar taşı
+  'vault-get', // V3.14 (A1-1): kasa anahtar kontrolü
+  'network-mode-get', // V3.14 (A1-2): ağ modu okuma
+  'network-mode-set', // V3.14 (A1-2): ağ modu (air-gapped) geçişi
 ]);
 
 contextBridge.exposeInMainWorld('krevyxApi', {

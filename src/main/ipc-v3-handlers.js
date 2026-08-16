@@ -26,6 +26,9 @@ const { loadAll, uninstallPlugin, listPlugins } = require('./plugins/loader');
 const { startServer, stopServer, listServers } = require('./mcp/client');
 const { runCodeAgent } = require('./agents/code-agent-bridge');
 const orchestrator = require('./agents/orchestrator');
+/* V3.14 (A1-1/A1-2): gizli anahtar kasası + air-gapped ağ modu */
+const networkMode = require('./network/network-mode');
+networkMode.setConfigStore(configStore);
 
 const IMG_PROVIDERS = {
   openai: {
@@ -80,6 +83,43 @@ function registerIpcV3Handlers(mainWindow) {
       return next;
     });
     return { ok: true, config: { ...config, providers: configStore.resolvedProviders(config) } };
+  });
+
+  /* V3.14 (A1-1): kasa durumu + anahtar taşıma uçları */
+  handler('vault-status', async () => {
+    const secretsVault = require('./secrets/secrets-vault');
+    return { ok: true, ...(await secretsVault.vaultStatus()) };
+  });
+  handler('vault-set', async (_e, { provider, key } = {}) => {
+    if (!provider || typeof provider !== 'string') return { ok: false, error: 'Sağlayıcı gerekli.' };
+    const ref = await configStore.storeApiKeyInVault(provider.trim(), String(key || ''));
+    if (ref && typeof ref === 'object' && ref.error) return { ok: false, error: ref.error };
+    if (ref) {
+      configStore.updateConfig((c) => {
+        const next = { ...c };
+        const p = { ...(next.providers || {}) };
+        const block = { ...(p[provider.trim()] || {}) };
+        block.apiKey = ref;
+        p[provider.trim()] = block;
+        next.providers = p;
+        return next;
+      });
+    }
+    return { ok: true, reference: ref };
+  });
+  handler('vault-get', async (_e, { provider } = {}) => {
+    if (!provider || typeof provider !== 'string') return { ok: false, error: 'Sağlayıcı gerekli.' };
+    const secretsVault = require('./secrets/secrets-vault');
+    const value = await secretsVault.getKey(`provider.${provider.trim()}`);
+    return { ok: true, hasKey: Boolean(value) };
+  });
+
+  /* V3.14 (A1-2): air-gapped ağ modu uçları */
+  handler('network-mode-get', () => ({ ok: true, mode: networkMode.getNetworkMode() }));
+  handler('network-mode-set', (_e, { mode } = {}) => {
+    const next = mode === 'local-only' ? 'local-only' : 'normal';
+    configStore.updateConfig((c) => ({ ...c, app: { ...(c.app || {}), network: { mode: next } } }));
+    return { ok: true, mode: next };
   });
 
   /* ------------------------------ SESSIONS ------------------------------ */

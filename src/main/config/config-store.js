@@ -84,6 +84,9 @@ function sessionPath(sessionId) {
 
 /**
  * ENV: ön ekli string'i env'den çözer; ön ek yoksa olduğu gibi döner.
+ * VAULT:keytar:<account> referansları renderer çözümü için VAULT: olarak
+ * işaretlenir; gerçek çözümü secrets-vault (main) yapar. Düzenlenmiş
+ * değerin düz metin olduğu durumda ENV: davranışı korunur.
  */
 function resolveApiKey(value) {
   if (typeof value !== 'string' || !value) return '';
@@ -91,7 +94,41 @@ function resolveApiKey(value) {
     const envName = value.slice(4).trim();
     return envName ? process.env[envName] || '' : '';
   }
+  /* VAULT referansı diskte asla düz metin anahtar taşımaz; çözümü kasadır */
+  if (value.startsWith('VAULT:')) return 'VAULT:';
   return value;
+}
+
+/**
+ * VAULT: referansını kasadaki gerçek anahtarla çözer (main tarafı). Kasa
+ * yoksa boş string döner — renderer'da 'Kasa bağlı değil' mesajı gösterilir.
+ */
+async function resolveVaultKey(value) {
+  if (typeof value !== 'string' || !value) return '';
+  if (!value.startsWith('VAULT:keytar:')) return '';
+  const account = value.slice('VAULT:keytar:'.length);
+  const secretsVault = require('../secrets/secrets-vault');
+  try {
+    return await secretsVault.getKey(account);
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Sağlayıcı için anahtar referansını kasaya taşır ve VAULT:keytar:<account>
+ * referansı döndürür. Mevcut değer boşsa kasadan siler, referans döndürmez.
+ */
+async function storeApiKeyInVault(provider, plainKey) {
+  const secretsVault = require('../secrets/secrets-vault');
+  const account = `provider.${provider}`;
+  if (!plainKey) {
+    await secretsVault.removeKey(account);
+    return '';
+  }
+  const res = await secretsVault.setKey(account, plainKey);
+  if (!res.ok) return { error: res.error };
+  return `VAULT:keytar:${account}`;
 }
 
 function stripEnv(value) {
@@ -220,7 +257,7 @@ function readConfig() {
 function defaultConfig() {
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
-    app: { theme: 'dark', language: 'tr', ghostMode: false, defaultProvider: 'ollama' },
+    app: { theme: 'dark', language: 'tr', ghostMode: false, defaultProvider: 'ollama', network: { mode: 'normal' } },
     providers: {
       ollama: { hosts: ['localhost:11434'], defaultHostId: 'default', pollInterval: 30000 },
       openai: { apiKey: '', modelFallback: ['gpt-5.5', 'gpt-5.3', 'gpt-5', 'gpt-4o'] },
@@ -249,6 +286,24 @@ function updateConfig(updater) {
 }
 
 /**
+ * Saðlayıcı bloklarındaki VAULT referanslarının sayısına göre kasayı
+ * bildiren durum. 'native' (OS keychain) / 'memory' (geçici) / 'off'.
+ */
+function getVaultMode(p) {
+  let refs = 0;
+  for (const k of Object.keys(p || {})) {
+    if (typeof p[k]?.apiKey === 'string' && p[k].apiKey.startsWith('VAULT:')) refs += 1;
+  }
+  try {
+    const sv = require('../secrets/secrets-vault');
+    const st = sv.getAvailability();
+    return refs ? st : 'off';
+  } catch {
+    return 'off';
+  }
+}
+
+/**
  * Config'teki tüm ENV: değerlerini çözerek API key'leri döndürür.
  * Geriye uyum: renderer'ın state.settings{openai,anthropic,gemini} beklentisi
  * için resolve edilmiş değerler verilir (diskte ENV: kalır).
@@ -260,6 +315,8 @@ function resolvedProviders(config) {
     openai: resolveApiKey(p.openai?.apiKey),
     anthropic: resolveApiKey(p.anthropic?.apiKey),
     gemini: resolveApiKey(p.gemini?.apiKey),
+    /* V3.14 (A1-1): kasa referanslarını renderer'a bildir (düz metin değil) */
+    vaultMode: getVaultMode(p),
   };
 }
 
