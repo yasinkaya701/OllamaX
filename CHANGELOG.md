@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.16.0 — 2026-08-16
+
+### Orkestrasyon 2.0 (F3-2: Prompt Bayrağı + Şef Ajan)
+
+- **Prompt forwarding**: `agent-chain` zincirine `{ forwardPrompt: true }` bayrağı eklendi — önde gelen ajanın (şef) **tam çıktısı** sonraki ajanın görev prompt'una `[ZİNCİR FORWARD]` bloklarıyla enjekte edilir (eski özet handoff'a ek olarak).
+- **Şef ajan seçimi**: UI'da "Şef ajan" listesinden zincirde başa geçen ajan seçilebilir; çıktıları `[ŞEF]` etiketiyle işaretlenir. Varsayılan: zincirin ilk ajanı.
+- Ayarlar modalına "Orkestrasyon" kontrolleri eklendi: şef ajan seçici (`#orch-head-agent`) + prompt bayrağı çipi (`#orch-forward-prompt`).
+
 ## 3.15.1 — 2026-08-16
 
 ### CI Düzeltmesi

@@ -1285,9 +1285,11 @@ ipcMain.on('agent-run', (event, { agentId, task, model }) => {
 });
 
 /* Zincir çalıştır (Claude → Codex → Antigravity vb.) */
-ipcMain.on('agent-chain', (event, { order, task }) => {
+/* V3.16 (F3-2): forwardPrompt — şef ajanın çıktısı sonraki ajana tam aktarılır;
+   headAgent — zincirdeki başa geçen ajan; varsayılan order[0] */
+ipcMain.on('agent-chain', (event, { order, task, forwardPrompt, headAgent }) => {
   const sendProgress = (agent, text) => event.reply('agent-chain-progress', { agent, text });
-  orchRunChain(order, task || '')
+  orchRunChain(order, task || '', { forwardPrompt, headAgent })
     .then((res) => {
       res.steps.forEach((s) => { sendProgress(s.agent, JSON.stringify(s.result)); });
       event.reply('agent-chain-progress', { done: true, result: res });

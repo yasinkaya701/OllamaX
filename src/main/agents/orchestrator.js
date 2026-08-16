@@ -215,25 +215,57 @@ function normalizeOutput(runResult) {
   return steps.map((s) => (typeof s === 'string' ? s : s.text)).filter(Boolean);
 }
 
+function normalizeFullOutput(runResult) {
+  /* V3.16: tam çıktı forwarding için ham adımları birleştir */
+  const steps = runResult && Array.isArray(runResult.steps) ? runResult.steps : [];
+  const joined = steps.map((s) => (typeof s === 'string' ? s : s.text)).filter(Boolean).join('\n');
+  return joined.slice(0, 8000);
+}
+
 function applyHandoff(task, chain) {
   if (!chain) return task;
   const ctx = chain.context || [];
   if (!Array.isArray(ctx) || ctx.length === 0) return task;
   const history = ctx.map((c) => `- ${c.agent}: ${c.text}`).join('\n');
-  return `[ZİNCİR HANDOFF]\nÖnceki ajan çıktıları:\n${history}\n\nDevam görevi: ${task}`;
+  const head = chain.headAgent ? ` [ŞEF: ${chain.headAgent}]` : '';
+  return `[ZİNCİR HANDOFF]${head}\nÖnceki ajan çıktıları:\n${history}\n\nDevam görevi: ${task}`;
 }
 
-async function runChain(order, rootTask) {
+function applyHandoffForward(task, opts) {
+  /* V3.16 (F3-2): prompt forwarding — önceki ajanın TAM çıktısı bir sonraki
+     ajanın görevine enjekte edilir; şef (head-agent) çıktısı ayrı bloklanır */
+  const ctx = opts && opts.context ? opts.context : [];
+  if (!Array.isArray(ctx) || ctx.length === 0) return task;
+  const blocks = ctx
+    .map((c) => {
+      const tag = c.head ? `${c.agent} [ŞEF]` : c.agent;
+      return `=== ${tag} ===\n${c.fullText || c.text}\n=== son ===`;
+    })
+    .join('\n\n');
+  return `[ZİNCİR FORWARD]\nÖnceki ajanların tam çıktıları:\n${blocks}\n\nYeni görev: ${task}`;
+}
+
+async function runChain(order, rootTask, opts = {}) {
+  const forward = Boolean(opts && opts.forwardPrompt);
+  const headAgent = (opts && typeof opts.headAgent === 'string' && order.includes(opts.headAgent)) ? opts.headAgent : order[0];
   const results = [];
   const context = [];
   for (let i = 0; i < order.length; i += 1) {
     const id = order[i];
-    const res = await runAgent(id, rootTask, { chain: i === 0 ? null : { context } });
+    const payload = forward
+      ? applyHandoffForward(rootTask, { context, headAgent })
+      : rootTask;
+    const res = await runAgent(id, payload, { chain: forward ? null : (i === 0 ? null : { context, headAgent }) });
     results.push({ agent: id, result: res });
-    context.push({ agent: REGISTRY[id] ? REGISTRY[id].label : id, text: normalizeOutput(res).join(' | ').slice(0, 400) });
+    context.push({
+      agent: REGISTRY[id] ? REGISTRY[id].label : id,
+      text: normalizeOutput(res).join(' | ').slice(0, 400),
+      fullText: normalizeFullOutput(res),
+      head: id === headAgent,
+    });
     if (res && !res.ok) break; // zincir, bir ajan hata verince durur
   }
-  return { ok: results.every((r) => r.result && r.result.ok), steps: results };
+  return { ok: results.every((r) => r.result && r.result.ok), steps: results, forwardPrompt: forward, headAgent };
 }
 
-module.exports = { REGISTRY, discoverAgent, discoverAll, runAgent, runChain, applyHandoff, normalizeOutput, _cache };
+module.exports = { REGISTRY, discoverAgent, discoverAll, runAgent, runChain, applyHandoff, applyHandoffForward, normalizeOutput, normalizeFullOutput, _cache };

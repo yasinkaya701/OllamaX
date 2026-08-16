@@ -108,3 +108,48 @@ describe('orchestrator — keşif', () => {
     expect(all.ollama).toBeTruthy();
   });
 });
+
+/* ------------------------------------------------------------------ */
+/* v3.16 (F3-2): prompt forwarding + şef ajan testleri                 */
+/* ------------------------------------------------------------------ */
+describe('orchestrator — v3.16 prompt forwarding', () => {
+  test('applyHandoffForward boş bağlamda görevi değiştirmez', () => {
+    expect(orchestrator.applyHandoffForward('görev', { context: [] })).toBe('görev');
+  });
+
+  test('applyHandoffForward tam çıktıyı [ZİNCİR FORWARD] bloğunda enjekte eder', () => {
+    const out = orchestrator.applyHandoffForward('yeni görev', {
+      context: [{ agent: 'Claude Code', text: 'kıs a', fullText: 'uzun tam çıktı\nikinci satır', head: true }],
+    });
+    expect(out).toContain('[ZİNCİR FORWARD]');
+    expect(out).toContain('=== Claude Code [ŞEF] ===');
+    expect(out).toContain('uzun tam çıktı\nikinci satır');
+    expect(out).toContain('=== son ===');
+    expect(out).toContain('Yeni görev: yeni görev');
+  });
+
+  test('head=false etiketi [ŞEF] içermiyor', () => {
+    const out = orchestrator.applyHandoffForward('t', { context: [{ agent: 'Codex', text: 'x', head: false }] });
+    expect(out).toContain('=== Codex ===');
+    expect(out).not.toContain('[ŞEF]');
+  });
+
+  test('normalizeFullOutput adımları birleştirip 8000 karakterle sınırlar', () => {
+    const big = 'a'.repeat(9000);
+    expect(orchestrator.normalizeFullOutput({ steps: [{ text: big }] }).length).toBe(8000);
+    expect(orchestrator.normalizeFullOutput(null)).toBe('');
+    expect(orchestrator.normalizeFullOutput({ steps: [] })).toBe('');
+  });
+
+  test('runChain forwardPrompt opsiyonunu ve headAgent bilgisini döner', async () => {
+    const res = await orchestrator.runChain(['claude-code'], 'test', { forwardPrompt: true, headAgent: 'claude-code' });
+    expect(res.forwardPrompt).toBe(true);
+    expect(res.headAgent).toBe('claude-code');
+  });
+
+  test('runChain headAgent sadece zincirdeki ajan olabilir, yoksa ilk ajan', () => {
+    return orchestrator.runChain(['codex', 'antigravity'], 'test', { headAgent: 'yok-olmayan' }).then((res) => {
+      expect(res.headAgent).toBe('codex');
+    });
+  });
+});

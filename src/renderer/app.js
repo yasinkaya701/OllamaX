@@ -2418,6 +2418,27 @@ function buildOrchChainToggles() {
     });
     box.appendChild(btn);
   });
+  buildOrchHeadSelect();
+}
+
+/* V3.16 (F3-2): şef ajan seçim listesini zincirdeki aktif ajanlara göre doldur */
+function buildOrchHeadSelect() {
+  const sel = q('#orch-head-agent');
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '';
+  ORCH_CHAIN_ORDER.forEach((id) => {
+    const info = orchAgents[id];
+    const active = orchChainActive.includes(id);
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = (info?.label || id) + (active ? '' : ' (devre dışı)');
+    opt.disabled = !active;
+    sel.appendChild(opt);
+  });
+  if (orchChainActive.length && orchChainActive.includes(prev)) sel.value = prev;
+  else if (orchChainActive.length) sel.value = orchChainActive[0];
+  else sel.value = ORCH_CHAIN_ORDER[0];
 }
 
 async function runOrchChain() {
@@ -2438,7 +2459,12 @@ async function runOrchChain() {
   state.history.push({ role: 'user', content: `[Orkestrasyon] Zincir: ${orchChainActive.join(' → ')} — Görev: ${task}` });
   appendStreamCard('SYSTEM', `Zincir başlatıldı: ${orchChainActive.map((id) => orchAgents[id]?.label || id).join(' → ')}`);
 
-  api.send('agent-chain', { order: [...orchChainActive], task });
+  /* V3.16 (F3-2): şef ajan seçimi + prompt forwarding bayrağı */
+  const headSel = q('#orch-head-agent');
+  let headAgent = headSel && headSel.value ? headSel.value : orchChainActive[0];
+  if (headAgent && !orchChainActive.includes(headAgent)) headAgent = orchChainActive[0];
+  const forwardPrompt = !!(q('#orch-forward-prompt')?.checked);
+  api.send('agent-chain', { order: [...orchChainActive], task, forwardPrompt, headAgent });
 }
 
 function handleOrchOutput(d) {
