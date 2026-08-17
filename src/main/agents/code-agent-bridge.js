@@ -40,8 +40,11 @@ const AGENT_PROFILES = {
   codex: {
     label: 'Codex',
     detect: ['codex'],
-    // `codex prompt` görevi stdin'den alır; tek komutluk non-interaktif akış
-    buildCmd: () => ['prompt'],
+    // `codex exec` non-interaktif moddur ve pipe edilen stdin'den görevi okur.
+    // `codex prompt` interaktif (PTY) moddur — pipe edilen stdin ile "stdin is not
+    // a terminal" hatası verir; bu yüzden bridge her zaman `exec` yolunu kullanır.
+    // `--skip-git-repo-check`: güvenilmeyen dizinlerde (sandbox/CI) çalışmayı sağlar.
+    buildCmd: () => ['exec', '--skip-git-repo-check'],
     parser: 'lines',
     stdin: true,
     cwdFrom: 'workspace',
@@ -95,18 +98,22 @@ function emitDone(agentId, result) {
 function findExecutable(profile) {
   for (const name of profile.detect) {
     try {
-      const args = process.platform === 'win32' ? [name] : ['-v', name];
-      const p = spawn(process.platform === 'win32' ? name : 'command', args, { shell: false, stdio: 'ignore' });
+      // `command` bir shell built-in'idir ve doğrudan spawn edilemez (ENOENT);
+      // POSIX'te `sh -c "command -v <exe>"` ile, Windows'ta doğrudan exe ile kontrol edilir.
+      const isWin = process.platform === 'win32';
+      const args = isWin ? [name] : ['-c', `command -v ${name}`];
+      const p = spawn(isWin ? name : 'sh', args, { shell: false, stdio: 'ignore' });
       return new Promise((resolve) => {
         p.on('error', () => resolve(null));
-        p.on('spawn', () => resolve(name));
         const t = setTimeout(() => {
           try { p.kill(); } catch { /* noop */ }
           resolve(null);
         }, 2000);
+        // `sh -c "command -v <exe>"`: sh her zaman spawn olur — ajanın varlığı
+        // çıkış kodundan anlaşılır (komut bulunamazsa 127 döner).
         p.on('exit', (code) => {
           clearTimeout(t);
-          resolve(code === 127 ? null : name);
+          resolve(code === 0 ? name : null);
         });
       });
     } catch {
@@ -188,10 +195,11 @@ function resolveCwd(agentId, opts) {
 function runCli(profile, profileId, task, timeoutMs, opts) {
   const args = profile.buildCmd(task, opts);
   const cwd = resolveCwd(profileId, opts);
+  const exe = (opts && opts.executable) ? String(opts.executable) : args.shift();
   return new Promise((resolve) => {
     let child;
     try {
-      child = spawn(args[0], args.slice(1), {
+      child = spawn(exe, args, {
         shell: false,
         stdio: profile.stdin ? ['pipe', 'pipe', 'pipe'] : ['ignore', 'pipe', 'pipe'],
         cwd,
