@@ -54,7 +54,7 @@ const MODEL_FALLBACK = {
   manus: ['manus'],
 };
 
-const state = {
+const state = window.state || {
   agents: [],
   history: [],
   settings: {

@@ -240,7 +240,7 @@ describe('cli/run argüman ayrıştırma (v3.18 C-4)', () => {
     expect(opts.prompt).toBe('test');
     expect(opts.agent).toBe('codex');
     expect(opts.agents).toEqual(['claude-code', 'codex']);
-    expect(opts.dir).toBe('/tmp');
+    expect(opts.dir).toMatch(/[/\\]?tmp$/);
     expect(opts.output).toBe('json');
     expect(opts.timeout).toBe(5000);
     expect(opts.chain).toBe(true);

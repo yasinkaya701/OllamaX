@@ -1,5 +1,12 @@
 const STORAGE_KEY = 'Krevyx_v4_permanent';
-const api = typeof window !== 'undefined' && window.krevyxApi ? window.krevyxApi : null;
+// api: Electron preload tarafından window.krevyxApi olarak basılır; test/enjeksiyon
+// düzleminde window.api üzerinden de çözülebilir (tembel erişim gerekir —
+// window.api geç yüklenirse getApi() kullanılır, bkz. core.js).
+const api = (typeof window !== 'undefined' && (window.krevyxApi || window.api)) || null;
+function getApi() {
+  if (typeof window === 'undefined') return null;
+  return window.krevyxApi || window.api || api;
+}
 
 const PROMPT_TEMPLATES = [
   {

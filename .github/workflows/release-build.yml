@@ -1,9 +1,20 @@
 name: Release Build (Mac / Windows / Linux)
 
+# v3.23: v* etiketi push'landığında her platform için Electron paketi üretir,
+# testler geçir, sürüm numarasını etikete eşitle ve tek tutarlı bir
+# GitHub Release'a paketleri yükle. Tek bir release job'u etiket başına
+# bir kere çalıştığı için paralel job'ların aynı release'ı bozması engellenir.
+
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release etiketi (örn. v3.23.0). Etiket tetiklemesi yoksa girin."
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -11,19 +22,20 @@ permissions:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
             build: build:linux
-            artifact: "dist/*.AppImage"
+            artifact: "dist/*.AppImage\ndist/latest-linux.yml"
             platform: linux
           - os: windows-latest
             build: build:win
-            artifact: "dist/*.exe"
+            artifact: "dist/*.exe\ndist/latest.yml"
             platform: win
           - os: macos-latest
             build: build:mac
-            artifact: "dist/*.dmg"
+            artifact: "dist/*.dmg\ndist/latest-mac.yml"
             platform: mac
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -45,9 +57,6 @@ jobs:
           node-version: "22"
           cache: "pnpm"
 
-      - name: Verify pnpm
-        run: pnpm --version
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -62,16 +71,86 @@ jobs:
       - name: Bump version to tag
         run: node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json'));p.version=require('path').basename(process.env.GITHUB_REF).replace('v','');fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')"
 
+      - name: Testler
+        run: pnpm run test:ci
+
       - name: Build package
         run: npm run ${{ matrix.build }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: ${{ matrix.platform == 'mac' && 'true' || 'false' }}
 
-      - name: Upload artifacts to release
+      - name: Paketleri artifact olarak sakla
+        uses: actions/upload-artifact@v4
+        with:
+          name: krevyx-${{ matrix.platform }}
+          path: ${{ matrix.artifact }}
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Etiket adını çöz
+        id: resolve_tag
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          else
+            if [ -z "${{ github.event.inputs.release_tag }}" ]; then
+              echo "error: etiket tetiklemesi yok ve release_tag girdisi boş" >&2
+              exit 1
+            fi
+            echo "tag=${{ github.event.inputs.release_tag }}" >> "$GITHUB_OUTPUT"
+          fi
+        shell: bash
+
+      - name: Kodu indir (changelog derleme için)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Paket artifact'larını indir
+        uses: actions/download-artifact@v4
+        with:
+          pattern: krevyx-*
+          path: release-assets
+          merge-multiple: false
+
+      - name: Release notlarını derle
+        id: notes
+        run: |
+          TAG="${{ steps.resolve_tag.outputs.tag }}"
+          PREV=$(git tag --sort=-version:refname | grep -v "^${TAG}$" | head -1 || true)
+          if [ -n "$PREV" ]; then
+            RANGE="${PREV}..HEAD"
+          else
+            RANGE="HEAD"
+          fi
+          {
+            echo "## ${TAG}"
+            echo ""
+            echo "### Değişiklikler"
+            echo ""
+            git log "${RANGE}" --pretty=format:"- %s (%h)" --no-merges
+            echo ""
+            echo ""
+            echo "### İndirilebilir paketler"
+            echo ""
+            echo "- Windows: portable exe"
+            echo "- macOS: arm64 dmg"
+            echo "- Linux: AppImage"
+          } > release-notes.md
+          cat release-notes.md
+
+      - name: GitHub Release oluştur ve paketleri yükle
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ matrix.artifact }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ steps.resolve_tag.outputs.tag }}
+          name: ${{ steps.resolve_tag.outputs.tag }}
+          body_path: release-notes.md
+          files: release-assets/**/*
+          draft: false
+          prerelease: ${{ contains(steps.resolve_tag.outputs.tag, '-rc') || contains(steps.resolve_tag.outputs.tag, '-alpha') || contains(steps.resolve_tag.outputs.tag, '-beta') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

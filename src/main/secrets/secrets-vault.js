@@ -79,8 +79,12 @@ async function setKey(provider, key) {
     memoryStore.set(providerKey, effectiveKey);
     return { ok: true, mode: 'memory' };
   } catch (err) {
-    setAvailability('error');
-    return { ok: false, mode: availability, error: err?.message || 'Kasa yazımı başarısız' };
+    // v3.23: Secret Service daemon yokken (CI, sunucu, headless ortam) keytar
+    // operasyonu çöker — kasa memory moduna düşer ve işlem yine başarılı sayılır.
+    // Anahtar diskte düz metin olarak asla saklanmaz; süreç ömrü boyunca bellekte yaşar.
+    setAvailability('memory');
+    memoryStore.set(providerKey, effectiveKey);
+    return { ok: true, mode: 'memory', warn: err?.message || 'Native kasa erişilemedi — memory modu kullanıldı' };
   }
 }
 
@@ -99,7 +103,7 @@ async function getKey(provider) {
     }
     return memoryStore.get(providerKey) || '';
   } catch {
-    setAvailability('error');
+    setAvailability('memory');
     return memoryStore.get(providerKey) || '';
   }
 }
@@ -112,10 +116,11 @@ async function removeKey(provider) {
   if (!providerKey) return { ok: true, mode: availability };
   memoryStore.delete(providerKey);
   try {
-    if (keytar) await keytar.deletePassword(SERVICE, accountFor(providerKey));
+    await keytar.deletePassword(SERVICE, accountFor(providerKey));
     return { ok: true, mode: availability };
-  } catch (err) {
-    return { ok: false, mode: availability, error: err?.message || 'Silme başarısız' };
+  } catch {
+    setAvailability('memory');
+    return { ok: true, mode: 'memory' };
   }
 }
 

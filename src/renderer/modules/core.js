@@ -284,14 +284,41 @@ function schedulePersist() {
   }, 500);
 }
 
-/* V3.9: diğer modüllere (prompt builder vb.) erken erişim */
+/* V3.9/v3.23: diğer modüllere (prompt builder vb.) erken erişim.
+ * md/save/clearChat chat.js'te tanımlı ve core.js daha önce yüklendiği
+ * için doğrudan atama ReferenceError üretir; tembel (getter) bağlama ile
+ * ilk erişimde chat.js'ten çözülür. */
 window.Krevyx = window.Krevyx || {};
 window.Krevyx.state = state;
-window.Krevyx.md = md;
-window.Krevyx.save = save;
-window.Krevyx.clearChat = clearChat;
-window.api = api;
-window.q = q;
+Object.defineProperty(window.Krevyx, 'md', {
+  get() {
+    return typeof md !== 'undefined' ? md : null;
+  },
+  configurable: true,
+  enumerable: true,
+});
+Object.defineProperty(window.Krevyx, 'save', {
+  get() {
+    return typeof save !== 'undefined' ? save : null;
+  },
+  configurable: true,
+  enumerable: true,
+});
+Object.defineProperty(window.Krevyx, 'clearChat', {
+  get() {
+    return typeof clearChat !== 'undefined' ? clearChat : null;
+  },
+  configurable: true,
+  enumerable: true,
+});
+/* api app.js'te tanımlı (core.js'ten sonra yüklenir) — tembel bağlama */
+Object.defineProperty(window, 'api', {
+  get() {
+    return typeof api !== 'undefined' ? api : null;
+  },
+  configurable: true,
+  enumerable: true,
+});
 
 function loadState() {
   try {

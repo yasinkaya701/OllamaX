@@ -20,7 +20,7 @@ function bindGlobalStreamListeners() {
  * V3.8 COMPOSER MODU (Cursor Composer benzeri)
  * Sohbet/Composer modu, dosya bağlamı (@file), görev listesi
  * ============================================================ */
-const COMPOSER = {
+const COMPOSER = (typeof window !== "undefined" && window.state && window.state.COMPOSER) || {
   mode: 'chat',
   files: [],          // { path, name, size }
   pickerDir: '',      // son açılan dizin
