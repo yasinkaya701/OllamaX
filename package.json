@@ -1,6 +1,6 @@
 {
   "name": "Krevyx",
-  "version": "3.24.0",
+  "version": "3.24.1",
   "description": "Krevyx Ultra - Local AI Agent Studio",
   "main": "src/main.js",
   "bin": {
@@ -38,7 +38,23 @@
       "target": "portable"
     },
     "mac": {
-      "target": "dmg"
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "identity": null,
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
     },
     "linux": {
       "target": [

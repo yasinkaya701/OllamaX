@@ -35,7 +35,7 @@ jobs:
             platform: win
           - os: macos-latest
             build: build:mac
-            artifact: "dist/*.dmg\ndist/latest-mac.yml"
+            artifact: "dist/*.dmg\ndist/*.zip\ndist/latest-mac.yml"
             platform: mac
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -138,7 +138,7 @@ jobs:
             echo "### İndirilebilir paketler"
             echo ""
             echo "- Windows: portable exe"
-            echo "- macOS: arm64 dmg"
+            echo "- macOS: arm64 dmg + zip (kapalı kaynak olmayan, koda imzasız dağıtım)"
             echo "- Linux: AppImage"
           } > release-notes.md
           cat release-notes.md
