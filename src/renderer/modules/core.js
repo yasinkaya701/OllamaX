@@ -42,6 +42,81 @@ function hideErrorBanner() {
   }
 }
 
+/* ------------------------------------------------------------------
+ * v3.24 — Güncelleme bildirimi (auto-updater)
+ * Main süreç `ipc:3:update:available` yayınladığında kalıcı bir
+ * bildirim kartı gösterir (indir / sürüm notları / ertele).
+ * ------------------------------------------------------------------ */
+function showUpdateNotice(payload) {
+  const v = payload?.latestVersion || '';
+  if (!v) return;
+  let card = q('#update-notice');
+  if (card) return; // zaten görünüyor
+  const host = q('#krevyx-host') || q('main') || document.body;
+  card = document.createElement('div');
+  card.id = 'update-notice';
+  card.setAttribute('role', 'alert');
+  card.className = 'update-notice';
+  card.innerHTML = '';
+  const wrap = document.createElement('div');
+  const title = document.createElement('div');
+  title.className = 'update-notice-title';
+  title.textContent = `Yeni sürüm hazır: v${v}`;
+  const body = document.createElement('div');
+  body.className = 'update-notice-body';
+  body.textContent = `Krevyx v${payload.currentVersion || '?'} → v${v}. Güncelleme için sistem sürümünüzü indirin.`;
+  const actions = document.createElement('div');
+  actions.className = 'update-notice-actions';
+  const dl = document.createElement('button');
+  dl.type = 'button';
+  dl.textContent = 'İndir';
+  dl.onclick = () => openPlatformAsset(payload.assets);
+  const notes = document.createElement('button');
+  notes.type = 'button';
+  notes.className = 'ghost';
+  notes.textContent = 'Sürüm notları';
+  notes.onclick = () => {
+    if (payload.releaseUrl) window.open(payload.releaseUrl, '_blank');
+  };
+  const later = document.createElement('button');
+  later.type = 'button';
+  later.className = 'ghost';
+  later.textContent = '×';
+  later.setAttribute('aria-label', 'Ertelenin ve kapatın');
+  later.onclick = () => {
+    if (api) void api.invoke('ipc:3:update-dismiss');
+    card.remove();
+  };
+  actions.append(dl, notes, later);
+  wrap.append(title, body, actions);
+  card.appendChild(wrap);
+  host.insertBefore(card, host.firstChild);
+  toast(`Yeni sürüm mevcut: v${v} — indirmek için kartı kullanın`, 'info', 5000);
+}
+
+function openPlatformAsset(assets) {
+  const a = (assets && typeof assets === 'object') ? assets : {};
+  const url = (platformAssetUrl(a) || '').trim();
+  if (url) window.open(url, '_blank');
+  else if (a && (a.win || a.mac || a.linux)) {
+    const pick = a.mac || a.linux || a.win;
+    if (pick) window.open(pick, '_blank');
+  }
+}
+
+function platformAssetUrl(assets) {
+  if (!assets) return '';
+  if (navigator.platform.includes('Win') && assets.win) return assets.win;
+  if (navigator.platform.includes('Mac') && assets.mac) return assets.mac;
+  if (navigator.platform.includes('Linux') && assets.linux) return assets.linux;
+  return assets.win || assets.mac || assets.linux || '';
+}
+
+function bindUpdateNotifier() {
+  if (!api || !api.on) return;
+  api.on('ipc:3:update:available', showUpdateNotice);
+}
+
 window.addEventListener('DOMContentLoaded', () => void init());
 
 async function init() {
@@ -84,6 +159,7 @@ async function init() {
     setInterval(runHealthCheck, 45000);
     void hydrateTeamPresets();
     initOrchestration();
+    bindUpdateNotifier();
   }
   bindFeaturedAccordion();
   bindGithubResultsAccordion();
