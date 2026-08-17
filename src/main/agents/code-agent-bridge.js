@@ -443,14 +443,43 @@ async function runCodeAgent(agentId, task, chain) {
     }
     const gradeOpts = (opts && opts.grade) || {};
     if (gradeOpts && gradeOpts.provider) {
-      const grade = await grading.gradeTask({
-        provider: gradeOpts.provider,
-        apiKey: gradeOpts.apiKey,
-        task: finalTask,
-        steps: (result && result.steps) || [],
-        ok: Boolean(result && result.ok),
-      });
-      if (grade) result.grading = grade;
+      /* Outcomes grading döngüsü: değerlendirme modelinin işaret ettiği sorunlar
+         görev tamamlanmadan önce ajana geri beslenir; tek tekrar deneme (1 tur)
+         ile sonuç iyileştirilir — grading artık ölçüm aracı değil, araç. */
+      const remediationBudget = (gradeOpts && gradeOpts.maxRetry === 0) ? 0 : 1;
+      let retryTask = null;
+      for (let attempt = 0; attempt <= remediationBudget; attempt += 1) {
+        const grade = await grading.gradeTask({
+          provider: gradeOpts.provider,
+          apiKey: gradeOpts.apiKey,
+          task: finalTask,
+          steps: (result && result.steps) || [],
+          ok: Boolean(result && result.ok),
+        });
+        if (grade) result.grading = grade;
+
+        const issues = (grade && Array.isArray(grade.issues) ? grade.issues : [])
+          .filter((i) => i && typeof (i === 'string' ? i : (i.text || i.message || '')) === 'string' || i);
+        const issueTexts = (grade && Array.isArray(grade.issues) ? grade.issues : [])
+          .map((i) => (typeof i === 'string' ? i : (i.text || i.message || JSON.stringify(i) || '')))
+          .filter((s) => Boolean(s))
+          .slice(0, 5);
+
+        const remediationNeeded = attempt < remediationBudget &&
+          grade && grade.issues && grade.issues.length > 0 && (grade.score || 0) < 80;
+        if (!remediationNeeded) break;
+
+        retryTask = sanitizeTask(
+          String(task || '') + '\n\n[DÜZELTME DÖNGÜSÜ] Görevin çıktısı değerlendirme modelinden şu sorunlarla döndü. Bu sorunları düzelt ve görevi tamamla: ' + issueTexts.join('; '),
+          chain
+        );
+        emitStep(agentId, 'plan', `Grading: sorun bulundu (${grade.issues.length} adet), düzeltme turu ${attempt + 1}/${remediationBudget + 1}`, 0);
+        const retryResult = await runCli(profile, agentId, retryTask, 300000, opts);
+        if (retryResult) {
+          result.steps = (result.steps || []).concat(retryResult.steps || []);
+          result.remediation = { attempts: attempt + 1, gradeBefore: grade ? grade.score : null };
+        }
+      }
     }
   } catch { /* değerlendirmenin hatası ana sonucu etkilemez */ }
 

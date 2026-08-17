@@ -388,7 +388,19 @@ function registerIpcV3Handlers(mainWindow) {
   handler('audit-log', (_e, { actor, action, limit, offset } = {}) => {
     return auditLog.query({ actor, action, limit: limit || 100, offset: offset || 0 });
   });
-  handler('audit-verify', () => ({ ok: true, ...auditLog.verifyChain() }));
+  handler('audit-verify', async (_e, { dir } = {}) => {
+    /* V3.21.1: derin doğrulama — bellek içi zincir (audit-log) ile diske yazılan
+       .jsonl dosyalarının SHA-256 + sıra hash zinciri birlikte doğrulanır. */
+    const inMemory = auditLog.verifyChain ? auditLog.verifyChain() : { ok: true, verified: true };
+    let disk = null;
+    try {
+      const va = require('./agents/verify-audit');
+      disk = dir ? va.verifyAuditDir(dir) : va.verifyAuditDir();
+    } catch (err) {
+      disk = { ok: false, error: err && err.message ? String(err.message) : 'doğrulama yüklenemedi' };
+    }
+    return { ok: true, inMemory, disk };
+  });
 
   /* ------------------------------ IMAGE GENERATION ------------------------------ */
 
@@ -496,10 +508,26 @@ function registerIpcV3Handlers(mainWindow) {
     return { ok: true, agents: { ...detected, ...orch } };
   });
 
+  /* V3.21.1: plan adım düzenleme deposu — code-agent-run'dan önce tanımlanır
+     (const TDZ'a düşmemesi için handler tanımından önce bildirilir). */
+  const planEdits = new Map(); // agentId -> [{op, index, text}] son plan için
   handler('code-agent-run', async (_e, payload) => {
     if (!payload || typeof payload.agentId !== 'string') return { ok: false, error: 'agentId gerekli.' };
     const { agentId, task, chain } = payload;
-    const result = await runCodeAgent(agentId, String(task || ''), chain || null);
+    /* plan üzerindeki kullanıcı düzenlemelerini görev zincirine enjekte et */
+    const edits = Array.from(planEdits.get(agentId) || []);
+    const chainWithEdits = chain ? String(chain) : '';
+    let combined = chainWithEdits;
+    if (edits.length > 0) {
+      const desc = edits.map((e) => {
+        if (e.op === 'remove') return `[ADIM SİLİNDİ] ${e.text}`;
+        if (e.op === 'override') return `[ADIM DEĞİŞTİRİLDİ] ${e.text}`;
+        return `[YENİ ADIM EKLENDİ] ${e.text}`;
+      }).join('\n');
+      combined = (combined ? combined + '\n' : '') + '\n[PLAN DÜZENLEMELERİ — kullanıcı tarafından onaylandı]\n' + desc;
+    }
+    const result = await runCodeAgent(agentId, String(task || ''), combined || null);
+    if (planEdits) planEdits.delete(agentId);
     return result;
   });
 
@@ -518,6 +546,29 @@ function registerIpcV3Handlers(mainWindow) {
     const { agentId, task } = payload;
     if (typeof task !== 'string' || !task.trim()) return { ok: false, error: 'task metni gerekli.' };
     return runAgentPlan(agentId, task);
+  });
+
+  /* V3.21.1: Plan adım düzenleme — kullanıcının plan üzerindeki tekil adımları
+     kaldırması, sonrasına yeni adım eklemesi veya adım metnini geçersiz kılması
+     mümkündür; düzenleme planEditStore'da tutulur ve gerçek görev tetiklendiğinde
+     sanitizeTask zinciri üzerinden görev metnine enjekte edilir. */
+  handler('code-agent-plan-edit', async (_e, payload) => {
+    if (!payload || typeof payload.agentId !== 'string') return { ok: false, error: 'agentId gerekli.' };
+    const { agentId, op, index, text } = payload;
+    if (!['remove', 'insert-after', 'override'].includes(op)) return { ok: false, error: 'Geçersiz düzenleme işlemi: ' + op };
+    const edits = planEdits.get(agentId) || [];
+    edits.push({ op, index: Number.isInteger(index) ? index : null, text: typeof text === 'string' ? text : '' });
+    planEdits.set(agentId, edits);
+    return { ok: true, editCount: edits.length };
+  });
+  handler('code-agent-plan-edits', async (_e, payload) => {
+    if (!payload || typeof payload.agentId !== 'string') return { ok: false, error: 'agentId gerekli.' };
+    return { ok: true, edits: planEdits.get(payload.agentId) || [] };
+  });
+  handler('code-agent-plan-clear', async (_e, payload) => {
+    if (!payload || typeof payload.agentId !== 'string') return { ok: false, error: 'agentId gerekli.' };
+    planEdits.delete(payload.agentId);
+    return { ok: true };
   });
 
   /* ----------------------------- V3.20: MANUS TASK API ----------------------------- */

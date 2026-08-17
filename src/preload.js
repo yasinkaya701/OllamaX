@@ -53,6 +53,10 @@ const INVOKE = new Set([
   'audit-verify', // V3.15 (A1-3): SHA-256 zincir bütünlük doğrulaması
   'ipc:3:code-agent-stop', // V3.19: çalışan kod ajanı sürecini gerçek durdur
   'ipc:3:code-agent-plan', // V3.21: Plan Modu (Cursor Agent Planning) — onay öncesi plan üretir
+  'ipc:3:code-agent-plan-edit', // V3.21.1: plan üzerinde tekil adım kaldır/ekle/değiştir
+  'ipc:3:code-agent-plan-edits', // V3.21.1: mevcut düzenlemeleri listele
+  'ipc:3:code-agent-plan-clear', // V3.21.1: düzenlemeleri sıfırla
+  'ipc:3:audit-verify', // V3.21.1: denetim zinciri doğrulama (verify-audit)
 ]);
 
 contextBridge.exposeInMainWorld('krevyxApi', {
