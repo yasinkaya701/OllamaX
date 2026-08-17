@@ -633,6 +633,22 @@ details.acc-github[open] > .github-acc-sum .acc-chev::before {
 .ac-chain-switch.ac-chain-on{border-color:var(--accent);}
 .ac-chain-knob{display:block;width:10px;height:10px;border-radius:50%;background:var(--text3);transition:transform .15s cubic-bezier(.4,0,.2,1),background .15s;}
 .ac-chain-switch.ac-chain-on .ac-chain-knob{transform:translateX(14px);background:var(--accent);}
+.ac-plan-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;}
+.ac-plan-label{font-size:9.5px;color:var(--text3);line-height:1.4;}
+.ac-plan-switch{background:var(--surface2);border:1px solid var(--border);border-radius:10px;width:30px;height:16px;padding:2px;cursor:pointer;position:relative;flex-shrink:0;transition:border-color .15s;}
+.ac-plan-switch.ac-plan-on{border-color:var(--accent);}
+.ac-plan-knob{display:block;width:10px;height:10px;border-radius:50%;background:var(--text3);transition:transform .15s cubic-bezier(.4,0,.2,1),background .15s;}
+.ac-plan-switch.ac-plan-on .ac-plan-knob{transform:translateX(14px);background:var(--accent);}
+.kc-grade-card{margin-top:7px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:7px 9px;animation:fadeUp .22s cubic-bezier(.4,0,.2,1);}
+.kc-grade-title{font-size:10px;font-weight:700;color:var(--text);letter-spacing:0.02em;margin-bottom:3px;}
+.kc-grade-pass{color:var(--green);}
+.kc-grade-fail{color:var(--red, #c9463a);}
+.kc-grade-summary{font-size:9.5px;color:var(--text2);line-height:1.4;margin-bottom:3px;}
+.kc-grade-issues{font-size:9px;color:var(--text3);line-height:1.5;}
+.kc-review-details{margin-top:5px;border-top:1px solid var(--border2);padding-top:5px;}
+.kc-review-details summary{font-size:9.5px;color:var(--text3);cursor:pointer;font-family:var(--mono);letter-spacing:.02em;}
+.kc-review-pre{margin:5px 0 0;white-space:pre-wrap;word-break:break-word;font-size:8.5px;color:var(--text2);background:var(--surface3);border:1px solid var(--border2);border-radius:3px;padding:5px 7px;max-height:140px;overflow:auto;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
 .ac-next{font-size:9px;color:var(--accent);font-family:var(--mono);letter-spacing:.03em;background:rgba(0,168,120,.12);border:1px solid rgba(0,168,120,.3);border-radius:3px;padding:0 5px;white-space:nowrap;}
 .ac-grid{display:flex;flex-direction:column;gap:10px;}
 .ac-card{background:var(--surface3);border:1px solid var(--border2);border-radius:var(--r);padding:10px;transition:border-color .15s,box-shadow .15s;}

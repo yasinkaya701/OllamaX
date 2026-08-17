@@ -52,6 +52,7 @@ const INVOKE = new Set([
   'cost-csv', // V3.15 (A2-4): kullanım raporu CSV export
   'audit-verify', // V3.15 (A1-3): SHA-256 zincir bütünlük doğrulaması
   'ipc:3:code-agent-stop', // V3.19: çalışan kod ajanı sürecini gerçek durdur
+  'ipc:3:code-agent-plan', // V3.21: Plan Modu (Cursor Agent Planning) — onay öncesi plan üretir
 ]);
 
 contextBridge.exposeInMainWorld('krevyxApi', {

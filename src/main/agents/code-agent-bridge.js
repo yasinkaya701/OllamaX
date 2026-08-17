@@ -356,6 +356,51 @@ async function detectAgents() {
   return result;
 }
 
+/* KREYX.md/CLAUDE.md bellek bağlamını görev metnine iliştirir (Claude Code CLAUDE.md öncülü) */
+function attachMemoryContext(profileId, task, workingDir) {
+  try {
+    const mem = require('./project-memory');
+    const { task: next, memoryFiles } = mem.attachMemory(task, workingDir);
+    if (memoryFiles && memoryFiles.length) {
+      emitStep(profileId, 'plan', `hafıza iliştirildi: ${memoryFiles.map((f) => path.basename(f)).join(', ')}`, 0);
+    }
+    return next;
+  } catch (_) {
+    return task;
+  }
+}
+
+/* Görev yaşam döngüsü kancalarını çalıştırır; krevyx-hooks.json okunur ve adımlara raporlanır */
+async function runLifecycleHooks(profileId, hookType, ctx) {
+  try {
+    const hooks = require('./agent-hooks');
+    const results = await hooks.runHooks(hookType, ctx || {});
+    if (!results || !results.length) return [];
+    const lines = results
+      .filter((r) => r && r.cmd)
+      .map((r) => `[${r.ok ? 'OK' : 'HATA'}] ${r.cmd}`)
+      .join(' | ');
+    if (lines) emitStep(profileId, 'plan', `kanca (${hookType}): ${lines.slice(0, 400)}`, 0);
+    /* adım eşiği kancası: her 5 adımda step kancasını tetikle */
+    if (hookType === 'task-start' && ctx && ctx.workingDir) {
+      try {
+        const interval = setInterval(() => {
+          const entry = liveProcesses.get(profileId);
+          if (!entry) return clearInterval(interval);
+          runLifecycleHooks(profileId, 'step', {
+            agentId,
+            workingDir: ctx.workingDir,
+            stepCount: (entry.stepsCount || 0),
+          });
+        }, 5 * 60 * 1000);
+      } catch (_) { /* noop */ }
+    }
+    return results;
+  } catch (_) {
+    return [];
+  }
+}
+
 async function runCodeAgent(agentId, task, chain) {
   const profile = AGENT_PROFILES[agentId];
   if (!profile) return { ok: false, error: 'Bilinmeyen ajan: ' + agentId };
@@ -372,12 +417,85 @@ async function runCodeAgent(agentId, task, chain) {
     resume: agentId === 'claude-code',
     executable: exe,
   };
-  const finalTask = sanitizeTask(String(task || ''), chain);
-  return runCli(profile, agentId, finalTask, 300000, opts);
+
+  const workingDir = resolveCwd(agentId, opts);
+  const finalTask = sanitizeTask(attachMemoryContext(agentId, String(task || ''), workingDir), chain);
+
+  /* task-start kancası */
+  await runLifecycleHooks(agentId, 'task-start', { agentId, workingDir, stepCount: 0 });
+
+  const result = await runCli(profile, agentId, finalTask, 300000, opts);
+
+  /* task-done / task-fail kancası */
+  await runLifecycleHooks(agentId, result && result.ok ? 'task-done' : 'task-fail', {
+    agentId,
+    workingDir,
+    stepCount: (result && Array.isArray(result.steps) ? result.steps.length : 0),
+  });
+
+  /* Görev sonu değerlendirmesi: diff review + outcomes grading döngüsü */
+  try {
+    const grading = require('./grade-task');
+    const diff = require('./diff-review');
+    if (result && result.ok && cwdRegistry.get(agentId)) {
+      const review = diff.buildDiffReview(cwdRegistry.get(agentId));
+      if (review && review.ok) result.diffReview = review.summary;
+    }
+    const gradeOpts = (opts && opts.grade) || {};
+    if (gradeOpts && gradeOpts.provider) {
+      const grade = await grading.gradeTask({
+        provider: gradeOpts.provider,
+        apiKey: gradeOpts.apiKey,
+        task: finalTask,
+        steps: (result && result.steps) || [],
+        ok: Boolean(result && result.ok),
+      });
+      if (grade) result.grading = grade;
+    }
+  } catch { /* değerlendirmenin hatası ana sonucu etkilemez */ }
+
+  return result;
+}
+
+/* Plan Modu (Cursor Agent Planning) — ajanı değiştirmeden çalıştırıp sonlandırır;
+   gerçek CLI ajanları native plan bayrağı vermez, bu yüzden görev planlama
+   görevi olarak koşulur ve canlı süreç sonlandırılır; renderer'a plan olarak
+   düşen akış, kullanıcı onayından sonra gerçek görevle tekrar koşulur. */
+async function runAgentPlan(agentId, task) {
+  const profile = AGENT_PROFILES[agentId];
+  if (!profile) return { ok: false, error: 'Bilinmeyen ajan: ' + agentId };
+
+  const exe = await findExecutable(profile);
+  if (!exe) {
+    return { ok: false, error: `${profile.label} kurulu değil`, missing: true };
+  }
+
+  const planPrompt = sanitizeTask(
+    String(task || '') + ' Bu görev için adım adım bir plan çıkar: hangi araçlar kullanılacak, hangi dosyalara dokunulacak, hangi riskler var. YALNIZCA plan yap — hiçbir değişiklik uygulamak yok. [PLAN MODU]',
+    null
+  );
+
+  const runP = runCli(profile, agentId, planPrompt, 120000, {
+    executable: exe,
+    resume: false,
+  });
+
+  /* plan üretimini 45 sn ile sınırla; sonlanan ajan "plan hazır" olarak raporlanır */
+  const timed = new Promise((resolve) => {
+    setTimeout(() => resolve(null), 45000);
+  });
+  const race = await Promise.race([runP, timed]);
+  if (race === null) {
+    await stopAgent(agentId);
+  }
+  const base = race || (liveProcesses.has(agentId) ? { ok: true, steps: [], planMode: true } : { ok: true, steps: [], planMode: true });
+  base.planMode = true;
+  return base;
 }
 
 module.exports = {
   runCodeAgent,
+  runAgentPlan,
   detectAgents,
   stopAgent,
   runCli,
@@ -389,3 +507,5 @@ module.exports = {
   cwdRegistry,
   liveProcesses,
 };
+
+

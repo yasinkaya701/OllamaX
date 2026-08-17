@@ -509,6 +509,17 @@ function registerIpcV3Handlers(mainWindow) {
     return stopAgent(payload.agentId);
   });
 
+  /* V3.21: Plan Modu (Cursor Agent Planning) — ajan sadece plan üretir, hiçbir
+     değişiklik uygulamaz; çıktısı adım akışıyla düşer, onay sonrası gerçek görevle
+     tekrar koşulur. */
+  const { runAgentPlan } = require('./agents/code-agent-bridge');
+  handler('code-agent-plan', async (_e, payload) => {
+    if (!payload || typeof payload.agentId !== 'string') return { ok: false, error: 'agentId gerekli.' };
+    const { agentId, task } = payload;
+    if (typeof task !== 'string' || !task.trim()) return { ok: false, error: 'task metni gerekli.' };
+    return runAgentPlan(agentId, task);
+  });
+
   /* ----------------------------- V3.20: MANUS TASK API ----------------------------- */
   const manusAgent = require('./agents/manus-agent');
   function resolveManusApiKey(payload = {}) {

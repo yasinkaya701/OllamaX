@@ -152,12 +152,34 @@
     inputRow.appendChild(runBtn);
     inputRow.appendChild(stopBtn);
 
+    /* V3.21: Plan Modu (Cursor Agent Planning) — önce plan, sonra onayla çalıştır */
+    const planRow = h('div', { className: 'ac-plan-row' });
+    const planLabel = h('span', { className: 'ac-plan-label' }, 'Plan Modu: önce plan çıkar, onayla yürüt');
+    const planToggle = h('button', {
+      className: 'ac-plan-switch',
+      type: 'button',
+      'data-plan-toggle': true,
+      'aria-pressed': 'false',
+      title: 'Açıkken ajan yalnızca plan üretir; gerçek görevi etkilemez.',
+    }, h('span', { className: 'ac-plan-knob' }, ''));
+    planToggle.addEventListener('click', () => {
+      const on = planToggle.getAttribute('aria-pressed') !== 'true';
+      planToggle.setAttribute('aria-pressed', String(on));
+      planToggle.classList.toggle('ac-plan-on', on);
+      if (planLabel) planLabel.textContent = on
+        ? 'Plan Modu AÇIK — Çalıştır yalnızca plan üretir'
+        : 'Plan Modu: önce plan çıkar, onayla yürüt';
+    });
+    planRow.appendChild(planLabel);
+    planRow.appendChild(planToggle);
+
     const log = h('div', { className: 'ac-log', 'data-log': true });
     log.appendChild(h('div', { className: 'ac-log-empty' }, 'Henüz görev yok — bir görev yazıp Çalıştır deyin.'));
 
     card.appendChild(header);
     card.appendChild(meta);
     card.appendChild(inputRow);
+    card.appendChild(planRow);
     card.appendChild(log);
     return card;
   }
@@ -272,8 +294,10 @@
     }
 
     if (useReal) {
+      /* V3.21 Plan Modu (Cursor Agent Planning): onay öncesi yalnızca plan üretir */
+      const isPlanMode = Boolean(card && card.querySelector('[data-plan-toggle]')?.checked);
       const useOrchestra = chain.running; // zincir modunda backend handoff protokolünü kullan
-      const channel = useOrchestra ? 'ipc:3:orchestra-run' : 'ipc:3:code-agent-run';
+      const channel = useOrchestra ? 'ipc:3:orchestra-run' : (isPlanMode ? 'ipc:3:code-agent-plan' : 'ipc:3:code-agent-run');
       ac.invoke(channel, { agentId: a.id, task: task.trim(), chain: useOrchestra ? { root: chain.rootTask, pos: chain.index } : null })
         .then((res) => {
           if (!res) return; // canlı akış step event'leri ile zaten düştü
@@ -297,8 +321,21 @@
             playSimulation();
           } else if (res && res.ok) {
             // steps boş döndüyse live stream event'leri zaten log'a yazıldı
+            /* V3.21: sonuç değerlendirme kartı (Outcomes Grading) + Diff Review */
+            renderGradingCard(card, res);
             setRunning(a, false);
             onAgentDone(a, card);
+          } else if (res && res.planMode) {
+            /* V3.21 Plan Modu: adım akışı zaten log'da; kullanıcı onayından sonra
+               plan toggle kapatılarak gerçek görev tekrar koşulur. */
+            if (card) {
+              const info = document.createElement('div');
+              info.className = 'kc-grade-card';
+              info.innerHTML = '<div class="kc-grade-title">Plan hazır — toggle kapalıyken gerçek görevi tetikleyin</div>';
+              const target = card.querySelector('.kc-actions') || card.querySelector('.kc-step-list') || card;
+              target.appendChild(info);
+            }
+            setRunning(a, false);
           } else {
             appendLogLine(card, `Gerçek köprü döndü: ${res && res.error ? res.error : 'bilinmeyen yanıt'}. Simülasyon moduna geçiliyor.`, 'sonuç');
             playSimulation();
@@ -308,6 +345,36 @@
     } else {
       playSimulation();
     }
+  }
+
+  /* V3.21: outcomes grading + diff review sonuç kartı */
+  function renderGradingCard(card, res) {
+    if (!card || !res) return;
+    const g = res.grading;
+    const hasReview = res.diffReview;
+    if (!g && !hasReview) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'kc-grade-card';
+    let html = '';
+    if (g) {
+      const cls = g.pass ? 'kc-grade-pass' : 'kc-grade-fail';
+      html += `<div class="kc-grade-title">Değerlendirme · ${g.score}/100 <span class="${cls}">${g.pass ? 'Geçti' : 'Kaldı'}</span></div>`;
+      if (g.summary) html += `<div class="kc-grade-summary">${escHtml(String(g.summary))}</div>`;
+      if (g.issues && g.issues.length) html += `<div class="kc-grade-issues">${g.issues.map((i) => '• ' + escHtml(String(i))).join('<br>')}</div>`;
+    }
+    if (hasReview) {
+      html += `<details class="kc-review-details"><summary>Diff Review (${(String(res.diffReview).split('\n').filter(Boolean).length)} satır)</summary><pre class="kc-review-pre">${escHtml(String(res.diffReview))}</pre></details>`;
+    }
+    wrap.innerHTML = html;
+    const target = card.querySelector('.kc-actions') || card.querySelector('.kc-step-list') || card;
+    target.appendChild(wrap);
+  }
+
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
   }
 
   /* ------------------------------------------------------------------ */
