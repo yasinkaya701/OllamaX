@@ -508,6 +508,48 @@ function registerIpcV3Handlers(mainWindow) {
     return { ok: true, agents: { ...detected, ...orch } };
   });
 
+  /* ------------------------------ GÜNCELLEME (v3.24) ------------------------------ */
+
+  // v3.24: Otomatik güncelleme bildirimi — GitHub Releases'taki latest.yml
+  // üzerinden sürüm karşılaştırması yapar; yeni sürüm varsa pencereye
+  // `ipc:3:update:available` olayı yayılır (bildirim toast'u tetikler).
+  const { checkForUpdate, startAutoCheck } = require('./update/updater');
+
+  handler('update-check', async () => {
+    try {
+      const result = await checkForUpdate();
+      return { ok: true, ...result };
+    } catch (err) {
+      return { ok: false, error: err?.message || 'Güncelleme denetlenemedi.' };
+    }
+  });
+
+  // Önbelleği temizler (manuel zorla denetim) ve yeniden kontrol eder
+  handler('update-check-force', async () => {
+    try {
+      const updater = require('./update/updater');
+      updater.resetCacheForTest();
+      const result = await checkForUpdate();
+      return { ok: true, ...result };
+    } catch (err) {
+      return { ok: false, error: err?.message || 'Güncelleme denetlenemedi.' };
+    }
+  });
+
+  handler('update-dismiss', () => {
+    // Renderer "ertele" bastıysa önbelleği süresiz boz: ertesi gün yenilenir
+    const updater = require('./update/updater');
+    updater.resetCacheForTest();
+    return { ok: true };
+  });
+
+  // Açılışta arka plan otomatik denetimi (bir kez, 24s önbellek)
+  try {
+    startAutoCheck(mainWindow).catch(() => {});
+  } catch {
+    /* denetim app'i asla kırmaz */
+  }
+
   /* V3.21.1: plan adım düzenleme deposu — code-agent-run'dan önce tanımlanır
      (const TDZ'a düşmemesi için handler tanımından önce bildirilir). */
   const planEdits = new Map(); // agentId -> [{op, index, text}] son plan için

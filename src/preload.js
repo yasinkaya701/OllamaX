@@ -21,6 +21,7 @@ const ON = new Set([
   'agent-chain-progress', // Orkestrasyon: zincir ilerleme akışı
   'ipc:3:code-agent:step', // V3.19: kod ajanı canlı adım akışı (stream)
   'ipc:3:code-agent:done', // V3.19: kod ajanı görev tamamlandı
+  'ipc:3:update:available', // V3.24: güncelleme bildirimi
 ]);
 
 const INVOKE = new Set([

@@ -49,3 +49,24 @@
 - [ ] Commit + push, tüm testler yeşil (210+)
 - [ ] Siteye gerekirse yansıtma
 - [ ] Rapor teslimi
+
+# v3.24 — Auto-updater + Site güncellemesi
+
+## Auto-updater (masaüstü)
+- [ ] Mevcut update mantığını incele (latest.yml kullanımı var mı?)
+- [ ] src/main/update/updater.js: latest.yml + semver karşılaştırma
+- [ ] Uygulama açılışında arka plan sürüm kontrolü
+- [ ] Renderer bildirim toast/dialog (indir + sürüm notları aç)
+- [ ] IPC: update-notify / update-dismiss / update-check
+- [ ] Birim testler
+- [ ] package.json 3.24.0
+
+## Site (v3.24)
+- [ ] İndirme butonları v3.23.0 varlıklarına: Krevyx-Ultra-3.23.0.exe / Krevyx-Ultra-3.23.0-arm64.dmg / Krevyx-Ultra-3.23.0.AppImage
+- [ ] /cli: verify-audit örnek SARIF çıktı bloğu (TR/EN)
+- [ ] i18n 3.24.0 (hero, roadmap, changelog lokal notlar)
+- [ ] Changelog.tsx LOCAL_NOTES v3.24.0
+
+## Teslim
+- [ ] Tam test paketi yeşil; commit + v3.24.0 tag + push → CI yeşil
+- [ ] Release linkleri doğrula; site checkpoint; final rapor

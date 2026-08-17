@@ -788,6 +788,17 @@ details.acc-github[open] > .github-acc-sum .acc-chev::before {
 .toast.success{border-color:rgba(63,185,80,.4);}
 .toast.error{border-color:rgba(248,81,73,.45);color:var(--red);}
 .toast.warn{border-color:rgba(210,153,34,.4);}
+/* v3.24 — Güncelleme bildirim kartı (update-notice). Üç renkli disipline
+   uyarlı: zümrüt aksan + monokrom yüzey. Toast yığınının üstünde. */
+#update-notice{position:fixed;top:16px;right:16px;z-index:10001;max-width:380px;background:var(--surface);border:1px solid rgba(0,168,120,.5);border-radius:12px;padding:14px 16px;box-shadow:0 12px 32px rgba(0,0,0,.5);color:var(--text);animation:toastIn .25s ease;font-size:13px;}
+.update-notice-title{font-weight:700;color:var(--accent);margin-bottom:4px;font-size:13px;letter-spacing:.02em;}
+.update-notice-body{color:var(--text2);line-height:1.5;font-size:12px;margin-bottom:10px;}
+.update-notice-actions{display:flex;gap:8px;}
+#update-notice button{background:var(--accent);color:#0d1117;border:none;font-weight:700;font-size:12px;padding:6px 14px;border-radius:8px;cursor:pointer;transition:all .15s cubic-bezier(.4,0,.2,1);}
+#update-notice button:hover{background:var(--accent-h);transform:translateY(-1px);}
+#update-notice button:active{transform:scale(.97);}
+#update-notice button.ghost{background:transparent;color:var(--text2);border:1px solid var(--border);font-weight:500;}
+#update-notice button.ghost:hover{border-color:var(--text2);color:var(--text);transform:none;}
 .toast.info{border-color:rgba(0,168,120,.35);}
 @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
