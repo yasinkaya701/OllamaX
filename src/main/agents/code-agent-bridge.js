@@ -30,7 +30,7 @@ const AGENT_PROFILES = {
     detect: ['claude'],
     // stream-json: type alanlı JSON satırları; stdout ayrıştırıcı etiket üretir
     buildCmd: (task, opts) => {
-      const args = ['-p', task, '--output-format', 'stream-json'];
+      const args = ['-p', task, '--output-format', 'stream-json', '--verbose'];
       if (opts && opts.resume) args.push('--resume');
       return args;
     },
@@ -42,9 +42,9 @@ const AGENT_PROFILES = {
     detect: ['codex'],
     // `codex exec` non-interaktif moddur ve pipe edilen stdin'den görevi okur.
     // `codex prompt` interaktif (PTY) moddur — pipe edilen stdin ile "stdin is not
-    // a terminal" hatası verir; bu yüzden bridge her zaman `exec` yolunu kullanır.
+    // interaktif `codex prompt` pipe stdin'de "stdin is not a terminal" hatası verir; bu yüzden bridge her zaman `exec` yolunu kullanır.
     // `--skip-git-repo-check`: güvenilmeyen dizinlerde (sandbox/CI) çalışmayı sağlar.
-    buildCmd: () => ['exec', '--skip-git-repo-check'],
+    buildCmd: () => ['exec', '--skip-git-repo-check'], // görev stdin'den verilir (interaktif olmayan mod)
     parser: 'lines',
     stdin: true,
     cwdFrom: 'workspace',
@@ -96,31 +96,29 @@ function emitDone(agentId, result) {
 }
 
 function findExecutable(profile) {
-  for (const name of profile.detect) {
-    try {
-      // `command` bir shell built-in'idir ve doğrudan spawn edilemez (ENOENT);
-      // POSIX'te `sh -c "command -v <exe>"` ile, Windows'ta doğrudan exe ile kontrol edilir.
-      const isWin = process.platform === 'win32';
-      const args = isWin ? [name] : ['-c', `command -v ${name}`];
-      const p = spawn(isWin ? name : 'sh', args, { shell: false, stdio: 'ignore' });
-      return new Promise((resolve) => {
-        p.on('error', () => resolve(null));
-        const t = setTimeout(() => {
-          try { p.kill(); } catch { /* noop */ }
+  // Fallback zincirini (detect listesi) EŞZAMANLI dene; ilk bulunanı döndür.
+  const isWin = process.platform === 'win32';
+  const probes = profile.detect.map(
+    (name) =>
+      new Promise((resolve) => {
+        try {
+          const args = isWin ? [name] : ['-c', `command -v ${name}`];
+          const p = spawn(isWin ? name : 'sh', args, { shell: false, stdio: 'ignore' });
+          p.on('error', () => resolve(null));
+          const t = setTimeout(() => {
+            try { p.kill(); } catch { /* noop */ }
+            resolve(null);
+          }, 2000);
+          p.on('exit', (code) => {
+            clearTimeout(t);
+            resolve(code === 0 ? name : null);
+          });
+        } catch {
           resolve(null);
-        }, 2000);
-        // `sh -c "command -v <exe>"`: sh her zaman spawn olur — ajanın varlığı
-        // çıkış kodundan anlaşılır (komut bulunamazsa 127 döner).
-        p.on('exit', (code) => {
-          clearTimeout(t);
-          resolve(code === 0 ? name : null);
-        });
-      });
-    } catch {
-      continue;
-    }
-  }
-  return null;
+        }
+      })
+  );
+  return Promise.all(probes).then((results) => results.find((r) => r != null) || null);
 }
 
 /* ------------------------------------------------------------------ */
@@ -132,7 +130,8 @@ function findExecutable(profile) {
  *   {"type":"tool_use", ...}   {"type":"result"}   {"type":"system", ...}
  */
 function parseStreamJsonLine(raw) {
-  const l = raw.trim();
+  if (raw == null) return null;
+  const l = String(raw).trim();
   if (!l || l[0] !== '{') return null;
   let j;
   try {
@@ -179,23 +178,45 @@ function parseLineTag(line, profileId) {
   return 'plan';
 }
 
+/* Görev giriş temizliği — fuzz dayanıklılığı: bozuk unicode, kontrol karakterleri,
+   NULL byte, satır enjeksiyonu ve boyut sınırı uygular */
+const MAX_TASK_BYTES = 32 * 1024;
 function sanitizeTask(task, chain) {
-  if (!chain) return task;
-  return `${task} [HANDOFF] zincir görevi: önceki ajan çıktısını işleyip ilerlet.`;
+  let t = task == null ? '' : String(task);
+  /* UTF-8 bozuk çift byte'ları ve NULL byte'ları temizle */
+  t = t.replace(/\0/g, '').replace(/\uFFFD/g, '');
+  /* Kontrol karakterlerini sil (CR/TAB hariç — CLI dostu kalır) */
+  t = t.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+  /* Satır enjeksiyonunu önle: stdin akışındaki satır ayrımını korumak için LF → boşluk */
+  t = t.replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  t = t.slice(0, MAX_TASK_BYTES);
+  if (!t) t = 'yok';
+  if (!chain) return t;
+  return `${t} [HANDOFF] zincir görevi: önceki ajan çıktısını işleyip ilerlet.`;
 }
 
+/* Çalışma dizini güvenliği: silinmiş/geçersiz CWD'yi process.cwd()'ye düşür */
 function resolveCwd(agentId, opts) {
-  if (opts && opts.workingDir) {
-    cwdRegistry.set(agentId, opts.workingDir);
-    return opts.workingDir;
+  const fs = require('fs');
+  const raw = (opts && opts.workingDir) ? opts.workingDir : cwdRegistry.get(agentId) || process.cwd();
+  try {
+    const st = fs.statSync(raw);
+    if (st.isDirectory()) {
+      if (opts && opts.workingDir) cwdRegistry.set(agentId, raw);
+      return raw;
+    }
+  } catch {
+    /* dizin yok/erişim yok — düş */
   }
-  return cwdRegistry.get(agentId) || process.cwd();
+  const safe = process.cwd();
+  if (opts && opts.workingDir) cwdRegistry.set(agentId, safe);
+  return safe;
 }
 
 function runCli(profile, profileId, task, timeoutMs, opts) {
   const args = profile.buildCmd(task, opts);
   const cwd = resolveCwd(profileId, opts);
-  const exe = (opts && opts.executable) ? String(opts.executable) : args.shift();
+  const exe = (opts && opts.executable) ? String(opts.executable) : profile.detect[0];
   return new Promise((resolve) => {
     let child;
     try {
@@ -212,53 +233,74 @@ function runCli(profile, profileId, task, timeoutMs, opts) {
     /* canlı süreç kayıt defterine al — stop çağrısı buradan kill eder */
     liveProcesses.set(profileId, { child, killed: false });
 
+    /* çift-bitirme koruması: finish yalnızca ilk çağrıda çalışır (timeout/exit/error yarışları) */
+    let finished = false;
     const steps = [];
     let buffer = '';
     let seq = 0;
     const push = (text, kind) => {
-      const t = text.trim();
-      if (!t) return;
-      seq += 1;
-      const entry = { text: t.slice(0, 500), kind };
-      steps.push(entry);
-      emitStep(profileId, kind, entry.text, seq);
+      try {
+        const t = String(text || '').trim();
+        if (!t) return;
+        seq += 1;
+        const entry = { text: t.slice(0, 500), kind: kind || 'plan' };
+        steps.push(entry);
+        emitStep(profileId, entry.kind, entry.text, seq);
+      } catch {
+        /* hiçbir ayrıştırıcı/emit hatası ana akışı öldürmez */
+      }
     };
 
     const finish = (result) => {
+      if (finished) return;
+      finished = true;
       clearTimeout(timer);
-      liveProcesses.delete(profileId);
-      emitDone(profileId, result);
+      try {
+        liveProcesses.delete(profileId);
+      } catch {
+        /* noop */
+      }
+      try {
+        emitDone(profileId, result);
+      } catch {
+        /* noop */
+      }
       resolve(result);
     };
 
     const timer = setTimeout(() => {
-      try { child.kill(); } catch { /* noop */ }
+      try {
+        if (child && !child.killed) child.kill();
+      } catch {
+        /* noop */
+      }
       finish({ ok: true, steps, truncated: true });
     }, timeoutMs);
 
-    child.stdout.on('data', (chunk) => {
-      buffer += String(chunk);
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
-      lines.forEach((raw) => {
-        if (profile.parser === 'stream-json') {
-          const parsed = parseStreamJsonLine(raw);
-          if (parsed) push(parsed.text, parsed.kind);
-        } else if (raw.trim()) {
-          push(raw, parseLineTag(raw, profileId));
-        }
-      });
-    });
-    child.stderr.on('data', (chunk) => {
-      const lines = String(chunk).split('\n');
-      lines.forEach((l) => {
-        if (l.trim()) push(l, parseLineTag(l, profileId));
-      });
-    });
+    const safeData = (parser) => (chunk) => {
+      try {
+        buffer += String(chunk);
+        if (buffer.length > 2 * 1024 * 1024) buffer = buffer.slice(-1024 * 1024);
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        lines.forEach((raw) => {
+          if (parser === 'stream-json') {
+            const parsed = parseStreamJsonLine(raw);
+            if (parsed) push(parsed.text, parsed.kind);
+          } else if (raw.trim()) {
+            push(raw, parseLineTag(raw, profileId));
+          }
+        });
+      } catch {
+        /* bozuk veri / ayrıştırıcı hatası süreci durdurmaz */
+      }
+    };
+
+    child.stdout.on('data', safeData(profile.parser));
+    child.stderr.on('data', safeData(profile.parser));
 
     child.on('error', (err) => {
-      liveProcesses.delete(profileId);
-      finish({ ok: false, error: String(err.message).slice(0, 200), missing: true });
+      finish({ ok: false, error: String(err && err.message).slice(0, 200), missing: true });
     });
     child.on('exit', (code) => {
       if (buffer && profile.parser !== 'stream-json') push(buffer, parseLineTag(buffer, profileId));
@@ -266,28 +308,34 @@ function runCli(profile, profileId, task, timeoutMs, opts) {
     });
 
     if (profile.stdin) {
-      child.stdin.write(task + '\n');
-      child.stdin.end();
+      try {
+        if (child.stdin && !child.stdin.destroyed) {
+          child.stdin.write(task + '\n');
+          child.stdin.end();
+        }
+      } catch {
+        /* erken ölen süreçte stdin yazısı atlanır */
+      }
     }
   });
 }
 
 async function stopAgent(agentId) {
   const entry = liveProcesses.get(agentId);
-  if (!entry) return { ok: true, stopped: false, reason: 'çalışan süreç yok' };
+  if (!entry || entry.killed) return { ok: true, stopped: false, reason: 'çalışan süreç yok' };
   entry.killed = true;
   try {
-    entry.child.kill('SIGTERM');
-    setTimeout(() => {
-      try {
-        if (!entry.child.killed) entry.child.kill('SIGKILL');
-      } catch {
-        /* noop */
-      }
-    }, 1500);
+    if (entry.child && !entry.child.killed) entry.child.kill('SIGTERM');
   } catch (err) {
-    return { ok: false, error: String(err.message).slice(0, 200) };
+    return { ok: false, error: String(err && err.message).slice(0, 200) };
   }
+  setTimeout(() => {
+    try {
+      if (entry.child && !entry.child.killed) entry.child.kill('SIGKILL');
+    } catch {
+      /* noop */
+    }
+  }, 1500);
   return { ok: true, stopped: true };
 }
 
@@ -332,6 +380,9 @@ module.exports = {
   runCodeAgent,
   detectAgents,
   stopAgent,
+  runCli,
+  resolveCwd,
+  sanitizeTask,
   AGENT_PROFILES,
   parseStreamJsonLine,
   parseLineTag,
