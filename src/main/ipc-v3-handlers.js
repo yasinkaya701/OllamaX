@@ -27,7 +27,7 @@ const { startServer, stopServer, listServers } = require('./mcp/client');
 const profilePackage = require('./profile-package');
 const auditExport = require('./audit-export');
 const { getAgentMcpSets, setAgentMcpSets } = require('./mcp/broker');
-const { runCodeAgent } = require('./agents/code-agent-bridge');
+const { runCodeAgent, stopAgent } = require('./agents/code-agent-bridge');
 const orchestrator = require('./agents/orchestrator');
 /* V3.14 (A1-1/A1-2): gizli anahtar kasası + air-gapped ağ modu */
 const networkMode = require('./network/network-mode');
@@ -501,6 +501,12 @@ function registerIpcV3Handlers(mainWindow) {
     const { agentId, task, chain } = payload;
     const result = await runCodeAgent(agentId, String(task || ''), chain || null);
     return result;
+  });
+
+  /* V3.19: canlı akışla çalışan kod ajanı sürecini gerçek olarak durdur */
+  handler('code-agent-stop', async (_e, payload) => {
+    if (!payload || typeof payload.agentId !== 'string') return { ok: false, error: 'agentId gerekli.' };
+    return stopAgent(payload.agentId);
   });
 
   handler('orchestra-discover', async () => {

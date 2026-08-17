@@ -19,6 +19,8 @@ const ON = new Set([
   'agent-discover', // Orkestrasyon: lokal ajan keşfi sonucu
   'agent-output', // Orkestrasyon: ajan çıktı akışı
   'agent-chain-progress', // Orkestrasyon: zincir ilerleme akışı
+  'ipc:3:code-agent:step', // V3.19: kod ajanı canlı adım akışı (stream)
+  'ipc:3:code-agent:done', // V3.19: kod ajanı görev tamamlandı
 ]);
 
 const INVOKE = new Set([
@@ -49,6 +51,7 @@ const INVOKE = new Set([
   'cost-check', // V3.15 (A2-1): istek öncesi bütçe kontrolü
   'cost-csv', // V3.15 (A2-4): kullanım raporu CSV export
   'audit-verify', // V3.15 (A1-3): SHA-256 zincir bütünlük doğrulaması
+  'ipc:3:code-agent-stop', // V3.19: çalışan kod ajanı sürecini gerçek durdur
 ]);
 
 contextBridge.exposeInMainWorld('krevyxApi', {

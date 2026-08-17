@@ -185,6 +185,48 @@
     if (s) s.history.push({ time: Date.now(), kind, text: line });
   }
 
+  /* ------------------------------------------------------------------ */
+  /* V3.19: canlı akış dinleyici — main süreç her adımı stream event ile atar */
+  /* ------------------------------------------------------------------ */
+  function subscribeLiveStream() {
+    const ac = getApi();
+    if (!ac || typeof ac.on !== 'function') return;
+    const offStep = ac.on('ipc:3:code-agent:step', (payload) => {
+      if (!payload || !payload.agentId) return;
+      const card = $(`[data-agent="${payload.agentId}"]`);
+      if (card) appendLogLine(card, String(payload.text || ''), payload.kind || 'plan');
+    });
+    const offDone = ac.on('ipc:3:code-agent:done', (payload) => {
+      if (!payload || !payload.agentId) return;
+      const a = AGENTS.find((x) => x.id === payload.agentId);
+      if (!a) return;
+      const s = state.get(a.id);
+      if (s && s.running) {
+        const res = payload.result;
+        if (res && !res.ok) {
+          appendLogLine($(`[data-agent="${a.id}"]`), `Ajan hatası: ${res.error || 'bilinmeyen'}`, 'sonuç');
+        } else if (res && res.truncated) {
+          appendLogLine($(`[data-agent="${a.id}"]`), 'Görev zaman aşımına uğradı — akış kesildi.', 'sonuç');
+        } else {
+          appendLogLine($(`[data-agent="${a.id}"]`), 'Görev tamamlandı.', 'sonuç');
+        }
+      }
+      setRunning(a, false);
+      onAgentDone(a);
+      detectAgentConnections();
+    });
+    /* pane kapatıldığında abonelikleri serbest bırak */
+    const pane = $('#ttab-code-agents');
+    if (pane) {
+      const ro = new MutationObserver((mut) => {
+        if (mut[0] && mut[0].removedNodes && mut[0].removedNodes.length > 0) {
+          offStep(); offDone(); ro.disconnect();
+        }
+      });
+      ro.observe(pane.parentElement || pane, { childList: true });
+    }
+  }
+
   function runAgentTask(a, task) {
     if (!task.trim()) return;
     setRunning(a, true);
@@ -219,7 +261,8 @@
       const channel = useOrchestra ? 'ipc:3:orchestra-run' : 'ipc:3:code-agent-run';
       ac.invoke(channel, { agentId: a.id, task: task.trim(), chain: useOrchestra ? { root: chain.rootTask, pos: chain.index } : null })
         .then((res) => {
-          if (res && res.ok && Array.isArray(res.steps)) {
+          if (!res) return; // canlı akış step event'leri ile zaten düştü
+          if (res && res.ok && Array.isArray(res.steps) && res.steps.length > 0) {
             let i = 0;
             const realTick = () => {
               if (i >= res.steps.length || !state.get(a.id).running) {
@@ -237,6 +280,10 @@
             appendLogLine(card, `Gerçek CLI bulunamadı: ${res.error || 'kurulu değil'}. Simülasyon moduna geçiliyor.`, 'sonuç');
             toast(`${a.label} CLI bulunamadı — simülasyon modu`, 'warn');
             playSimulation();
+          } else if (res && res.ok) {
+            // steps boş döndüyse live stream event'leri zaten log'a yazıldı
+            setRunning(a, false);
+            onAgentDone(a, card);
           } else {
             appendLogLine(card, `Gerçek köprü döndü: ${res && res.error ? res.error : 'bilinmeyen yanıt'}. Simülasyon moduna geçiliyor.`, 'sonuç');
             playSimulation();
@@ -404,6 +451,13 @@
     }
     if (stopBtn) {
       stopBtn.addEventListener('click', () => {
+        /* V3.19: gerçek süreç durdurma — main tarafında child kill edilir */
+        const ac = getApi();
+        if (ac && typeof ac.invoke === 'function') {
+          ac.invoke('ipc:3:code-agent-stop', { agentId: a.id })
+            .then(() => appendLogLine(card, 'Süreç durduruldu (kill).', 'sonuç'))
+            .catch(() => { /* noop */ });
+        }
         appendLogLine(card, 'Çalışma kullanıcı tarafından durduruldu.', 'sonuç');
         setRunning(a, false);
       });
@@ -447,6 +501,7 @@
       grid.appendChild(card);
     }
     pane.appendChild(grid);
+    subscribeLiveStream();
     detectAgentConnections();
   }
 
