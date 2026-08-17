@@ -1,6 +1,5 @@
 <div align="center">
 
-<img src="assets/preview.png" alt="Krevyx Ultra Preview" width="800">
 
 # 🤖 Krevyx — Open-Source AI Agent Studio
 ### Local Ollama + 18 Cloud Providers, Tek Stüdyoda Agent Orkestrasyonu
