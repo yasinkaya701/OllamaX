@@ -11,11 +11,32 @@
  *      bir sonraki ajanın görev prompt'una enjekte eder
  *
  * Ajan örnekleri: Claude Code (şef), Codex CLI, Antigravity, yerel Ollama,
- * Terminal (kabuk), Dosya sistemi (sandbox'lı okuma/yazma).
+ * Terminal (kabuk), Dosya sistemi (sandbox'lı okuma/yazma) ve V3.20 itibarıyla
+ * Manus (bulut ajanı — task.create + polling).
  */
 
 const { spawn } = require('child_process');
 const http = require('http');
+
+/* V3.20: Manus — bulut ajanı (yerel CLI yok; task.create + polling ile konuşur) */
+let manusAgent = null;
+function getManusAgent() {
+  if (!manusAgent) manusAgent = require('./manus-agent');
+  return manusAgent;
+}
+function resolveManusApiKey() {
+  try {
+    const configStore = require('../config/config-store');
+    const ref = configStore.readConfig?.()?.providers?.manus?.apiKey;
+    if (typeof ref === 'string' && ref.startsWith('VAULT:')) {
+      const sv = require('../secrets/secrets-vault');
+      return sv.getKey(ref.split(':')[2] || 'manus') || '';
+    }
+    return ref || '';
+  } catch {
+    return '';
+  }
+}
 
 /* ------------------------------------------------------------------ */
 /* 1) Ajan kayıt defteri                                               */
@@ -59,6 +80,14 @@ const REGISTRY = {
       { type: 'spawn', cmd: process.platform === 'win32' ? 'cmd' : 'sh', args: () => [process.platform === 'win32' ? '/c' : '-c'], stdin: true, timeout: 120000 },
     ],
   },
+  /* V3.20: Manus — kayıt defterinde görünen bulut ajanı; reachable kontrolü API anahtarına bağlı */
+  manus: {
+    label: 'Manus (Bulut)',
+    kind: 'cloud',
+    transports: [
+      { type: 'manus-task', timeout: 600000 },
+    ],
+  },
 };
 
 const _cache = new Map(); // agentId -> { label, kind, transport, executable }
@@ -83,6 +112,12 @@ function probeSpawn(cmd) {
 async function discoverAgent(agentId) {
   const reg = REGISTRY[agentId];
   if (!reg) return null;
+
+  if (reg.kind === 'cloud') {
+    /* Manus: anahtar var ve geçerli ise erişilebilir sayılır (API çağrısı yapılmaz) */
+    const reachable = Boolean(resolveManusApiKey());
+    return { label: reg.label, kind: 'cloud', transport: reg.transports[0], executable: 'manus-api', reachable };
+  }
 
   if (reg.kind === 'http') {
     // Ollama HTTP probe
@@ -117,6 +152,20 @@ async function discoverAll() {
 /* ------------------------------------------------------------------ */
 /* 2) Evrensel dispatcher: run(agentId, task, opts)                    */
 /* ------------------------------------------------------------------ */
+
+async function runManusTask(tr, task) {
+  /* V3.20: Manus bulut ajanı — görevi task.create ile açar, tamamlanana kadar bekler */
+  try {
+    const res = await getManusAgent().runManusAgent({ apiKey: resolveManusApiKey(), task });
+    if (res && res.ok) {
+      const steps = (res.steps || []).map((s) => (typeof s === 'string' ? { text: s.slice(0, 500), kind: 'plan' } : s));
+      return { ok: true, steps, taskUrl: res.taskUrl, structuredOutput: res.structuredOutput };
+    }
+    return { ok: false, error: (res && res.error) || 'Manus görevi tamamlanamadı', taskUrl: res && res.taskUrl };
+  } catch (err) {
+    return { ok: false, error: String(err.message).slice(0, 200) };
+  }
+}
 
 function runHttpOllama(tr, model, task) {
   return new Promise((resolve) => {
@@ -194,6 +243,9 @@ async function runAgent(agentId, task, opts = {}) {
     _cache.set(agentId, info);
   }
   if (!info || !info.reachable || !info.transport) {
+    if (info && info.kind === 'cloud') {
+      return { ok: false, error: `${info.label} erişilebilir değil — Ayarlar → APIs sekmesinden Manus API anahtarını ekleyin.`, missing: true };
+    }
     return { ok: false, error: `${info ? info.label : agentId} erişilebilir değil — kurulu CLI/MCP bulunamadı.`, missing: true };
   }
 
@@ -202,6 +254,9 @@ async function runAgent(agentId, task, opts = {}) {
 
   if (tr.type === 'ollama-http') {
     return runHttpOllama(tr, opts.model);
+  }
+  if (tr.type === 'manus-task') {
+    return runManusTask(tr, payload);
   }
   return runSpawnStream(tr, payload);
 }

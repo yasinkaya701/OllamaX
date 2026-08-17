@@ -613,12 +613,13 @@ function iconSvg(cls) {
 }
 
 const MODEL_LISTS = { ollama: [], openai: [], anthropic: [], gemini: [], openrouter: [], xai: [], mistral: [], deepseek: [], cohere: [], perplexity: [], together: [], groq: [], cerebras: [], fireworks: [], replicate: [], azure: [], "aws-bedrock": [], lmstudio: [], custom: [] };
-const CLOUD_PROVIDERS = ['openai','anthropic','gemini','openrouter', 'xai', 'mistral', 'deepseek', 'cohere', 'perplexity', 'together', 'groq', 'cerebras', 'fireworks', 'replicate', 'azure', 'aws-bedrock', 'lmstudio', 'custom'];
+const CLOUD_PROVIDERS = ['openai','anthropic','gemini','openrouter', 'xai', 'mistral', 'deepseek', 'cohere', 'perplexity', 'together', 'groq', 'cerebras', 'fireworks', 'replicate', 'azure', 'aws-bedrock', 'lmstudio', 'custom', 'manus'];
 
 const MODEL_FALLBACK = {
   openai: ['gpt-5.5', 'gpt-5.3', 'gpt-5', 'gpt-5-mini', 'gpt-4o', 'gpt-4.1', 'o5-mini', 'o4-mini'],
   anthropic: ['claude-sonnet-5-20260630', 'claude-opus-4-8', 'claude-sonnet-4-20250514'],
   gemini: ['gemini-3.7-flash', 'gemini-3-pro', 'gemini-2.5-flash', 'gemini-2.5-pro'],
+  manus: ['manus'],
 };
 
 const state = {
@@ -974,17 +975,17 @@ async function loadPersistedSession() {
       q('#openai-key').value = state.settings.openai || '';
       q('#anthropic-key').value = state.settings.anthropic || '';
       q('#gemini-key').value = state.settings.gemini || '';
-  q('#openrouter-key').value = state.settings[pid] || '';
-  q('#xai-key').value = state.settings[pid] || '';
-  q('#mistral-key').value = state.settings[pid] || '';
-  q('#deepseek-key').value = state.settings[pid] || '';
-  q('#cohere-key').value = state.settings[pid] || '';
-  q('#perplexity-key').value = state.settings[pid] || '';
-  q('#together-key').value = state.settings[pid] || '';
-  q('#groq-key').value = state.settings[pid] || '';
-  q('#cerebras-key').value = state.settings[pid] || '';
-  q('#fireworks-key').value = state.settings[pid] || '';
-  q('#replicate-key').value = state.settings[pid] || '';
+  q('#openrouter-key').value = state.settings['openrouter'] || '';
+  q('#xai-key').value = state.settings['xai'] || '';
+  q('#mistral-key').value = state.settings['mistral'] || '';
+  q('#deepseek-key').value = state.settings['deepseek'] || '';
+  q('#cohere-key').value = state.settings['cohere'] || '';
+  q('#perplexity-key').value = state.settings['perplexity'] || '';
+  q('#together-key').value = state.settings['together'] || '';
+  q('#groq-key').value = state.settings['groq'] || '';
+  q('#cerebras-key').value = state.settings['cerebras'] || '';
+  q('#fireworks-key').value = state.settings['fireworks'] || '';
+  q('#replicate-key').value = state.settings['replicate'] || '';
   q('#azure-endpoint').value = state.settings.azureEndpoint || '';
   q('#azure-key').value = state.settings.azureApiKey || '';
   q('#bedrock-region').value = state.settings.bedrockRegion || '';
@@ -993,6 +994,7 @@ async function loadPersistedSession() {
   q('#lmstudio-endpoint').value = state.settings.lmstudioEndpoint || '';
   q('#custom-endpoint').value = state.settings.customEndpoint || '';
   q('#custom-key').value = state.settings.customApiKey || '';
+  q('#manus-key').value = state.settings['manus'] || '';
       if (Array.isArray(disk.history) && disk.history.length) {
         state.history = disk.history;
         refreshChatFromHistory();
@@ -1037,7 +1039,7 @@ function loadState() {
     const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (s?.agents?.length) state.agents = s.agents;
     if (s?.settings && typeof s.settings === 'object') {
-      for (const k of ['openai', 'anthropic', 'gemini', 'ollamaHost', 'openrouter', 'xai', 'mistral', 'deepseek', 'cohere', 'perplexity', 'together', 'groq', 'cerebras', 'fireworks', 'replicate', 'azure', 'aws-bedrock', 'lmstudio', 'custom']) {
+      for (const k of ['openai', 'anthropic', 'gemini', 'ollamaHost', 'openrouter', 'xai', 'mistral', 'deepseek', 'cohere', 'perplexity', 'together', 'groq', 'cerebras', 'fireworks', 'replicate', 'azure', 'aws-bedrock', 'lmstudio', 'custom', 'manus']) {
         if (typeof s.settings[k] === 'string') state.settings[k] = s.settings[k];
       }
       if (Array.isArray(s.settings.ollamaMachines) && s.settings.ollamaMachines.length) {
@@ -2348,7 +2350,8 @@ function populateAgentModelSelect(provider) {
 /* ================================================================ */
 /* V3.12: Orkestrasyon — lokal ajan keşfi + zincir çalıştırma        */
 /* ================================================================ */
-const ORCH_CHAIN_ORDER = ['claude-code', 'codex', 'antigravity'];
+/* V3.20: Manus (bulut otonom ajan) zincir ve şef rolüne eklendi */
+const ORCH_CHAIN_ORDER = ['claude-code', 'codex', 'antigravity', 'manus'];
 let orchAgents = {};
 let orchChainActive = [];
 
@@ -2552,17 +2555,17 @@ async function saveApiKeys() {
   state.settings.openai = q('#openai-key').value.trim();
   state.settings.anthropic = q('#anthropic-key').value.trim();
   state.settings.gemini = q('#gemini-key').value.trim();
-  state.settings[pid] = (q('#openrouter-key').value || '').trim();
-  state.settings[pid] = (q('#xai-key').value || '').trim();
-  state.settings[pid] = (q('#mistral-key').value || '').trim();
-  state.settings[pid] = (q('#deepseek-key').value || '').trim();
-  state.settings[pid] = (q('#cohere-key').value || '').trim();
-  state.settings[pid] = (q('#perplexity-key').value || '').trim();
-  state.settings[pid] = (q('#together-key').value || '').trim();
-  state.settings[pid] = (q('#groq-key').value || '').trim();
-  state.settings[pid] = (q('#cerebras-key').value || '').trim();
-  state.settings[pid] = (q('#fireworks-key').value || '').trim();
-  state.settings[pid] = (q('#replicate-key').value || '').trim();
+  state.settings['openrouter'] = (q('#openrouter-key').value || '').trim();
+  state.settings['xai'] = (q('#xai-key').value || '').trim();
+  state.settings['mistral'] = (q('#mistral-key').value || '').trim();
+  state.settings['deepseek'] = (q('#deepseek-key').value || '').trim();
+  state.settings['cohere'] = (q('#cohere-key').value || '').trim();
+  state.settings['perplexity'] = (q('#perplexity-key').value || '').trim();
+  state.settings['together'] = (q('#together-key').value || '').trim();
+  state.settings['groq'] = (q('#groq-key').value || '').trim();
+  state.settings['cerebras'] = (q('#cerebras-key').value || '').trim();
+  state.settings['fireworks'] = (q('#fireworks-key').value || '').trim();
+  state.settings['replicate'] = (q('#replicate-key').value || '').trim();
   state.settings.azureEndpoint = (q('#azure-endpoint').value || '').trim();
   state.settings.azureApiKey = (q('#azure-key').value || '').trim();
   state.settings.bedrockRegion = (q('#bedrock-region').value || '').trim();
@@ -2571,6 +2574,7 @@ async function saveApiKeys() {
   state.settings.lmstudioEndpoint = (q('#lmstudio-endpoint').value || '').trim();
   state.settings.customEndpoint = (q('#custom-endpoint').value || '').trim();
   state.settings.customApiKey = (q('#custom-key').value || '').trim();
+  state.settings['manus'] = (q('#manus-key').value || '').trim();
   save();
   updateApiDots();
   log('API keys saved ✓', 'success');
@@ -3014,6 +3018,7 @@ function runAgent(agent) {
     else if (prov === 'openai') api.send('openai-chat', { agentId: agent.id, model, messages: msgs, apiKey: state.settings.openai, modelParams });
     else if (prov === 'anthropic') api.send('anthropic-chat', { agentId: agent.id, model, messages: msgs, apiKey: state.settings.anthropic, modelParams });
     else if (prov === 'gemini') api.send('gemini-chat', { agentId: agent.id, model, messages: msgs, apiKey: state.settings.gemini, modelParams });
+    else if (prov === 'manus') api.send('manus-chat', { agentId: agent.id, model, messages: msgs, apiKey: state.settings['manus'], modelParams });
     else if (CLOUD_PROVIDERS.includes(prov)) api.send('multi-chat', {
       provider: prov,
       agentId: agent.id,

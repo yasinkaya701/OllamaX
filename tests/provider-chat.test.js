@@ -10,7 +10,7 @@ const { _internal } = require('../src/main/agents/provider-chat');
 describe('validateProvider', () => {
   const { validateProvider } = require('../src/main/agents/provider-chat');
   test('bilinen sağlayıcıları kabul eder', () => {
-    for (const id of ['openrouter','xai','mistral','deepseek','cohere','perplexity','together','groq','cerebras','fireworks','replicate','azure','aws-bedrock','lmstudio','custom']) {
+    for (const id of ['openrouter','xai','mistral','deepseek','cohere','perplexity','together','groq','cerebras','fireworks','replicate','azure','aws-bedrock','lmstudio','custom','manus']) {
       expect(validateProvider(id)).toBe(true);
     }
   });
@@ -99,13 +99,16 @@ describe('extractModelIds', () => {
 
 describe('sağlayıcı kayıt defteri', () => {
   const { PROVIDERS } = require('../src/main/agents/provider-chat');
-  test('15 sağlayıcı kayıtlı (aws-bedrock dahil)', () => {
-    expect(Object.keys(PROVIDERS).length).toBe(15);
+  test('16 sağlayıcı kayıtlı (aws-bedrock ve manus dahil)', () => {
+    expect(Object.keys(PROVIDERS).length).toBe(16);
+    expect(PROVIDERS.manus).toBeDefined();
+    expect(PROVIDERS.manus.label).toBe('Manus');
+    expect(PROVIDERS.manus.hostname).toBe('api.manus.ai');
   });
   test('her sağlayıcının hostname, path ve format tanımı var', () => {
     for (const [id, p] of Object.entries(PROVIDERS)) {
       expect(p.label).toBeTruthy();
-      expect(p.format).toMatch(/^(openai|cohere|bedrock|azure|custom)$/);
+      expect(p.format).toMatch(/^(openai|cohere|bedrock|azure|custom|manus)$/);
       if (p.authType !== 'none' && p.modelEndpoint) {
         expect(p.modelEndpoint.hostname).toBeTruthy();
         expect(p.modelEndpoint.path).toBeTruthy();

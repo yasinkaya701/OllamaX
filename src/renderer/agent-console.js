@@ -58,11 +58,26 @@
         '[sonuç] İnceleme özeti oluşturuldu · 0 kritik bulgu',
       ],
     },
+    /* V3.20: Manus — bulut otonom ajan (gerçek süreç değil, görev aç/kapat + canlı takip) */
+    {
+      id: 'manus',
+      label: 'Manus',
+      vendor: 'Manus',
+      modelDefault: 'manus',
+      statusDefault: 'bağlı',
+      simulateSteps: [
+        '[plan] Görev Manus bulut ajanına aktarıldı · görev açıldı',
+        '[adım] Araştırma başlatıldı · kaynak taraması yapılıyor',
+        '[adım] Bulgular derleniyor · yapılandırılmış çıktı üretiliyor',
+        '[sonuç] Görev tamamlandı · sonuç sohbete geri getirildi',
+      ],
+    },
   ];
 
   const state = new Map(); // agentId -> { running, step, history[], output }
   let api = null;
-  const chain = { enabled: false, order: ['claude-code', 'codex', 'antigravity'], running: false, index: 0, rootTask: '' };
+  /* V3.20: Manus bulut ajanı zincire eklendi */
+  const chain = { enabled: false, order: ['claude-code', 'codex', 'antigravity', 'manus'], running: false, index: 0, rootTask: '' };
 
   function buildChainPrompt(a, prevAgent, prevTask, prevOutput) {
     const prev = AGENTS.find((x) => x.id === prevAgent);

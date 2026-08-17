@@ -509,6 +509,48 @@ function registerIpcV3Handlers(mainWindow) {
     return stopAgent(payload.agentId);
   });
 
+  /* ----------------------------- V3.20: MANUS TASK API ----------------------------- */
+  const manusAgent = require('./agents/manus-agent');
+  function resolveManusApiKey(payload = {}) {
+    const k = (payload.apiKey || '').trim();
+    if (k) return k;
+    try {
+      const ref = configStore.readConfig?.()?.providers?.manus?.apiKey;
+      if (typeof ref === 'string' && ref.startsWith('VAULT:')) {
+        const sv = require('./secrets/secrets-vault');
+        return sv.getKey(ref.split(':')[2] || 'manus') || '';
+      }
+      return ref || '';
+    } catch {
+      return '';
+    }
+  }
+  handler('manus-task-create', async (_e, payload) => {
+    if (!payload || typeof payload.task !== 'string' || !payload.task.trim()) return { ok: false, error: 'task metni gerekli.' };
+    try {
+      return await manusAgent.createManusTask({ ...payload, apiKey: resolveManusApiKey(payload) });
+    } catch (err) { return { ok: false, error: err.message }; }
+  });
+  handler('manus-task-wait', async (_e, payload) => {
+    if (!payload || typeof payload.taskId !== 'string') return { ok: false, error: 'taskId gerekli.' };
+    try {
+      return await manusAgent.waitForManusTask(payload.taskId, Number(payload.timeout) || undefined);
+    } catch (err) { return { ok: false, error: err.message }; }
+  });
+  handler('manus-task-stop', async (_e, payload) => {
+    if (!payload || typeof payload.taskId !== 'string') return { ok: false, error: 'taskId gerekli.' };
+    try { return await manusAgent.stopManusTask(payload.taskId); } catch (err) { return { ok: false, error: err.message }; }
+  });
+  handler('manus-task-answer', async (_e, payload) => {
+    if (!payload || typeof payload.taskId !== 'string' || typeof payload.content !== 'string') return { ok: false, error: 'taskId ve content gerekli.' };
+    try { return await manusAgent.answerManusTask(payload.taskId, payload.content); } catch (err) { return { ok: false, error: err.message }; }
+  });
+  handler('manus-task-message', async (_e, payload) => {
+    if (!payload || typeof payload.taskId !== 'string' || typeof payload.content !== 'string') return { ok: false, error: 'taskId ve content gerekli.' };
+    try { return await manusAgent.sendManusMessage(payload.taskId, payload.content); } catch (err) { return { ok: false, error: err.message }; }
+  });
+  handler('manus-task-list', async () => ({ ok: true, tasks: manusAgent.listManusTasks() }));
+
   handler('orchestra-discover', async () => {
     const orch = await orchestrator.discoverAll();
     return { ok: true, agents: orch };

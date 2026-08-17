@@ -156,6 +156,17 @@ const PROVIDERS = {
     modelEndpoint: null,
     format: 'custom',
   },
+  /* V3.20: Manus — asenkron ajan görevi sağlayıcısı (API v2: api.manus.ai)
+   * Manus'un genel API'si streaming chat değil görev (task) tabanlıdır; bu yüzden
+   * format 'manus' olarak işaretlenir ve provider-chat içinde özel akış ile ele alınır. */
+  manus: {
+    label: 'Manus',
+    hostname: 'api.manus.ai',
+    path: '/v2/task.create',
+    authType: 'manus',
+    modelEndpoint: null,
+    format: 'manus',
+  },
 };
 
 function validateProvider(providerId) {
@@ -169,6 +180,8 @@ function buildAuthHeaders(provider, apiKey) {
       return { Authorization: `Bearer ${apiKey}` };
     case 'azure':
       return { 'api-key': apiKey };
+    case 'manus':
+      return apiKey ? { 'x-manus-api-key': apiKey } : {};
     case 'custom':
       return apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
     case 'none':
@@ -391,6 +404,12 @@ async function runMultiChat(event, { provider, model, apiKey, options = {}, mess
 
   if (provider === 'custom') {
     startCustomStream(event, { apiKey, options, messages, model, agentId, reply, modelParams });
+    return;
+  }
+
+  /* V3.20: Manus — asenkron görev akışı (task.create + polling, stream görünümü) */
+  if (provider === 'manus') {
+    startManusTaskStream(event, { apiKey, options, messages, model, agentId, reply, modelParams });
     return;
   }
 
@@ -727,6 +746,16 @@ function registerProviderChatHandlers() {
       reply('chat-done', { agentId: payload?.agentId });
     }
   });
+  /* V3.20: Manus otonom bulut ajanı — görev açılır, tamamlanana kadar takip edilir */
+  ipcMain.on('manus-chat', (event, payload) => {
+    try {
+      startManusTaskStream(event, payload || {});
+    } catch (err) {
+      const reply = (ch, p) => { if (event.sender && !event.sender.isDestroyed()) event.sender.send(ch, p); };
+      reply('chat-chunk', { agentId: payload?.agentId, content: `❌ Manus hatası: ${err.message}` });
+      reply('chat-done', { agentId: payload?.agentId });
+    }
+  });
 }
 
 module.exports = {
@@ -742,3 +771,140 @@ module.exports = {
     extractModelIds,
   },
 };
+
+/* ------------------------------------------------------------------ */
+/* V3.20: Manus — asenkron görev akışı (API v2: https://api.manus.ai) */
+/* ------------------------------------------------------------------ */
+const MANUS_API_BASE = 'https://api.manus.ai';
+const MANUS_POLL_INTERVAL_MS = 5000;
+const MANUS_TASK_TIMEOUT_MS = 600000; // 10 dk; Manus görevleri uzun sürebilir
+const MANUS_MAX_POLL_ATTEMPTS = Math.ceil(MANUS_TASK_TIMEOUT_MS / MANUS_POLL_INTERVAL_MS);
+
+function manusRequest(method, urlPath, apiKey, body) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(MANUS_API_BASE + urlPath);
+    const req = https.request({
+      hostname: url.hostname, port: url.port || 443, path: url.pathname + url.search,
+      method, headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(buildAuthHeaders('manus', apiKey)) },
+      timeout: 60000,
+    }, (res) => {
+      let data = '';
+      res.on('data', (c) => { data += c; });
+      res.on('end', () => {
+        try {
+          const j = data ? JSON.parse(data) : {};
+          if (res.statusCode >= 200 && res.statusCode < 300) resolve({ ok: true, status: res.statusCode, body: j });
+          else reject(new Error((j?.error?.message) || `Manus API HTTP ${res.statusCode}`));
+        } catch {
+          if (res.statusCode >= 200 && res.statusCode < 300) resolve({ ok: true, status: res.statusCode, body: { data } });
+          else reject(new Error(`Manus API HTTP ${res.statusCode} (geçersiz yanıt)`));
+        }
+      });
+    });
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('Manus API zaman aşımı')); });
+    if (body) req.write(JSON.stringify(body));
+    req.end();
+  });
+}
+
+function findEvent(messages, type) {
+  if (!Array.isArray(messages)) return null;
+  for (let i = 0; i < messages.length; i += 1) {
+    if (messages[i] && messages[i].type === type) return messages[i];
+  }
+  return null;
+}
+
+function renderManusEvent(evt, agentId, reply) {
+  /* Poll sırasında görülen asistan olaylarını sohbet balonuna parça parça ekler */
+  if (!evt) return;
+  const t = evt.type || '';
+  const parts = [];
+  if (t === 'assistant_message' && evt.assistant_message?.message) {
+    const m = typeof evt.assistant_message.message === 'string' ? evt.assistant_message.message : (evt.assistant_message.message?.content || JSON.stringify(evt.assistant_message.message));
+    parts.push(m);
+  } else if (t === 'status_update' && evt.status_update?.status_detail?.waiting_description) {
+    parts.push(`⏳ [Manus onay bekliyor] ${evt.status_update.status_detail.waiting_description}`);
+  } else if (t === 'error_message' && evt.error_message) {
+    parts.push(`❌ ${typeof evt.error_message === 'string' ? evt.error_message : JSON.stringify(evt.error_message)}`);
+  }
+  for (const p of parts) reply('chat-chunk', { agentId, content: String(p) + '\n' });
+}
+
+async function startManusTaskStream(event, { apiKey, options = {}, messages, agentId, reply }) {
+  if (!apiKey) {
+    reply('chat-chunk', { agentId, content: '❌ Manus API anahtarı eksik. Ayarlar → APIs sekmesinden API anahtarınızı ekleyin (manus.im → Settings → API).' });
+    reply('chat-done', { agentId });
+    return;
+  }
+  const norm = normalizeMessages(messages);
+  const text = norm.map((m) => `${m.role === 'assistant' ? '> Asistan notu: ' : ''}${m.content}`).join('\n\n').trim() || '';
+  if (!text) {
+    reply('chat-chunk', { agentId, content: '❌ Mesaj listesi boş.' });
+    reply('chat-done', { agentId });
+    return;
+  }
+  const model = (typeof options.model === 'string' && options.model.trim()) || '';
+  const body = {
+    message: { content: text },
+    ...(model ? { model } : {}),
+    ...(options.projectId ? { project_id: options.projectId } : {}),
+    ...(options.agentProfile ? { agent_profile: options.agentProfile } : {}),
+  };
+  /* Görev başlığı: ilk 60 karakter */
+  const title = text.replace(/\n+/g, ' ').slice(0, 60);
+  reply('chat-chunk', { agentId, content: `🔗 Manus görevi oluşturuluyor: "${title}"…\n` });
+  let taskId = null;
+  let taskUrl = null;
+  let eventIds = new Set();
+  let waited = 0;
+  try {
+    const createRes = await manusRequest('POST', '/v2/task.create', apiKey, body);
+    taskId = createRes.body?.task_id || createRes.body?.data?.task_id;
+    taskUrl = createRes.body?.task_url || createRes.body?.data?.task_url;
+    if (!taskId) throw new Error('task.create yanıtında task_id bulunamadı');
+    reply('chat-chunk', { agentId, content: `✓ Görev oluşturuldu${taskUrl ? ` → ${taskUrl}` : ''}\nManus ajan çalışıyor, sonuçlar akıyor…\n` });
+    for (let attempt = 0; attempt < MANUS_MAX_POLL_ATTEMPTS; attempt += 1) {
+      await new Promise((r) => setTimeout(r, MANUS_POLL_INTERVAL_MS));
+      waited += MANUS_POLL_INTERVAL_MS;
+      let poll;
+      try {
+        poll = await manusRequest('GET', `/v2/task.listMessages?task_id=${encodeURIComponent(taskId)}&order=asc`, apiKey);
+      } catch (err) {
+        if (attempt >= 2) reply('chat-chunk', { agentId, content: `⚠️ Poll hatası (${err.message}), denemeye devam ediliyor…\n` });
+        continue;
+      }
+      const events = poll.body?.events || poll.body?.data?.events || (Array.isArray(poll.body?.data) ? poll.body.data : []);
+      for (const evt of events) {
+        const eid = evt?.event_id;
+        if (!eid || eventIds.has(eid)) continue;
+        eventIds.add(eid);
+        renderManusEvent(evt, agentId, reply);
+        const st = evt?.status_update || {};
+        if (st?.agent_status === 'waiting' && st?.status_detail?.waiting_for_event_type === 'messageAskUser') {
+          reply('chat-chunk', { agentId, content: '❓ Manus bir soru soruyor — sohbete yanıt verdiğinizde iletilecek.\n' });
+        }
+        if (st?.agent_status === 'stopped') {
+          const so = findEvent(events, 'structured_output_result');
+          if (so?.structured_output_result?.success) {
+            reply('chat-chunk', { agentId, content: `\n📦 [Structured Output] ${JSON.stringify(so.structured_output_result.value)}\n` });
+          }
+          reply('chat-chunk', { agentId, content: `✓ Manus görevi tamamlandı${taskUrl ? ` · ${taskUrl}` : ''}\n` });
+          reply('chat-done', { agentId });
+          return;
+        }
+        if (st?.agent_status === 'error') {
+          reply('chat-chunk', { agentId, content: `❌ Manus görevi hata ile durdu: ${JSON.stringify(st.status_detail || {}).slice(0, 400)}\n` });
+          reply('chat-done', { agentId });
+          return;
+        }
+      }
+    }
+    reply('chat-chunk', { agentId, content: `⏱️ Manus görevi hâlâ çalışıyor (10 dk geçti). Görev sayfada tamamlanmaya devam eder; sonuçlar bir sonraki mesajla akabilir.\n` });
+    reply('chat-done', { agentId });
+  } catch (err) {
+    reply('chat-chunk', { agentId, content: `❌ Manus hatası: ${err.message}` });
+    reply('chat-done', { agentId });
+  }
+}

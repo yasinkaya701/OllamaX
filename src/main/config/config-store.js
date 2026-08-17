@@ -263,6 +263,8 @@ function defaultConfig() {
       openai: { apiKey: '', modelFallback: ['gpt-5.5', 'gpt-5.3', 'gpt-5', 'gpt-4o'] },
       anthropic: { apiKey: '' },
       gemini: { apiKey: '' },
+      /* V3.20: Manus sağlayıcı bloğu (API v2) */
+      manus: { apiKey: '' },
     },
     agents: [],
     workspaces: [],
@@ -315,6 +317,7 @@ function resolvedProviders(config) {
     openai: resolveApiKey(p.openai?.apiKey),
     anthropic: resolveApiKey(p.anthropic?.apiKey),
     gemini: resolveApiKey(p.gemini?.apiKey),
+    manus: resolveApiKey(p.manus?.apiKey),
     /* V3.14 (A1-1): kasa referanslarını renderer'a bildir (düz metin değil) */
     vaultMode: getVaultMode(p),
   };
