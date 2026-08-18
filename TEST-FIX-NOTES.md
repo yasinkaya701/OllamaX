@@ -359,3 +359,11 @@ CI: run 32094554690 v3.26.0 hala in_progress (b7e5627). Tamamlanınca release 37
 3. Linux: BAŞARI (536 test, 28 paket geçti).
 Yapılacak: commit + tag v3.26.0'ı yeni commite taşı (force push tag) + push.
 NOT: 'overwrite published file' electron-builder'da fatal exit 1 veriyor; asset silme adımından sonra release boş olacak → overwrite değil yeni upload olacak, sorun çözülür.
+
+
+## CI Durum (güncel)
+- Yeni commit e858eca (shell: bash + set +e düzeltmesi) push edildi, tag v3.26.0 force-update e858eca'ya.
+- Run 32094962843 (branch main, e858eca) Windows 'Eski release asset temizle' adımında hala hata verdi — DİKKAT: bu run tag trigger değil push trigger olabilir ama fix uygulanmış commit üzerinde çalışıyor; log'da hâlâ pwsh altında bash syntax hatası mı kontrol et. Windows'ta step 77-86: shell: bash ekli, set +e de var. Hata devam ediyorsa başka bir step olabilir (release step'i?) — win job'ın fail step'i yine 'Eski release asset'lerini temizle'.
+- Run 32094962417 (branch main, e858eca) Mac 'Build package' adımında hata (muhtemelen release asset overwrite; release v3.26.0 ZATEN e858eca commitinde var mı kontrol et: tag e858eca'ya taşındı → release var mı? v3.26.0 release ilk başarılı olmayan run'da oluşturulmuş olabilir).
+- ÖNEMLİ: release-build.yml trigger: push tags + workflow_dispatch. Push trigger'daki main job'da 'release' adımı çalışıyor mu? release adımı tag olmayan push'ta skip olması lazım. Win job'daki 'Eski asset temizle' adımı release'e YAZIYOR (gh api release/tag). Push trigger'da TAG="" olur → TAG="" → releases/tags/... 404 → 404'de bile hata mı? set +e eklendi → exit 0 olmalı. Yani win fail belki tag-trigger run (32094554690? hayır o önceki). Run ID'ler: 32094962843 ve 32094962417 ikisi de 'main' branch, push trigger. Bunlarda GH_TOKEN farklı olabilir (actions token ok sadece → release asset silme yazma gerektirir → 403 Forbidden!). Evet: push trigger GITHUB_TOKEN repo ok-yazma; ama release write için repo contents write yetkisi Gerekli — varsayılanda push token'ı yazabilir. 403 kontrol et.
+- Sıradaki adım: her iki run'ın win/mac job loglarının son kısımlarını al, hatayı netleştir.

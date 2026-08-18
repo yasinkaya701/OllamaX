@@ -85,7 +85,6 @@ jobs:
               gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$ID" >/dev/null 2>&1 && echo "silindi: $ID" || echo "silinemedi: $ID"
             done
           fi
-        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -119,7 +118,6 @@ jobs:
             fi
             echo "tag=${{ github.event.inputs.release_tag }}" >> "$GITHUB_OUTPUT"
           fi
-        shell: bash
 
       - name: Kodu indir (changelog derleme için)
         uses: actions/checkout@v4
