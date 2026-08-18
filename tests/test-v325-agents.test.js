@@ -307,7 +307,7 @@ describe('agents-ext/context-manager — bağlam bütçesi', () => {
     m.add({ role: 'user', content: 'kalıcı görev' });
     const s = await m.save();
     expect(s.ok).toBe(true);
-    const loadId = s.path.replace(/.*\//, '').replace('.json', '');
+    const loadId = path.basename(s.path).replace('.json', '');
     const c2 = ctxMgr.createManager({ dir, budget: 1000 });
     const m2 = c2.manager || c2;
     const l = await m2.load(loadId);
