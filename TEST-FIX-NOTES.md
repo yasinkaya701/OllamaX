@@ -329,3 +329,33 @@ Fix: workflow içinde 'release' job assets silme + release oluşturma mantığı
 Workflow: build job'ları GH_TOKEN ile npm run build:mac/win/linux çalıştırırken electron-builder GitHub releases'a asset yükler (422 already_exists çünkü ilk failed attempt release 372063653 oluşturup dmg/zip yükledi). v3.26.0 release objesi şu an API'de YOK (404) — ilk run'ın oluşturduğu release muhtemelen draft ve silinmiş ya da PAT'le görünmüyor (workflow GITHUB_TOKEN kullandı, PAT'ın erişimi draft'e kısıtlı).
 FIX: workflow release-build.yml'e env GITHUB_RELEASE_PRECLEAN: build öncesi aynı tag'li release varsa asset'leri sil (gh CLI ile, secrets.GITHUB_TOKEN). Basit: npm script'i yerine workflow step 'Temizlik' — gh release list/view/delete assets. Veya: release job zaten softprops ile dosyaları yükler; electron-builder'ın GH_TOKEN ile yükleme yaptığını ENGELLEMEK daha doğru: publish: never + release job'dan assets yükleme zaten yapılıyor. Ama mevcut davranış v3.25.0'da çalışıyordu çünkü o zaman release yoktu ilk seferde. Kalıcı fix: GITHUB_TOKEN yerine PAT gerektirmeden, aynı release'ın ikinci çalışmasında asset çakışmasını önlemek için electron-builder arg'ına '-c.publish.provider=github -c.publish.releaseType=draft' değil — en pratik: 'gh release delete-asset' ile her build öncesi mevcut asseti silmek.
 Yapılan: workflow'a 'Remove stale release assets' adımı eklendi (gh repo view release tag ile silme), ardından v3.26.0 tag'ine tekrar push.
+
+
+## SİTE GÜNCELLEME DURUMU (ollamax-site webdev projesi)
+yapıldı: i18n.ts TR roadmap'e v3.24.1/v3.25.0/v3.26.0 eklendi (TR section, before '2026 Q3' — line ~431).
+yapılacak kalan:
+1. EN roadmap (i18n.ts ~987 sonrası aynı 3 entry: v3.24.1 Gatekeeper compat, v3.25.0 Re-auditor Engine & Audit Chain v2, v3.26.0 50K-line core engine + deep orchestration).
+2. Changelog.tsx: v3.24.1/v3.25.0/v3.26.0 LOCAL_NOTES entry'leri eklenmeli (Changelog.tsx içinde embedded release notes formatı nasıl? — daha önce v3.25.0 notu eklendiyse aynı kalıbı kullan; eğer GitHub API'den çekiyorsa sadece fallback).
+3. nav_version "v3.16" ve footer_version "AI Agent Studio · v3.23.0" (satır 18/236 TR, 568/796 EN) → güncelle (nav v3.26, footer v3.26.0).
+4. Downloads: mac recommendedFile Krevyx.Ultra-3.24.1-arm64-mac.zip — yeni v3.26.0 assets yayınlandığında güncelle (CI tamamlanınca /releases/latest API'ye bak; dosya adları v3.25.0 formatına göre: Krevyx-Ultra-3.26.0.AppImage / Krevyx.Ultra.3.26.0.exe / Krevyx.Ultra-3.26.0-arm64-mac.zip).
+5. Hero/footer sürüm dizesi (Home'da nav_version kullanılıyor olabilir).
+6. /docs sayfasına v3.26 giriş paragrafı gerekirse.
+CI: v3.26.0 tag b7e5627'e taşındı, workflow'da asset temizleme adımı eklendi, tetiklendi. Kontrol: https://github.com/yasinkaya701/OllamaX/actions — run 32094121687'den sonra yenisini izle.
+Sürüm yükseltmeleri: package.json 3.26.0, CHANGELOG.md v3.26.0 girişi eklendi (repo), commit 282d8d8 (Windows fix) + b7e5627 (CI fix).
+
+
+## SİTE GÜNCELLEME — KALAN İŞLER (ollamax-site)
+YAPILDI: i18n.ts TR+EN roadmap'e v3.24.1/v3.25.0/v3.26.0 eklendi; nav_version v3.26; footer_version v3.26.0; Changelog.tsx LOCAL_NOTES'a v3.26.0 ve v3.25.0 eklendi (typecheck OK); Home.tsx indirme kartları v3.25.0'a işaret ediyor (Windows Krevyx.Ultra.3.25.0.exe, mac Krevyx.Ultra-3.25.0-arm64-mac.zip, linux Krevyx-Ultra-3.25.0.AppImage).
+KALAN:
+1. i18n.ts satır 28 + 581: hero_screenshot_label v3.23.0 → v3.25.0 (TR/EN)
+2. i18n.ts FAQ/TR (satır 184, 331, 338, 345-348) ve EN (748, 894, 901, 908-911): 3.23.0 dosya adları → 3.25.0; macOS DMG adı Krevyx-Ultra-3.25.0-arm64.dmg
+3. Checkpoint al (auto-publish ON)
+CI: run 32094554690 v3.26.0 hala in_progress (b7e5627). Tamamlanınca release 372063653 veya yenisi ile assetler yayınlanır; site indirme kartları o zaman v3.26.0'a güncellenebilir. v3.25.0 release ZATEN YAYINDA (assetler var).
+
+
+## CI v3.26.0 KO — KÖK NEDENLER (run 32094554690)
+1. Windows: 'Eski release asset temizle' adımı bash syntax ile default pwsh altında çalıştı → ParserError. DÜZELTİLDİ: shell: bash eklendi.
+2. macOS: cleanup OK idi; build adımı 'overwrite published file' ile exit 1 verdi. İlk run (silinen release öncesi) release oluşturmuştu ve mac build'i release'e paralel yazarken assetler çakıştı. Düzeltme: cleanup adımının 404'te de exit 0 olması için 'set +e' satırı eklendi + build'in GH_TOKEN overwrite davranışı zaten devam ediyor; asıl sorun release varken aynı anda iki runner'ın yazmasıydı (artık assetler önceden silinecek, overwrite kalmamalı).
+3. Linux: BAŞARI (536 test, 28 paket geçti).
+Yapılacak: commit + tag v3.26.0'ı yeni commite taşı (force push tag) + push.
+NOT: 'overwrite published file' electron-builder'da fatal exit 1 veriyor; asset silme adımından sonra release boş olacak → overwrite değil yeni upload olacak, sorun çözülür.
