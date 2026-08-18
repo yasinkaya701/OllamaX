@@ -316,3 +316,16 @@ aggregate: {ok,text,succeeded,failed} döner (object, .text string). planSkill: 
 1. 'list_dir ve write adımları başarıyla yürür': /tmp path Windows'ta geçerli değil (C:\tmp dizini yok) → list_dir write başarısız.
 2. 'desteklenmeyen adım türü...': aynı /tmp sorunu; list_dir Windows'ta failed → haltOnError zinciri hemen durur → steps.length=1 (beklenen 2).
 ÇÖZÜM: testlerde platform-bağımsız os.tmpdir() kullan. Ayrıca runtime.run: failed step + haltOnError ile 2. test yine de 2 adım üretebilir çünkü unsupported runner'da rec push edilir, sonra break → beklenen 2 OK. Sorun sadece /tmp.
+
+
+## v3.26.0 İKİNCİ CI HATASI (mac, run 32094121687)
+Hata: electron-builder GitHub'a .blockmap yüklemeye çalışırken "already_exists" (422). Release 372063653 zaten v3.26.0 ilk attempt'ten asset'ler içeriyor (dmg + blockmap yazılmış, sonra arm64-mac.zip.blockmap çakıştı).
+ÇÖZÜM: workflow'da publish step'e GH_TOKEN ile 'delete existing release assets' eklemek yerine basit: release asset adı tekil — problem 'zip.blockmap'. electron-builder overwrite flag: electron-builder publish 'already exists' case'inde overwrite yapmıyor. En temiz fix: workflow'un 'publish' adımında release assets'u önce silmek veya ELECTRON_BUILDER env değişkeni. Ancak v3.25.0'da bu sorun yoktu çünkü ilk tag attempt'te release oluştu — v3.26.0'da release release-notes job'da mı oluşuyor?
+Kontrol: release-build.yml 'release' job'u release'i oluşturuyor; build job'ları publish sırasında assets yükler. Tag force-push edildi: ilk v3.26.0 attempt/release (4f3862f) release oluşturuldu ve assets yüklendi; sonra tag silinip yeniden itildi, aynı release ID'ye tekrar yüklemeye çalışıyor → already_exists.
+Fix: workflow içinde 'release' job assets silme + release oluşturma mantığı; veya basit: manuel silme scripti ile mevcut assets'leri silip tekrar tetikleme.
+
+
+## CI FIX KARARI (v3.26.0, mac run 32094121687)
+Workflow: build job'ları GH_TOKEN ile npm run build:mac/win/linux çalıştırırken electron-builder GitHub releases'a asset yükler (422 already_exists çünkü ilk failed attempt release 372063653 oluşturup dmg/zip yükledi). v3.26.0 release objesi şu an API'de YOK (404) — ilk run'ın oluşturduğu release muhtemelen draft ve silinmiş ya da PAT'le görünmüyor (workflow GITHUB_TOKEN kullandı, PAT'ın erişimi draft'e kısıtlı).
+FIX: workflow release-build.yml'e env GITHUB_RELEASE_PRECLEAN: build öncesi aynı tag'li release varsa asset'leri sil (gh CLI ile, secrets.GITHUB_TOKEN). Basit: npm script'i yerine workflow step 'Temizlik' — gh release list/view/delete assets. Veya: release job zaten softprops ile dosyaları yükler; electron-builder'ın GH_TOKEN ile yükleme yaptığını ENGELLEMEK daha doğru: publish: never + release job'dan assets yükleme zaten yapılıyor. Ama mevcut davranış v3.25.0'da çalışıyordu çünkü o zaman release yoktu ilk seferde. Kalıcı fix: GITHUB_TOKEN yerine PAT gerektirmeden, aynı release'ın ikinci çalışmasında asset çakışmasını önlemek için electron-builder arg'ına '-c.publish.provider=github -c.publish.releaseType=draft' değil — en pratik: 'gh release delete-asset' ile her build öncesi mevcut asseti silmek.
+Yapılan: workflow'a 'Remove stale release assets' adımı eklendi (gh repo view release tag ile silme), ardından v3.26.0 tag'ine tekrar push.

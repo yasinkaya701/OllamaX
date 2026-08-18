@@ -74,6 +74,18 @@ jobs:
       - name: Testler
         run: pnpm run test:ci
 
+      - name: Eski release asset'lerini temizle
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          if [ -n "$TAG" ]; then
+            ASSET_IDS=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '.assets[].id' 2>/dev/null || true)
+            for ID in $ASSET_IDS; do
+              gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$ID" >/dev/null 2>&1 && echo "silindi: $ID" || echo "silinemedi: $ID"
+            done
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build package
         run: npm run ${{ matrix.build }}
         env:
