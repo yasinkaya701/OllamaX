@@ -80,10 +80,32 @@ jobs:
           set +e
           TAG="${GITHUB_REF#refs/tags/}"
           if [ -n "$TAG" ]; then
-            ASSET_IDS=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '.assets[].id' 2>/dev/null || true)
-            for ID in $ASSET_IDS; do
-              gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$ID" >/dev/null 2>&1 && echo "silindi: $ID" || echo "silinemedi: $ID"
-            done
+            echo "== temizlik: tag=$TAG"
+            # Etiket endpointi draft release'larda bazen 404 döner;
+            # önce /releases/tag/$TAG dene, tutmazsa release'leri tara ve tag_name ile eşleştir.
+            REL_ID=""
+            REL_JSON=$(gh api "repos/$GITHUB_REPOSITORY/releases/tag/$TAG" 2>/dev/null) || true
+            if [ -n "$REL_JSON" ]; then
+              REL_ID=$(echo "$REL_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin).get('id',''))" 2>/dev/null) || REL_ID=""
+            fi
+            if [ -z "$REL_ID" ]; then
+              echo "tag endpointi boş; release'leri tarıyorum..."
+              ALL=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" 2>/dev/null | python3 -c "
+import json,sys
+rels=json.load(sys.stdin)
+for r in rels:
+    if r.get('tag_name')=='$TAG' or (r.get('name')=='$TAG'):
+        print(r['id'])
+" 2>/dev/null) || ALL=""
+              REL_ID=$(echo "$ALL" | head -n1)
+            fi
+            echo "== bulunan release id: ${REL_ID:-yok}"
+            if [ -n "$REL_ID" ]; then
+              ASSET_IDS=$(gh api "repos/$GITHUB_REPOSITORY/releases/$REL_ID/assets?per_page=100" --jq '.[].id' 2>/dev/null) || ASSET_IDS=""
+              for ID in $ASSET_IDS; do
+                gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$ID" >/dev/null 2>&1 && echo "silindi: $ID" || echo "silinemedi: $ID"
+              done
+            fi
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -367,3 +367,41 @@ NOT: 'overwrite published file' electron-builder'da fatal exit 1 veriyor; asset 
 - Run 32094962417 (branch main, e858eca) Mac 'Build package' adımında hata (muhtemelen release asset overwrite; release v3.26.0 ZATEN e858eca commitinde var mı kontrol et: tag e858eca'ya taşındı → release var mı? v3.26.0 release ilk başarılı olmayan run'da oluşturulmuş olabilir).
 - ÖNEMLİ: release-build.yml trigger: push tags + workflow_dispatch. Push trigger'daki main job'da 'release' adımı çalışıyor mu? release adımı tag olmayan push'ta skip olması lazım. Win job'daki 'Eski asset temizle' adımı release'e YAZIYOR (gh api release/tag). Push trigger'da TAG="" olur → TAG="" → releases/tags/... 404 → 404'de bile hata mı? set +e eklendi → exit 0 olmalı. Yani win fail belki tag-trigger run (32094554690? hayır o önceki). Run ID'ler: 32094962843 ve 32094962417 ikisi de 'main' branch, push trigger. Bunlarda GH_TOKEN farklı olabilir (actions token ok sadece → release asset silme yazma gerektirir → 403 Forbidden!). Evet: push trigger GITHUB_TOKEN repo ok-yazma; ama release write için repo contents write yetkisi Gerekli — varsayılanda push token'ı yazabilir. 403 kontrol et.
 - Sıradaki adım: her iki run'ın win/mac job loglarının son kısımlarını al, hatayı netleştir.
+
+
+## CI Durum 2 (03:27 UTC)
+- Commit f497073 (workflow düzeltmeleri: shell: bash duplikatları kaldırıldı, set +e eklendi) push edildi, tag v3.26.0 → f497073.
+- Run 32095516755 (tag trigger, v3.26.0, f497073) in_progress — testler geçti. Mac build ~20 dk.
+- Önceki run'lar hep hatalıydı: 32094554690 (pwsh syntax), 32094962843/32094962417 (bozuk YAML: sed dup shell: bash), 32095123614 (0 job, YAML invalid).
+- Başarılı olursa: GitHub Release v3.26.0'da assetler (exe/dmg/zip/AppImage + latest*.yml). Site download kartlarını v3.26.0'a güncelle, checkpoint al, kullanıcıya rapor.
+- Site checkpoint: d34efa67 (v3.25.0 kartları) — v3.26.0 kartları için yeni checkpoint gerekli.
+- Release asset adları v3.25.0 örneği: Krevyx.Ultra.3.x.0.exe, Krevyx.Ultra-3.x.0-arm64-mac.zip, Krevyx-Ultra-3.x.0.AppImage, Krevyx-Ultra-3.x.0-arm64.dmg
+
+
+## GENEL DURUM (03:37 UTC, compaction öncesi)
+Proje: /home/ubuntu/OllamaX (Krevyx masaüstü app) + /home/ubuntu/ollamax-site (web sitesi).
+50K satır v3.26.0 upgrade TAMAMLANDI: core (runtime/tools/sandbox/llm-router/prompts/session/eval), orch (pipelines/events/state-store/vault-tasks/handoffs/swarm/budget-engine/skills/workspace/observability), guard (permission/allowlist/policy/diff-gate/ci-check/entropy/quarantine), trust/signing, cli/v326-commands.js (10 komut), ipc-v326-handlers.js, 6 renderer paneli, styles.css. 28 paket 536 test geçiyor. package.json 3.26.0, CHANGELOG'a v3.26.0 girişi, git tag v3.26.0 → commit f497073.
+
+CI: run 32095516755 (tag v3.26.0, f497073) in_progress — testler geçti, build aşamasında. İzleme: curl run 32095516755; tamamlanınca run/jobs 32095516755 ile kontrol, başarısızsa getlogs.py 32095516755 ile hata analizi.
+
+Site: checkpoint d34efa67 yayında (v3.25.0 kartları). Kalan: CI başarılı olunca release/tag v3.26.0 assetlerini doğrula, Home.tsx indirme kartlarını 3.25.0→3.26.0 yap, Changelog'a v3.26.0 LOCAL_NOTES zaten var, checkpoint al, kullanıcıya nihai rapor (manus-webdev://...).
+
+Kullanıcı uykuda; bilgi mesajlarıyla ilerle, sonunda result ile özet.
+
+
+## Mac run 32095516755 hatası (03:28 UTC)
+Mac job: testler geçti, cleanup 404 (silinemedi ama set +e ile geçti), build sırasında 'overwrite published file ...dmg reason=already exists on GitHub' → exit 1 (fatal). Windows ve Linux job'ları başarılı.
+KÖK NEDEN: v3.26.0 GitHub Release'i ZATEN VAR ve assetler yüklü (dmg, dmg.blockmap). Cleanup adımı releases/tags/v3.26.0 arıyor → 404! Neden 404? Release 'tag_name' farklı olabilir: belki release adı 'Krevyx v3.26.0' ama tag_name 'v3.26.0'... 404 = tag'a release yok demek. Ama assetler 'already exists' diyor → release VAR. ÇELİŞKİ: gh api releases/tags/v3.26.0 404 alırken electron-builder aynı repo'da v3.26.0 release'ına asset buluyor. OLASI: release tag_name 'v3.26.0' ama repo'da release 'Krevyx v3.26.0' farklı? Hayır, tag bazlıdır. Daha olası: GH_TOKEN (GITHUB_TOKEN) release create etme iznine sahip ama release, önceki KO run'larında (32093733376?) oluşmuş olabilir — o zaman 404 olmazdı. Alternatif: release 'prerelease' true, tag farklı. KESİN TEŞHİS GEREKİR: curl ile releases/tags/v3.26.0'ı token ile ara.
+ÇÖZÜM SEÇENEKLERİ: (a) release'deki assetleri elle sil sonra tag push ile retry; (b) cleanup'ta 'releases?per_page=100' ile release'i bul ve assetleri sil (tag 404 ise release adıyla ara: 'Krevyx v3.26.0'); (c) release step'ini 'allowUpdates' true + overwriteAllowExisting? electron-builder publish zaten overwrite deniyor ama fatal.
+
+
+## TEŞHİS NETLEŞTİ (04:02 UTC)
+electron-builder release ID 372063653'e asset yüklüyor → bu release mevcut ve v3.26.0 assetlerini tutuyor! Benim 'releases?per_page=100' sorgumda görünmemesi garip (belki 403 olmadan farklı hesap/visibility — PAT repo erişimi kısıtlı olabilir veya release 'draft' değildi ama list query 403 döndü?). ÖNEMLİ: assetler release'de VAR, cleanup (releases/tags/v3.26.0) 404 dönüyor çünkü release tag_name muhtemelen 'v3.26.0' değil (örn. ilk başarılı run release'i farklı etiketle oluşturmuş olabilir, draft=true olabilir).
+ÇÖZÜM: doğrudan release ID 372063653'ün assetlerini sil (curl DELETE /repos/yasinkaya701/OllamaX/releases/assets/{id}) sonra retry. Önce release detayı: GET releases/372063653 ile tag_name'yi doğrula.
+Ayrıca electron-builder 'overwrite' yapıyor (success) ama SONDAN dördüncü upload (422) fatal exit verdi → overwrite sonrası son upload da overwrite olmalıydı; 'overwrite published file ...dmg/blockmap' sonra 422 geliyor → muhtemelen overwrite rate limit / concurrent upload çakışması. Asset silme + tek seferde temiz build çözer.
+
+
+## PAT kısıtı + çözüm planı (04:05 UTC)
+PAT fine-grained, release endpoint'lerine 403 veriyor (user/repo OK). Bu yüzden cleanup adımı da releases/tags/v3.26.0'ı göremedi (404 gibi silinemedi) ve release 372063653'ü göremiyoruz. AMA Actions içindeki GITHUB_TOKEN release'e yazabiliyor (electron-builder başarıyla upload etti).
+PLAN: workflow'un cleanup adımını güçlendir: gh ile release'i ETİKET yerine arama ile bul (gh release list veya gh api 'repos/{repo}/releases' ile tag_name match) ve assetlerini sil. 'gh release list' PAT kısıtından etkilenmez (runner'ın GITHUB_TOKEN). Alternatif: gh release delete —overwrite v3.26.0 + release job'ı yeniden oluşturur.
+DİKKAT: release job'ı zaten 'GitHub Release oluştur ve yükle' adımı ile release'i kendisi yaratıyor; assetler orada birikmiş durumda. Temiz çözüm: build job'ındaki cleanup'ta tag_name eşleşmeli tüm release'leri bul, assetleri sil.
