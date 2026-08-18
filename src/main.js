@@ -24,6 +24,9 @@ const { registerIpcV3Handlers } = require('./main/ipc-v3-handlers');
 /* V3.25: Yeniden Denetçi, Orkestrasyon ve Güven zinciri IPC yüzeyi */
 let registerIpcV325Handlers = null;
 try { registerIpcV325Handlers = require('./main/ipc-v325-handlers').registerIpcV325Handlers; } catch { /* modül opsiyonel */ }
+/* V3.26: Çekirdek Motor, Orkestrasyon ve Güvenlik Kapısı IPC yüzeyi */
+let registerIpcV326 = null;
+try { registerIpcV326 = require('./main/ipc-v326-handlers').registerIpcV326; } catch { /* modül opsiyonel */ }
 const { registerProviderChatHandlers, runMultiChat } = require('./main/agents/provider-chat');
 const { registerIpcBridge } = require('./main/ipc-bridge');
 const configStore = require('./main/config/config-store');
@@ -546,6 +549,13 @@ function registerV3Surface() {
           registerIpcV325Handlers(mainWindow);
         } catch (err) {
           console.error('[Krevyx] ipc-v325 başlatma hatası:', err?.message || err);
+        }
+      }
+      if (registerIpcV326) {
+        try {
+          registerIpcV326(app);
+        } catch (err) {
+          console.error('[Krevyx] ipc-v326 başlatma hatası:', err?.message || err);
         }
       }
     }

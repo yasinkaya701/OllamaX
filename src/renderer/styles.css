@@ -1799,3 +1799,24 @@ body[data-platform="darwin"] .mod-kbd{display:none;}
 .tr-finding.tr-critical { border-color: rgba(248, 81, 73, 0.5); } .tr-finding.tr-high { border-color: rgba(248, 81, 73, 0.3); }
 .tr-finding.tr-medium { border-color: rgba(210, 153, 34, 0.35); } .tr-finding.tr-ok { border-color: rgba(63, 185, 80, 0.4); color: var(--v3-ok); }
 .tr-results { display: flex; flex-direction: column; gap: 3px; max-height: 220px; overflow-y: auto; }
+
+/* ============================================================
+   v3.26 yeni panel stilleri (RT/PP/SK/BD/GD/OB-UI) — Emerald Ledger
+   ============================================================ */
+.rt-zone, .pp-zone, .sk-zone, .bd-zone, .gd-zone, .ob-zone { padding: 6px 10px 10px; display: flex; flex-direction: column; gap: 7px; }
+.rt-label, .pp-label, .sk-label, .bd-label, .gd-label, .ob-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--v3-text-muted); }
+.rt-actions, .pp-actions, .sk-actions, .bd-actions, .gd-actions, .ob-actions { display: flex; gap: 6px; }
+.rt-primary-btn, .pp-primary-btn, .sk-primary-btn, .bd-primary-btn, .gd-primary-btn, .ob-primary-btn { background: rgba(63, 185, 80, 0.12); border: 1px solid rgba(63, 185, 80, 0.35); color: var(--v3-ok); }
+.rt-primary-btn:hover, .pp-primary-btn:hover, .sk-primary-btn:hover, .bd-primary-btn:hover, .gd-primary-btn:hover, .ob-primary-btn:hover { background: rgba(63, 185, 80, 0.22); }
+.rt-status, .pp-status, .sk-status, .bd-status, .gd-status, .ob-status { font-size: 11px; padding: 5px 8px; border-radius: 6px; border: 1px solid var(--v3-border-subtle); }
+.rt-ok, .pp-ok, .sk-ok, .bd-ok, .gd-ok, .ob-ok { border-color: rgba(63, 185, 80, 0.4); color: var(--v3-ok); background: rgba(63, 185, 80, 0.07); }
+.rt-error, .pp-error, .sk-error, .bd-error, .gd-error, .ob-error { border-color: rgba(248, 81, 73, 0.4); color: var(--v3-error); background: rgba(248, 81, 73, 0.07); }
+.rt-warn, .pp-warn, .sk-warn, .bd-warn, .gd-warn, .ob-warn { border-color: rgba(210, 153, 34, 0.4); color: var(--v3-warn); background: rgba(210, 153, 34, 0.07); }
+.ta-mono { font-family: var(--v3-font-mono); font-size: 10px; }
+.sk-result, .pp-report, .rt-output, .ob-metrics, .bd-quota { font-family: var(--v3-font-mono); font-size: 10px; background: rgba(0, 0, 0, 0.35); border: 1px solid var(--v3-border-subtle); border-radius: 6px; padding: 7px; max-height: 200px; overflow: auto; white-space: pre-wrap; word-break: break-all; }
+.gd-row, .bd-row { display: flex; gap: 6px; align-items: center; }
+.gd-row .text-input, .gd-row select, .bd-row select { flex: 1; min-width: 0; }
+.bd-bar-wrap { height: 5px; border-radius: 3px; background: rgba(255, 255, 255, 0.06); overflow: hidden; }
+.bd-bar { height: 100%; border-radius: 3px; background: var(--v3-ok); transition: width .25s cubic-bezier(0.23, 1, 0.32, 1); }
+.bd-numbers { font-family: var(--v3-font-mono); font-size: 10px; color: var(--v3-text-muted); }
+.gd-report { font-family: var(--v3-font-mono); font-size: 10px; background: rgba(0, 0, 0, 0.35); border: 1px solid var(--v3-border-subtle); border-radius: 6px; padding: 7px; max-height: 260px; overflow: auto; white-space: pre-wrap; word-break: break-all; }

@@ -1,3 +1,39 @@
+## 3.26.0 — 2026-08-18
+### Yeni Çekirdek Motor (Faz 1 — agents-core, ~1.760 satır)
+- **`src/main/agents-core/runtime.js`**: adım çalıştırıcılı (step runner) ajan yürütme döngüsü v2 — durum makinesi, iptal, zaman aşımı ve özet.
+- **`src/main/agents-core/tools.js`**: 24 yeni araç kayıt defteri ve rol bazlı izin matrisi (`toolAllowed`, `allowedToolsFor`).
+- **`src/main/agents-core/sandbox.js`**: komut normalleştirme, tehlikeli desen tespiti (`DANGER_SIGNALS`) ve yol sınırlama.
+- **`src/main/agents-core/llm-router.js`**: 6 sağlayıcılı LLM yönlendirici — sağlamlık, çevirme (fallback) ve maliyet ağırlıklı seçim.
+- **`src/main/agents-core/prompts.js`**: 22 şablonlu sistem prompt kütüphanesi (`buildTemplate`, `listTemplates`).
+- **`src/main/agents-core/session.js`**: oturum yaşam döngüsü — oluşturma/kurtarma/prune, kalıcı durum.
+- **`src/main/agents-core/eval.js`**: görev değerlendirme — derecelendirme kriterleri ve rapor.
+### Derin Orkestrasyon (Faz 2 — orch, ~1.550 satır)
+- **`src/main/orch/pipelines.js`**: DAG tabanlı pipeline motoru — döngü tespiti, topolojik sıralama, paralel seviye yürütme.
+- **`src/main/orch/events.js`**: olay otobüsü — kanal bazlı abonelik, throttle ve olay geçmişi.
+- **`src/main/orch/state-store.js`**: isim alanlı durum deposu — TTL, abonelik bildirimleri, kalıcılık.
+- **`src/main/orch/vault-tasks.js`**: kasalı gizli görevler — prompt maskeleme, gizli enjeksiyonu, eksik anahtar tespiti.
+- **`src/main/orch/handoffs.js`**: ajanlar arası görev devri — worker dağılımı, yeniden devir, konsensüs toplama.
+- **`src/main/orch/swarm.js`**: sürü orkestrasyonu — rol tabanlı ajan kaydı, uzmanlık skoruyla görev eşleştirme, konsensüs karar.
+- **`src/main/orch/budget-engine.js`**: bütçe motoru — harcama, kalan kota, uyarı eşikleri ve sert durdurma.
+- **`src/main/orch/skills.js`**: 12 yerleşik yetenek kayıt defteri — tetikleyici eşleştirme ve değişkenli adım planı üretimi.
+- **`src/main/orch/workspace.js`**: çalışma alanı sınırlaması — kök konfinmanı, dışlama desenleri, işlem kısıtları.
+- **`src/main/orch/observability.js`**: gözlemlenebilirlik — pencere bazlı metrik toplama, özet (p95/avg) ve sağlık raporu.
+### Gelişmiş Güvenlik (Faz 3 — guard + trust, ~690 satır)
+- **`src/main/guard/permission.js`**: ayrıntılı izin modeli — roller ve yetenek kontrolleri.
+- **`src/main/guard/allowlist.js`**: araç izin listesi yönetimi — ekleme/çıkarma/kontrol.
+- **`src/main/guard/policy.js`**: kurumsal güvenlik politikaları — limitler, onay akışı, saat kısıtı.
+- **`src/main/guard/diff-gate.js`**: diff tabanlı değişim kapısı — risk puanlama ve karantina eşikleri.
+- **`src/main/guard/ci-check.js`**: CI durum kapısı — diff onayı için pipeline gereksinimi.
+- **`src/main/guard/entropy.js`**: yüksek entropi tespiti — sızan gizli anahtar taraması.
+- **`src/main/guard/quarantine.js`**: karantina kayıt defteri — kapılı dosyaların takibi.
+- **`src/main/trust/signing.js`**: bütünlük imzası — SHA-256 + HMAC, manifest üretimi ve doğrulama.
+### CLI, IPC ve UI (Faz 4 — ~920 satır)
+- **`src/main/cli/v326-commands.js`**: 10 yeni CLI komutu — `runtime-run`, `pipeline-run`, `swarm-match`, `budget-quota`, `skills-plan`, `guard-check`, `diff-gate`, `workspace-init`, `vault-task`, `metrics-snap`.
+- **`src/main/ipc-v326-handlers.js`**: yeni modüllerin Electron IPC köprüsü.
+- **`src/renderer/modules/{runtime,pipelines,skills,budget,guard,observability}.js`**: 6 yeni UI paneli (Runtime, Pipelines, Yetenekler, Bütçe, Guard/Diff Kapısı, Gözlemlenebilirlik).
+### Test Kapsamı (+86 test, toplam 536)
+- `tests/test-v326-core.test.js` (çekirdek motor), `tests/test-v326-orch.test.js` (orkestrasyon), `tests/test-v326-guard.test.js` (güvenlik) — tüm paketler yeşil.
+
 # Changelog
 
 ## 3.25.0 — 2026-08-18
