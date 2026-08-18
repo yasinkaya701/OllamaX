@@ -39,7 +39,7 @@ describe('agents-core/runtime — ajan çalışma zamanı', () => {
   });
   test('runtime oluşturulur ve durum raporlanır', () => {
     runtime.seedDefaultRunners();
-    const res = runtime.createRuntime({ cwd: '/tmp' });
+    const res = runtime.createRuntime({ cwd: require('os').tmpdir() });
     expect(res.ok).toBe(true);
     const st = runtime.state(res.runtime);
     expect(st.ok).toBe(true);
@@ -47,7 +47,7 @@ describe('agents-core/runtime — ajan çalışma zamanı', () => {
   });
   test('geçersiz plan yürütmesi reddedilir', async () => {
     runtime.seedDefaultRunners();
-    const res = runtime.createRuntime({ cwd: '/tmp' });
+    const res = runtime.createRuntime({ cwd: require('os').tmpdir() });
     const out = await runtime.run(res.runtime, null);
     expect(out.ok).toBe(false);
     const out2 = await runtime.run(res.runtime, { steps: [] });
@@ -55,22 +55,24 @@ describe('agents-core/runtime — ajan çalışma zamanı', () => {
   });
   test('list_dir ve write adımları başarıyla yürür', async () => {
     runtime.seedDefaultRunners();
-    const res = runtime.createRuntime({ cwd: '/tmp' });
+    const tmp = require('os').tmpdir();
+    const res = runtime.createRuntime({ cwd: tmp });
     const out = await runtime.run(res.runtime, {
       steps: [
-        { type: 'list_dir', target: '/tmp' },
-        { type: 'write', target: '/tmp/krevyx-v326-rt-test.txt', content: 'deneme' },
+        { type: 'list_dir', target: tmp },
+        { type: 'write', target: `${tmp}/krevyx-v326-rt-test.txt`, content: 'deneme' },
       ],
     });
     expect(out.ok).toBe(true);
     expect(out.steps.every((s) => s.status === 'succeeded')).toBe(true);
-    require('fs').unlinkSync('/tmp/krevyx-v326-rt-test.txt');
+    try { require('fs').unlinkSync(`${tmp}/krevyx-v326-rt-test.txt`); } catch (e) { /* temizlik */ }
   });
   test('desteklenmeyen adım türü failed olarak işaretlenir ve haltOnError zinciri durdurur', async () => {
     runtime.seedDefaultRunners();
-    const res = runtime.createRuntime({ cwd: '/tmp', haltOnError: true });
+    const tmp = require('os').tmpdir();
+    const res = runtime.createRuntime({ cwd: tmp, haltOnError: true });
     const out = await runtime.run(res.runtime, {
-      steps: [{ type: 'list_dir', target: '/tmp' }, { type: 'yok-sa', target: '/tmp' }, { type: 'write', target: '/tmp/x.txt', content: '1' }],
+      steps: [{ type: 'list_dir', target: tmp }, { type: 'yok-sa', target: tmp }, { type: 'write', target: `${tmp}/x.txt`, content: '1' }],
     });
     expect(out.ok).toBe(true);
     expect(out.steps.length).toBe(2);
@@ -78,27 +80,29 @@ describe('agents-core/runtime — ajan çalışma zamanı', () => {
   });
   test('onay kapısı reddedilen adımı denied yapar', async () => {
     runtime.seedDefaultRunners();
+    const tmp = require('os').tmpdir();
     const res = runtime.createRuntime({
-      cwd: '/tmp',
+      cwd: tmp,
       haltOnError: false,
       approval: { request: async () => ({ ok: false, error: 'Red' }) },
     });
     const out = await runtime.run(res.runtime, {
-      steps: [{ type: 'list_dir', target: '/tmp' }],
+      steps: [{ type: 'list_dir', target: tmp }],
     });
     expect(out.ok).toBe(true);
     expect(out.steps[0].status).toBe('denied');
   });
   test('abort çağrısı runtime durumunu işaretler ve yürütmeyi durdurur', async () => {
     runtime.seedDefaultRunners();
-    const res = runtime.createRuntime({ cwd: '/tmp' });
+    const tmp = require('os').tmpdir();
+    const res = runtime.createRuntime({ cwd: tmp });
     const stBefore = runtime.state(res.runtime);
     expect(stBefore.aborted).toBe(false);
     const ab = runtime.abort(res.runtime);
     expect(ab.ok).toBe(true);
     const stAfter = runtime.state(res.runtime);
     expect(stAfter.aborted).toBe(true);
-    const out = await runtime.run(res.runtime, { steps: [{ type: 'list_dir', target: '/tmp' }] });
+    const out = await runtime.run(res.runtime, { steps: [{ type: 'list_dir', target: require('os').tmpdir() }] });
     expect(out.ok).toBe(true);
   });
 });
@@ -137,19 +141,19 @@ describe('agents-core/tools — araç kayıt defteri', () => {
 
 describe('agents-core/sandbox — izole yürütme', () => {
   test('sandbox oluşturulur ve durum raporlanır', () => {
-    const res = sandbox.createSandbox({ cwd: '/tmp' });
+    const res = sandbox.createSandbox({ cwd: require('os').tmpdir() });
     expect(res.ok).toBe(true);
     const st = sandbox.state(res.sandbox);
     expect(st.ok).toBe(true);
     expect(st.activeSpawns).toBe(0);
   });
   test('izinli komut izole çalışır', () => {
-    const res = sandbox.createSandbox({ cwd: '/tmp' });
+    const res = sandbox.createSandbox({ cwd: require('os').tmpdir() });
     const out = sandbox.run(res.sandbox, 'echo hello');
     if (out.ok) expect(out.stdout).toMatch(/hello/);
   });
   test('yasaklı komut izole edildikten sonra reddedilir', () => {
-    const res = sandbox.createSandbox({ cwd: '/tmp', allowlist: [] });
+    const res = sandbox.createSandbox({ cwd: require('os').tmpdir(), allowlist: [] });
     const out = sandbox.run(res.sandbox, 'rm -rf /');
     if (out && typeof out.then === 'function') return out.then((o) => {
       expect(o.ok).toBe(false);
@@ -159,10 +163,11 @@ describe('agents-core/sandbox — izole yürütme', () => {
     expect(out.error).toBeTruthy();
   });
   test('yol sınırlama dizin dışı hedefi engeller', () => {
-    const res = sandbox.createSandbox({ cwd: '/tmp/krevyx-box', pathPrefix: '/tmp/krevyx-box' });
+    const tmp = require('os').tmpdir();
+    const res = sandbox.createSandbox({ cwd: `${tmp}/krevyx-box`, pathPrefix: `${tmp}/krevyx-box` });
     const assertRes = sandbox.assertConfined(res.sandbox, '/etc/passwd');
     expect(assertRes.ok).toBe(false);
-    const confined = sandbox.assertConfined(res.sandbox, '/tmp/krevyx-box/dosya.txt');
+    const confined = sandbox.assertConfined(res.sandbox, `${tmp}/krevyx-box/dosya.txt`);
     expect(confined.ok).toBe(true);
   });
   test('normalizeCommand tehlike sinyallerini algılar', () => {

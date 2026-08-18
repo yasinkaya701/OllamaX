@@ -309,3 +309,10 @@ KALAN: orch testlerini API'ye uydur, 3 suite PASS → tüm jest → 3.26.0 sür�
 ## SON 4 HATA (orch suite)
 events.on(bus,'task',fn) ok:false döndü — 'already subscriber' değil; bus oluşturuldu: _buses.has(bus.id) true olmalı. onRes.ok false ⇒ bus.id eksik mi? createBus {id,bus} döner; on(bus,ch,fn) parametresi bus objesi gerektirir ✓. Ama on('task') → normalizeChannel: VALID_CHANNELS 'task' var ✓. onRes.ok=false ise hata msg bak: 'Bus bulunamadı' mı? Belki createBus _buses'a bus objesini kayıt etti; on(bus,...) doğru. İlk emit delivered? on ok:false ise hiç eklenmez ⇒ delivered 0. Çözüm: testte on sonucunu kontrol et; gerçek hata muhtemelen on(bus,ch,fn) içinde bus.channels.has→set sonrası subs.some(fn===fn) ilk seferde false. onRes.ok false gelmesi beklenmiyor — log'a bak! (grep node script ile tek dosya test et)
 aggregate: {ok,text,succeeded,failed} döner (object, .text string). planSkill: skill.steps yoksa steps undefined dizi mi? vars eksik → ok:false. skills.matchSkills: score>0 gerekir. 'commit et' metninde builtin skill keywordleri bakılacak (skill keywords belki 'git commit' gibi).
+
+
+## WINDOWS CI HATASI (v3.26.0, run 32093733376)
+2 test başarısız — test-v326-core.test.js, macOS/Linux CI'de geçen Windows'ta kalıyor:
+1. 'list_dir ve write adımları başarıyla yürür': /tmp path Windows'ta geçerli değil (C:\tmp dizini yok) → list_dir write başarısız.
+2. 'desteklenmeyen adım türü...': aynı /tmp sorunu; list_dir Windows'ta failed → haltOnError zinciri hemen durur → steps.length=1 (beklenen 2).
+ÇÖZÜM: testlerde platform-bağımsız os.tmpdir() kullan. Ayrıca runtime.run: failed step + haltOnError ile 2. test yine de 2 adım üretebilir çünkü unsupported runner'da rec push edilir, sonra break → beklenen 2 OK. Sorun sadece /tmp.
