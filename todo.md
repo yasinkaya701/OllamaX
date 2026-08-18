@@ -70,3 +70,51 @@
 ## Teslim
 - [ ] Tam test paketi yeşil; commit + v3.24.0 tag + push → CI yeşil
 - [ ] Release linkleri doğrula; site checkpoint; final rapor
+
+# v3.24.2 — Site medya + OS algılama iyileştirmeleri (site-only, app repo'da todo kaydı)
+- [ ] macOS xattr karantina kaldırma demo videosu üret (terminal ekranı, komut yazımı)
+- [ ] Videoyu SSS bölümüne göm (TR/EN FAQ yapısına uyarla)
+- [ ] macOS algılandığında indirme kartlarında ZIP seçeneğini öne çıkar (highlight + sıralama)
+- [ ] TypeScript kontrol + screenshot + checkpoint (otomatik yayın)
+
+# 20k Satırlık Upgrade — v3.25 (YENİ İŞ)
+
+## Faz 1: İnceleme + Plan
+- [ ] Kod tabanını tarayıp mevcut satır sayısını ve modül haritasını çıkar
+- [ ] 20k satırlık upgrade planını yaz (PLAN-325.md)
+
+## Faz 2: Yeniden Denetçi Motoru (Çekirdek)
+- [ ] plan-engine: Plan Mode — plan oluşturma, onay döngüsü, plan diff
+- [ ] grading: Ajan çıktı derecelendirme — kalite puanı, geri döngü (plan→execute→grade→revise)
+- [ ] diff-review: Dosya değişiklik inceleme — hunk seviyesi onay/reddet
+- [ ] diff-apply: Güvenli diff uygulama (context doğrulaması, fallback)
+- [ ] memory: Semantik çalışma belleği — KREYX.md + kalıcı proje notları
+- [ ] tools registry: Genişletilebilir araç kaydı + permission model
+- [ ] Yeni modüller için birim testleri
+
+## Faz 3: Orkestrasyon & Ajan Yetenekleri
+- [ ] task-queue: Görev kuyruğu + paralel çalıştırma + öncelik
+- [ ] agent-composer: Çoklu ajan orkestrasyonu (lead + worker ajanlar)
+- [ ] chain-tasks: Zincir görevler — önceki görev çıktısını sonrakine aktarma
+- [ ] context-manager: Bağlam sıkıştırma/özetleme (long-horizon)
+- [ ] hooks: Yaşam döngüsü hook'ları (pre/post tool, pre/post run)
+- [ ] Yeni modüller için birim testleri
+
+## Faz 4: Güvenlik & Güven Zinciri
+- [ ] signed-releases: Release doğrulama — SHA checksum + imza kontrolü (updater entegrasyonu)
+- [ ] audit-chain güçlendirme: events genelleştir, merkle root, sorgulanabilir audit log
+- [ ] secrets-audit: Gizli sızıntı tespiti (env/diff scan) + desen kural seti
+- [ ] vault-cli: krevyx vault import/export/rotate komutları
+- [ ] Yeni modüller için birim testleri
+
+## Faz 5: CLI + UI + Testler
+- [ ] CLI yeni komutlar: krevyx plan, grade, diff, queue, hooks, audit-query, secrets-scan
+- [ ] Renderer UI: Plan onay paneli, diff review paneli, görev kuyruğu görünümü, audit sorgulayıcı
+- [ ] Test seti 20k+ satır hedefi, edge case'ler
+- [ ] E2E UI testleri
+
+## Faz 6: Sürüm & Teslim
+- [ ] Tüm testler yeşil (npm test)
+- [ ] Sürüm 3.25.0, CHANGELOG, GitHub tag + push
+- [ ] CI'da release pipeline doğrulama
+- [ ] Final rapor

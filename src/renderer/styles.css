@@ -1743,3 +1743,59 @@ body.ghost-active .tools-panel {
 .kbd-mac{display:none;}
 body[data-platform="darwin"] .kbd-mac{display:inline;}
 body[data-platform="darwin"] .mod-kbd{display:none;}
+/* ============================================================
+   v3.25 Yeni panel stilleri (P-UI / Q-UI / T-UI) — Emerald Ledger
+   ============================================================ */
+.pl-zone, .df-zone, .qu-zone, .hk-zone, .tr-zone { padding: 6px 10px 10px; display: flex; flex-direction: column; gap: 7px; }
+.pl-label, .df-label, .hk-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--v3-text-muted); }
+.pl-actions, .pl-secondary-row, .df-actions, .hk-actions, .qu-add-row, .qu-secondary, .tr-grid { display: flex; gap: 6px; }
+.pl-primary-btn, .df-load-btn, .df-apply-btn, .hk-register-btn, .qu-add-btn, .orch-run-btn { background: rgba(63, 185, 80, 0.12); border: 1px solid rgba(63, 185, 80, 0.35); color: var(--v3-ok); }
+.pl-primary-btn:hover, .df-load-btn:hover, .df-apply-btn:hover, .hk-register-btn:hover, .qu-add-btn:hover, .orch-run-btn:hover { background: rgba(63, 185, 80, 0.22); }
+.pl-status, .df-status, .hk-status, .tr-status { font-size: 11px; padding: 5px 8px; border-radius: 6px; border: 1px solid var(--v3-border-subtle); }
+.pl-ok, .df-ok, .hk-ok, .tr-ok { border-color: rgba(63, 185, 80, 0.4); color: var(--v3-ok); background: rgba(63, 185, 80, 0.07); }
+.pl-error, .df-error, .hk-error, .tr-error { border-color: rgba(248, 81, 73, 0.4); color: var(--v3-error); background: rgba(248, 81, 73, 0.07); }
+.pl-warn, .df-warn, .tr-warn { border-color: rgba(210, 153, 34, 0.4); color: var(--v3-warn); background: rgba(210, 153, 34, 0.07); }
+.pl-steps, .df-hunks, .qu-tasks { display: flex; flex-direction: column; gap: 4px; max-height: 260px; overflow-y: auto; }
+.pl-step-row { display: grid; grid-template-columns: 20px 46px 1fr 30px; gap: 6px; align-items: center; font-size: 11px; padding: 4px 6px; border-radius: 6px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--v3-border-subtle); }
+.pl-step-idx { color: var(--v3-text-muted); font-family: var(--v3-font-mono); }
+.pl-step-type { text-transform: uppercase; font-size: 9px; letter-spacing: 0.05em; color: var(--v3-text-secondary); background: rgba(255,255,255,0.05); border-radius: 4px; padding: 1px 4px; text-align: center; }
+.pl-step-target { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pl-step-risk { font-family: var(--v3-font-mono); font-size: 10px; text-align: right; }
+.pl-high { color: var(--v3-error); } .pl-mid { color: var(--v3-warn); } .pl-low { color: var(--v3-ok); }
+.pl-serial { font-family: var(--v3-font-mono); font-size: 10px; background: rgba(0, 0, 0, 0.35); border: 1px solid var(--v3-border-subtle); border-radius: 6px; padding: 7px; max-height: 160px; overflow: auto; white-space: pre-wrap; word-break: break-all; }
+.df-hunk-card { border: 1px solid var(--v3-border-subtle); border-radius: 7px; padding: 6px 8px; background: rgba(255,255,255,0.02); }
+.df-approved { border-color: rgba(63, 185, 80, 0.45); } .df-rejected { border-color: rgba(248, 81, 73, 0.45); opacity: 0.65; }
+.df-hunk-head { display: flex; justify-content: space-between; font-size: 10px; color: var(--v3-text-muted); margin-bottom: 4px; }
+.df-hunk-decision { text-transform: uppercase; letter-spacing: 0.05em; }
+.df-hunk-body { font-family: var(--v3-font-mono); font-size: 10px; margin: 0; max-height: 120px; overflow: auto; background: rgba(0,0,0,0.3); border-radius: 5px; padding: 6px; line-height: 1.4; }
+.df-add { color: var(--v3-ok); } .df-rem { color: var(--v3-error); }
+.df-hunk-btns { display: flex; gap: 5px; margin-top: 5px; justify-content: flex-end; }
+.df-approve-btn.active { color: var(--v3-ok); border-color: rgba(63, 185, 80, 0.6); }
+.df-reject-btn.active { color: var(--v3-error); border-color: rgba(248, 81, 73, 0.6); }
+.df-file-row { display: flex; gap: 6px; align-items: center; }
+.df-file-name { font-size: 10px; color: var(--v3-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.df-file-input { display: none; }
+.qu-toolbar { display: flex; gap: 6px; align-items: center; }
+.qu-badge { font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 10px; margin-left: auto; }
+.qu-running { background: rgba(63, 185, 80, 0.15); color: var(--v3-ok); }
+.qu-paused { background: rgba(210, 153, 34, 0.15); color: var(--v3-warn); }
+.qu-task-row { display: grid; grid-template-columns: 46px 1fr 58px; gap: 6px; align-items: center; font-size: 11px; padding: 4px 6px; border-radius: 6px; background: rgba(255,255,255,0.03); border: 1px solid var(--v3-border-subtle); }
+.qu-task-type { text-transform: uppercase; font-size: 9px; color: var(--v3-text-muted); background: rgba(255,255,255,0.05); border-radius: 4px; padding: 1px 4px; text-align: center; }
+.qu-task-payload { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qu-task-status { font-family: var(--v3-font-mono); font-size: 10px; color: var(--v3-text-muted); text-align: right; }
+.qu-prio { flex: 1; }
+.qu-add-btn { margin-left: 4px; }
+.hk-status { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hk-log { font-family: var(--v3-font-mono); font-size: 10px; max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.hk-log-row { padding: 3px 6px; border-radius: 4px; background: rgba(255,255,255,0.03); }
+.hk-log-row.hk-ok { color: var(--v3-ok); } .hk-log-row.hk-fail { color: var(--v3-error); }
+.hk-register-btn { background: rgba(63, 185, 80, 0.12); border: 1px solid rgba(63, 185, 80, 0.35); color: var(--v3-ok); }
+.hk-register-btn:hover { background: rgba(63, 185, 80, 0.22); }
+.tr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.tr-btn { padding: 7px 6px; }
+.tr-finding { display: flex; justify-content: space-between; gap: 6px; font-size: 10px; padding: 4px 6px; border-radius: 5px; background: rgba(255,255,255,0.03); border: 1px solid var(--v3-border-subtle); }
+.tr-finding-rule { font-family: var(--v3-font-mono); }
+.tr-finding-env { color: var(--v3-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 45%; }
+.tr-finding.tr-critical { border-color: rgba(248, 81, 73, 0.5); } .tr-finding.tr-high { border-color: rgba(248, 81, 73, 0.3); }
+.tr-finding.tr-medium { border-color: rgba(210, 153, 34, 0.35); } .tr-finding.tr-ok { border-color: rgba(63, 185, 80, 0.4); color: var(--v3-ok); }
+.tr-results { display: flex; flex-direction: column; gap: 3px; max-height: 220px; overflow-y: auto; }

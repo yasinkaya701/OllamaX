@@ -1,5 +1,45 @@
 # Changelog
 
+## 3.25.0 — 2026-08-18
+
+### Yeniden Denetçi Motoru (P-1: Plan, Onay, Grading, Güvenli Diff, Proje Belleği)
+
+- **`src/main/plans/engine.js`**: ajan prompt'undan adım planı üreten yeniden denetçi motoru. 6 adım türü (list_dir, read, write, edit, execute, review), otomatik risk puanlama (0-100), tehlikeli desen eşleştirme (silme/ağ/kimlik desenleri) ve plan serileştirme.
+- **`src/main/plans/approval.js`**: plan onay döngüsü — yürütmeden önce adım bazlı kullanıcı onayı bloklaması, oturum yaşam döngüsü ve zaman aşımı; plan düzenleme (adım değiştirme/ekleme/çıkarma).
+- **`src/main/plans/grading.js`**: görev sonuçlarını 0-10 ölçeğinde derecelendiren grading modülü — tam sonuç, eksik veri ve hatalı sonuç ayrımı.
+- **`src/main/plans/diff-apply.js`**: güvenli unified diff uygulayıcı — hunk bütünlük doğrulama (eklenen/silinen satır sayımı), yalnızca beklenen dosyalara uygulama, fuzzy strateji.
+- **`src/main/plans/diff-review.js`**: hunk bazlı diff inceleme — her hunk için onay/reddet durumu, SARIF 2.1.0 dışa aktarma.
+- **`src/main/plans/project-memory.js`**: proje belleği (KREYX.md + semantik notlar) — ekleme/sorgulama/pruning, bellek bütçesi, proje bilgi dosyası iskeleti.
+
+### Orkestrasyon (Q: Görev Kuyruğu + Çoklu Ajan + Zincir + Bağlam + Hook)
+
+- **`src/main/agents-ext/task-queue.js`**: kalıcı görev kuyruğu — öncelik, yeniden deneme, zaman aşımı, crash kurtarma (disk senkronizasyonu), paralel çalışma limiti.
+- **`src/main/agents-ext/multi-agent.js`**: ajan havuzu — register/state/distribute (round-robin, least-loaded, broadcast) + dispatch.
+- **`src/main/agents-ext/chain-tasks.js`**: zincir görevler — sıralı ve paralel grup yürütme, şablonlu prompt render, iptal jetonu.
+- **`src/main/agents-ext/context-manager.js`**: bağlam yöneticisi — proje bağlamı kaydetme/yükleme, kırpma (trim), zincir doğrulama.
+- **`src/main/agents-ext/hooks.js`**: yaşam döngüsü hook sistemi — pre-run/post-run/pre-tool/pre-shell hook'ları, kayıt kümesi, blok kararları, FORBIDDEN_TOKENS güvenlik filtresi, zaman aşımı koruması, olay günlüğü.
+
+### Güven ve Denetim (T-4: İmza, Merkle Zincir v2, Gizli Tarama, Kasa)
+
+- **`src/main/trust/release-check.js`**: sürüm doğrulama — checksum ayrıştırma (SHA-256/SHA-512) ve dosya eşleştirme.
+- **`src/main/trust/audit-chain-v2.js`**: merkle köklü denetim zinciri v2 — bloklu zincirleme, blok sınırı kök taşıma, JSONL kalıcılık, sorgu/istatistik, CSV/SARIF dışa aktarma; `krevyx audit2` ile statik doğrulama.
+- **`src/main/trust/secrets-audit.js`**: 40 kuralı gizli sızıntı tespiti — API anahtarları, PAT, PEM, URL kimlik bilgileri, diff taraması, krevyx-ignore susturma, test dosyası atlama.
+- **`src/main/trust/vault-mgmt.js`**: kasa yönetimi — AES-256-GCM import/export, anahtar döndürme (rotate), entropy raporu, bütünlük kontrolü.
+
+### CLI (7 yeni alt komut)
+
+- `krevyx plan`, `krevyx diff-apply`, `krevyx diff-review`, `krevyx memory`, `krevyx secrets-scan`, `krevyx audit2`, `krevyx kreyx-md`.
+
+### UI (5 yeni panel modülü)
+
+- **plans** (Yeniden Denetçi), **diff-review**, **queue** (Görev Kuyruğu), **hooks** (Hook Yöneticisi), **trust** (Güven paneli); `index.html` + `styles.css` entegrasyonu, `ipc:3:*` uç noktaları.
+
+### Testler ve Kalite
+
+- 3 yeni test dosyası: `test-v325-plans` (37), `test-v325-agents` (45), `test-v325-trust` (33) — **25 suite, 450 test**.
+- Düzeltilen gerçek bug'lar: paralel grup sonsuz döngüsü (chain-tasks), blok zincirleme hatası ve tek girişlik flush (audit-chain-v2), rotateKey eksik çıktısı (vault-mgmt), 7 regex derleme hatası (secrets-audit), sabit-nullish maxRetries (task-queue).
+
+
 ## 3.16.1 — 2026-08-16
 
 ### CI Düzeltmesi
