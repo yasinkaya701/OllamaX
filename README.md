@@ -54,11 +54,13 @@ flowchart LR
 | Reusable prompts/workflows | Versioned engineering Skills |
 | Chat-centric UI | Task board, run timeline, diff and evidence views |
 
-The implementation blueprint is intentionally detailed and migration-oriented:
+The v4 work is documented at two levels:
 
-**[Read the full Krevyx v4 Execution Plan →](docs/KREVYX_V4_EXECUTION_PLAN.md)**
+**[Read the Krevyx v4 Master Execution Program →](docs/KREVYX_V4_MASTER_PROGRAM.md)**  
+Program-level delivery plan covering 14 workstreams, dependency waves, a 68-PR delivery train, parallel agent lanes, semantic-hotspot ownership, merge protocol, security/reliability gates, release ladder and launch Definition of Done.
 
-It defines the domain model, target module boundaries, `ipc:4:*` contract, workspace indexing, model router, scheduler, permissions, worktree isolation, evidence/verification engine, memory, Skills, v4 UX, Git delivery, observability, security, testing, CI gates, migration rules, risks, 29 PR-sized milestones and a ready-to-assign engineering backlog.
+**[Read the technical Krevyx v4 Execution Plan →](docs/KREVYX_V4_EXECUTION_PLAN.md)**  
+Architecture-level blueprint covering the domain model, target module boundaries, `ipc:4:*` contract, workspace indexing, model router, scheduler, permissions, worktree isolation, evidence/verification engine, memory, Skills, v4 UX, Git delivery, observability, security and testing.
 
 ## Current highlights
 
@@ -149,6 +151,7 @@ assets/     real project logo, icons and current application preview
 
 ## Documentation
 
+- [Krevyx v4 Master Execution Program](docs/KREVYX_V4_MASTER_PROGRAM.md)
 - [Krevyx v4 Execution Plan](docs/KREVYX_V4_EXECUTION_PLAN.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Feature catalog](docs/FEATURES.md)
