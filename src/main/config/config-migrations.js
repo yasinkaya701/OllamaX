@@ -2,13 +2,13 @@
  * config-migrations.js — Krevyx konfigürasyon şema geçişleri (ADR-006)
  *
  * v2 (chat-session.json tek JSON dump) -> v3 (şema-sürümlü config + sessions dizini)
- * Migration'lar ileri (up) ve geri (down) yönde çalışır; her geçiş geri
- * dönüştürülebilir tasarlanmıştır (geri dönüş stratejisinin temeli).
+ * v3 -> v4 (feature flags; v4 workspace varsayılan olarak kapalı)
+ * Migration'lar küçük, açık ve test edilebilir adımlar halinde tutulur.
  */
 
 'use strict';
 
-const CURRENT_SCHEMA_VERSION = 3;
+const CURRENT_SCHEMA_VERSION = 4;
 
 function safeStr(v, fallback = '') {
   return typeof v === 'string' ? v : fallback;
@@ -23,7 +23,7 @@ function isPlainObject(v) {
  */
 function migrateV2ToV3(raw) {
   if (!isPlainObject(raw)) {
-    return { schemaVersion: CURRENT_SCHEMA_VERSION, app: {}, providers: {}, agents: [], workspaces: [] };
+    return { schemaVersion: 3, app: {}, providers: {}, agents: [], workspaces: [] };
   }
 
   const settings = isPlainObject(raw.settings) ? raw.settings : {};
@@ -49,7 +49,7 @@ function migrateV2ToV3(raw) {
   const defaultMachineId = safeStr(settings.defaultOllamaMachineId, hosts.length ? 'default' : '');
 
   return {
-    schemaVersion: CURRENT_SCHEMA_VERSION,
+    schemaVersion: 3,
     migratedFrom: 2,
     migratedAt: new Date().toISOString(),
     app: {
@@ -116,8 +116,35 @@ function migrateV3ToV2(config) {
   };
 }
 
+/**
+ * v3 -> v4: v4 kullanıcı arayüzü/runtime'ı önce default-off feature flag arkasına alınır.
+ * Var olan bilinmeyen alanlar korunur; migration yalnızca eksik feature flag'i ekler.
+ */
+function migrateV3ToV4(config) {
+  if (!isPlainObject(config)) return null;
+  const features = isPlainObject(config.features) ? config.features : {};
+  return {
+    ...config,
+    schemaVersion: 4,
+    features: {
+      ...features,
+      v4Workspace: features.v4Workspace === true,
+    },
+  };
+}
+
+/**
+ * v4 -> v3 yardımcı downgrade. v3'ün bilmediği feature flag alanını kaldırır.
+ */
+function migrateV4ToV3(config) {
+  if (!isPlainObject(config)) return null;
+  const { features: _features, ...rest } = config;
+  return { ...rest, schemaVersion: 3 };
+}
+
 const MIGRATIONS = [
   { from: 2, to: 3, up: migrateV2ToV3, down: migrateV3ToV2 },
+  { from: 3, to: 4, up: migrateV3ToV4, down: migrateV4ToV3 },
 ];
 
 /**
@@ -138,6 +165,7 @@ function migrateConfig(raw, targetVersion = CURRENT_SCHEMA_VERSION) {
       const m = MIGRATIONS.find((x) => x.from === current && x.to === current + 1);
       if (!m) break;
       config = m.up(config);
+      if (!config) return null;
       current += 1;
     }
     if (current < targetVersion) {
@@ -158,6 +186,8 @@ module.exports = {
   getSchemaVersion,
   migrateV2ToV3,
   migrateV3ToV2,
+  migrateV3ToV4,
+  migrateV4ToV3,
   MIGRATIONS,
   CURRENT_SCHEMA_VERSION,
 };
