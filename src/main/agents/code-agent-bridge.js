@@ -185,8 +185,11 @@ function sanitizeTask(task, chain) {
   let t = task == null ? '' : String(task);
   /* UTF-8 bozuk çift byte'ları ve NULL byte'ları temizle */
   t = t.replace(/\0/g, '').replace(/\uFFFD/g, '');
-  /* Kontrol karakterlerini sil (CR/TAB hariç — CLI dostu kalır) */
-  t = t.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+  /* C0 kontrol karakterlerini sil; TAB/LF/CR sonraki normalizasyon adımına kadar korunur. */
+  t = Array.from(t).filter((char) => {
+    const code = char.charCodeAt(0);
+    return code === 9 || code === 10 || code === 13 || (code >= 32 && code !== 127);
+  }).join('');
   /* Satır enjeksiyonunu önle: stdin akışındaki satır ayrımını korumak için LF → boşluk */
   t = t.replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
   t = t.slice(0, MAX_TASK_BYTES);

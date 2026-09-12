@@ -33,7 +33,7 @@ const CRITICAL_PATTERNS = [
 
 const SECRET_PATTERNS = [
   /-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----/,
-  /(api[_-]?key|secret|token|password)\s*[:=]\s*['"][A-Za-z0-9_\-]{12,}/i,
+  /(api[_-]?key|secret|token|password)\s*[:=]\s*['"][A-Za-z0-9_-]{12,}/i,
   /\b(sk|pk)-[A-Za-z0-9]{20,}/,
   /ghp_[A-Za-z0-9]{20,}/,
 ];
