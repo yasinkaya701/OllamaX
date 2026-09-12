@@ -165,7 +165,7 @@ jobs:
           cat release-notes.md
 
       - name: GitHub Release oluştur ve paketleri yükle
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.resolve_tag.outputs.tag }}
           name: ${{ steps.resolve_tag.outputs.tag }}
