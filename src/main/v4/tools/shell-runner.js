@@ -113,6 +113,25 @@ function bufferStateToString(state) {
   return Buffer.concat(state.parts).toString('utf8');
 }
 
+function cancelledResult(executable, args, cwd, permission, classification) {
+  return {
+    ok: false,
+    cancelled: true,
+    executable: baseName(executable),
+    args,
+    cwd,
+    stdout: '',
+    stderr: '',
+    outputTruncated: false,
+    code: null,
+    signal: null,
+    timedOut: false,
+    durationMs: 0,
+    permission,
+    classification,
+  };
+}
+
 function runShell(options = {}) {
   const rootPath = options.rootPath;
   const executable = String(options.executable || '').trim();
@@ -133,6 +152,10 @@ function runShell(options = {}) {
     allowRoot: true,
     allowSecrets: false,
   });
+  if (options.signal && options.signal.aborted) {
+    return Promise.resolve(cancelledResult(executable, args, cwdResolved.relative, permission, classification));
+  }
+
   const timeoutMs = Number.isInteger(options.timeoutMs)
     ? Math.max(100, options.timeoutMs)
     : DEFAULT_TIMEOUT_MS;
@@ -145,7 +168,9 @@ function runShell(options = {}) {
     const stdout = { parts: [], bytes: 0, truncated: false };
     const stderr = { parts: [], bytes: 0, truncated: false };
     let timedOut = false;
+    let cancelled = false;
     let settled = false;
+    let timeout = null;
 
     const child = spawn(executable, args, {
       cwd: cwdResolved.target,
@@ -156,12 +181,19 @@ function runShell(options = {}) {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
+    const onAbort = () => {
+      cancelled = true;
+      killProcessTree(child, 'SIGKILL');
+    };
+
     const finish = (error, code, signal) => {
       if (settled) return;
       settled = true;
-      clearTimeout(timeout);
+      if (timeout) clearTimeout(timeout);
+      if (options.signal) options.signal.removeEventListener('abort', onAbort);
       const result = {
-        ok: !error && code === 0 && !timedOut,
+        ok: !error && code === 0 && !timedOut && !cancelled,
+        cancelled,
         executable: baseName(executable),
         args,
         cwd: cwdResolved.relative,
@@ -184,16 +216,18 @@ function runShell(options = {}) {
     child.on('error', (error) => finish(error, null, null));
     child.on('close', (code, signal) => finish(null, code, signal));
 
-    const timeout = setTimeout(() => {
+    timeout = setTimeout(() => {
       timedOut = true;
       killProcessTree(child, 'SIGKILL');
     }, timeoutMs);
     if (typeof timeout.unref === 'function') timeout.unref();
 
-    // Defensive: spawn can synchronously create a child whose streams fail later;
-    // close/error handlers above own all settlement paths.
+    if (options.signal) options.signal.addEventListener('abort', onAbort, { once: true });
+
     if (!child.pid) {
-      clearTimeout(timeout);
+      if (timeout) clearTimeout(timeout);
+      if (options.signal) options.signal.removeEventListener('abort', onAbort);
+      settled = true;
       reject(new V4Error(ErrorCode.INVALID_ARGUMENT, `failed to spawn executable: ${executable}`));
     }
   });
@@ -213,5 +247,6 @@ module.exports = {
   buildSafeEnv,
   killProcessTree,
   appendCapped,
+  cancelledResult,
   runShell,
 };
