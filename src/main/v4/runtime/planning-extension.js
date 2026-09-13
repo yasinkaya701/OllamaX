@@ -35,13 +35,14 @@ function createPlanningExtension(options = {}) {
     const workspace = runtime.store.get(EntityType.WORKSPACE, mission.workspaceId);
     if (!workspace) throw new V4Error(ErrorCode.NOT_FOUND, `workspace not found: ${mission.workspaceId}`);
 
+    const planningRoot = typeof runtime.service.resolveExecutionRoot === 'function'
+      ? await runtime.service.resolveExecutionRoot(mission, workspace, 'planning')
+      : workspace.rootPath;
     const refreshed = refreshWorkspaceContext({
-      rootPath: workspace.rootPath,
+      rootPath: planningRoot,
       workspaceId: workspace.id,
       memory: runtime.memory,
-      previousInventory: workspace.indexState && workspace.indexState.inventoryHash
-        ? { inventoryHash: workspace.indexState.inventoryHash, files: [] }
-        : null,
+      previousInventory: null,
       kind: 'planner',
       query: `${task.title} ${task.description || ''}`,
       maxContextFiles: 20,
@@ -58,6 +59,7 @@ function createPlanningExtension(options = {}) {
     return {
       ...result,
       context: {
+        executionRoot: planningRoot,
         sourceInventoryHash: refreshed.inventory.inventoryHash,
         includedPaths: refreshed.context.includedPaths || [],
         memoryRecordIds: (refreshed.context.memory || []).map((item) => item.id),
