@@ -18,6 +18,9 @@ function createV4ApplicationService(options = {}) {
   const verificationEngine = options.verificationEngine || null;
   const configReader = options.configReader || (() => configStore.readConfig());
   const inventoryCache = new Map();
+  let executionRootResolver = typeof options.executionRootResolver === 'function'
+    ? options.executionRootResolver
+    : null;
 
   if (!store || typeof store.get !== 'function' || typeof store.put !== 'function' || typeof store.list !== 'function') {
     throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'v4 application service requires a v4 store');
@@ -28,6 +31,23 @@ function createV4ApplicationService(options = {}) {
     if (!isFeatureEnabled(config, 'v4Workspace')) {
       throw new V4Error(ErrorCode.VALIDATION_FAILED, 'v4 workspace is disabled');
     }
+  }
+
+  function setExecutionRootResolver(resolver) {
+    if (resolver !== null && typeof resolver !== 'function') {
+      throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'execution root resolver must be a function or null');
+    }
+    executionRootResolver = resolver;
+    return true;
+  }
+
+  async function resolveExecutionRoot(mission, workspace, purpose = 'execution') {
+    if (!executionRootResolver) return path.resolve(workspace.rootPath);
+    const resolved = await executionRootResolver({ mission, workspace, purpose });
+    if (!resolved || typeof resolved !== 'string') {
+      throw new V4Error(ErrorCode.VALIDATION_FAILED, `execution root resolver returned no root for ${purpose}`);
+    }
+    return path.resolve(resolved);
   }
 
   function workspaceByRoot(rootPath) {
@@ -189,20 +209,18 @@ function createV4ApplicationService(options = {}) {
     assertEnabled();
     if (!missionRunner) throw new V4Error(ErrorCode.NOT_FOUND, 'mission runner is unavailable');
     if (!input.missionId) throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'missionId is required');
-    const { workspace } = missionWorkspace(input.missionId);
+    const { mission, workspace } = missionWorkspace(input.missionId);
+    const executionRoot = await resolveExecutionRoot(mission, workspace, 'execution');
     const permissionProfile = Object.values(PermissionProfile).includes(input.permissionProfile)
       ? input.permissionProfile
       : PermissionProfile.DEVELOPER;
 
     return missionRunner.runReadyBatch({
       missionId: input.missionId,
-      rootPath: workspace.rootPath,
+      rootPath: executionRoot,
       cwd: '.',
       maxParallel: input.maxParallel,
       permissionProfile,
-      // Approval objects never cross the renderer boundary. Operations that
-      // require explicit approval fail closed until the main-process approval
-      // inbox supplies a trusted approval provider.
       approval: null,
       approvalProvider: null,
       agentProfileId: input.agentProfileId || 'implementer',
@@ -239,7 +257,8 @@ function createV4ApplicationService(options = {}) {
     if (!verificationEngine) throw new V4Error(ErrorCode.NOT_FOUND, 'verification engine is unavailable');
     const task = store.get(EntityType.TASK, input.taskId);
     if (!task) throw new V4Error(ErrorCode.NOT_FOUND, `task not found: ${input.taskId}`);
-    const { workspace } = missionWorkspace(task.missionId);
+    const { mission, workspace } = missionWorkspace(task.missionId);
+    const executionRoot = await resolveExecutionRoot(mission, workspace, 'verification');
     const runtime = taskRuntimeInput(task);
     const storedGates = runtime && Array.isArray(runtime.verificationGates) ? runtime.verificationGates : [];
     if (!storedGates.length) {
@@ -250,7 +269,7 @@ function createV4ApplicationService(options = {}) {
       : PermissionProfile.DEVELOPER;
     return verificationEngine.runTaskVerification({
       taskId: task.id,
-      rootPath: workspace.rootPath,
+      rootPath: executionRoot,
       cwd: '.',
       gates: storedGates,
       permissionProfile,
@@ -262,6 +281,8 @@ function createV4ApplicationService(options = {}) {
 
   return {
     assertEnabled,
+    setExecutionRootResolver,
+    resolveExecutionRoot,
     openWorkspace,
     refreshWorkspace,
     listWorkspaces,
