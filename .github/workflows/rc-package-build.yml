@@ -21,15 +21,15 @@ jobs:
         include:
           - platform: linux
             os: ubuntu-latest
-            script: build:linux
+            builder_target: linux
             artifact_path: dist/*.AppImage
           - platform: windows
             os: windows-latest
-            script: build:win
+            builder_target: win
             artifact_path: dist/*.exe
           - platform: macos-arm64
             os: macos-latest
-            script: build:mac
+            builder_target: mac
             artifact_path: |
               dist/*.dmg
               dist/*.zip
@@ -58,8 +58,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build package
-        run: pnpm run ${{ matrix.script }}
+      - name: Build package without publishing
+        run: pnpm exec electron-builder --${{ matrix.builder_target }} --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
