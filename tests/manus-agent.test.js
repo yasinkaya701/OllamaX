@@ -32,6 +32,15 @@ function makeFakeRequest(responses) {
   });
 }
 
+afterEach(() => {
+  const m = require('../src/main/agents/manus-agent');
+  for (const sess of m._internal._sessions.values()) {
+    if (sess.pollTimer) clearInterval(sess.pollTimer);
+  }
+  m._internal._sessions.clear();
+  require('https').request.mockReset();
+});
+
 describe('manus-agent module', () => {
   test('modül yüklenir ve beklenen arayüzü dışa aktarır', () => {
     const m = require('../src/main/agents/manus-agent');

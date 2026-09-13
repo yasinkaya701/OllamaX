@@ -15,11 +15,14 @@ const {
   migrateConfig,
   migrateV2ToV3,
   migrateV3ToV2,
+  migrateV3ToV4,
+  migrateV4ToV3,
   getSchemaVersion,
   CURRENT_SCHEMA_VERSION,
 } = require('../src/main/config/config-migrations');
 
 const configStore = require('../src/main/config/config-store');
+const { isFeatureEnabled, normalizeFeatures } = require('../src/main/config/feature-flags');
 
 let tmpDir;
 beforeAll(() => {
@@ -40,9 +43,9 @@ describe('migrateV2ToV3', () => {
   test('eski chat-session formatını v3 config\'e taşır', () => {
     const raw = {
       settings: {
-        openai: 'sk-xxx',
-        anthropic: 'sk-ant-xxx',
-        gemini: 'AIza-xxx',
+        openai: 'test-openai-key',
+        anthropic: 'test-anthropic-key',
+        gemini: 'test-gemini-key',
         ollamaHost: '192.168.1.5:11434',
         theme: 'light',
       },
@@ -54,9 +57,9 @@ describe('migrateV2ToV3', () => {
     expect(v3.schemaVersion).toBe(3);
     expect(v3.migratedFrom).toBe(2);
     expect(v3.app.theme).toBe('light');
-    expect(v3.providers.openai.apiKey).toBe('ENV:sk-xxx');
-    expect(v3.providers.anthropic.apiKey).toBe('ENV:sk-ant-xxx');
-    expect(v3.providers.gemini.apiKey).toBe('ENV:AIza-xxx');
+    expect(v3.providers.openai.apiKey).toBe('ENV:test-openai-key');
+    expect(v3.providers.anthropic.apiKey).toBe('ENV:test-anthropic-key');
+    expect(v3.providers.gemini.apiKey).toBe('ENV:test-gemini-key');
     expect(v3.providers.ollama.hosts).toEqual(['192.168.1.5:11434']);
     expect(v3.agents[0].id).toBe('dev');
     expect(v3.workspaces[0].path).toBe('/home/user/proje');
@@ -100,18 +103,18 @@ describe('migrateV3ToV2', () => {
       app: { theme: 'dark', language: 'tr', ghostMode: true },
       providers: {
         ollama: { hosts: ['localhost:11434'] },
-        openai: { apiKey: 'ENV:sk-test' },
-        anthropic: { apiKey: 'ENV:sk-ant' },
-        gemini: { apiKey: 'AIza-env-siz' },
+        openai: { apiKey: 'ENV:test-openai' },
+        anthropic: { apiKey: 'ENV:test-anthropic' },
+        gemini: { apiKey: 'test-gemini' },
       },
       agents: [{ id: 'a1' }],
       workspaces: [{ path: '/home/user/p' }],
       sessions: [{ messages: [{ role: 'user', content: 'hi' }] }],
     };
     const v2 = migrateV3ToV2(v3);
-    expect(v2.settings.openai).toBe('sk-test');
-    expect(v2.settings.anthropic).toBe('sk-ant');
-    expect(v2.settings.gemini).toBe('AIza-env-siz');
+    expect(v2.settings.openai).toBe('test-openai');
+    expect(v2.settings.anthropic).toBe('test-anthropic');
+    expect(v2.settings.gemini).toBe('test-gemini');
     expect(v2.settings.ghostMode).toBe(true);
     expect(v2.agents[0].id).toBe('a1');
     expect(v2.workspaces[0]).toBe('/home/user/p');
@@ -119,17 +122,49 @@ describe('migrateV3ToV2', () => {
   });
 });
 
-describe('migrateConfig zinciri', () => {
-  test('v2 -> v3 up geçiş', () => {
-    const v3 = migrateConfig(
-      { settings: { openai: 'sk-z' }, agents: [], workspaces: [], history: [] },
-      3,
-    );
-    expect(getSchemaVersion(v3)).toBe(3);
+describe('v3 -> v4 feature flag migration', () => {
+  test('v3 config v4Workspace kapalı olacak şekilde v4 olur', () => {
+    const v3 = { schemaVersion: 3, app: { theme: 'dark' }, providers: {}, agents: [], workspaces: [] };
+    const v4 = migrateV3ToV4(v3);
+    expect(v4.schemaVersion).toBe(4);
+    expect(v4.features).toEqual({ v4Workspace: false });
+    expect(v4.app.theme).toBe('dark');
   });
 
-  test('zaten v3 ise değişmez', () => {
+  test('mevcut feature alanlarını korur ve yalnızca açık true değerini etkin sayar', () => {
+    const v4 = migrateV3ToV4({ schemaVersion: 3, features: { experimentalOther: true, v4Workspace: 'yes' } });
+    expect(v4.features.experimentalOther).toBe(true);
+    expect(v4.features.v4Workspace).toBe(false);
+  });
+
+  test('v4 -> v3 downgrade feature alanını kaldırır', () => {
+    const v3 = migrateV4ToV3({ schemaVersion: 4, features: { v4Workspace: true }, app: { theme: 'dark' } });
+    expect(v3.schemaVersion).toBe(3);
+    expect(v3.features).toBeUndefined();
+    expect(v3.app.theme).toBe('dark');
+  });
+});
+
+describe('migrateConfig zinciri', () => {
+  test('v2 -> güncel şema zinciri v4\'e ulaşır', () => {
+    const v4 = migrateConfig(
+      { settings: { openai: 'test-key' }, agents: [], workspaces: [], history: [] },
+      CURRENT_SCHEMA_VERSION,
+    );
+    expect(getSchemaVersion(v4)).toBe(4);
+    expect(v4.features.v4Workspace).toBe(false);
+  });
+
+  test('v3 config varsayılan hedefte v4\'e taşınır', () => {
     const cfg = { schemaVersion: 3, providers: { ollama: { hosts: ['h'] } } };
+    const migrated = migrateConfig(cfg);
+    expect(migrated).not.toBe(cfg);
+    expect(migrated.schemaVersion).toBe(4);
+    expect(isFeatureEnabled(migrated, 'v4Workspace')).toBe(false);
+  });
+
+  test('zaten güncel şemadaysa aynı nesne döner', () => {
+    const cfg = { schemaVersion: CURRENT_SCHEMA_VERSION, features: { v4Workspace: false } };
     expect(migrateConfig(cfg)).toBe(cfg);
   });
 
@@ -139,11 +174,23 @@ describe('migrateConfig zinciri', () => {
   });
 });
 
+describe('feature flag helpers', () => {
+  test('eksik flag default-off davranır', () => {
+    expect(normalizeFeatures({})).toEqual({ v4Workspace: false });
+    expect(isFeatureEnabled({}, 'v4Workspace')).toBe(false);
+    expect(isFeatureEnabled({ features: { v4Workspace: true } }, 'v4Workspace')).toBe(true);
+    expect(isFeatureEnabled({ features: { v4Workspace: 'true' } }, 'v4Workspace')).toBe(false);
+    expect(isFeatureEnabled({}, 'bilinmeyen')).toBe(false);
+  });
+});
+
 describe('configStore (geçici dizin)', () => {
-  test('readConfig yeni kurulumda varsayılan config yazıyor', () => {
+  test('readConfig yeni kurulumda güncel şema config yazıyor', () => {
     const cfg = configStore.readConfig();
-    expect(cfg.schemaVersion).toBe(3);
+    expect(cfg.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
     expect(cfg.providers.ollama.hosts).toContain('localhost:11434');
+    // Fresh config'te alan henüz fiziksel olarak bulunmasa bile runtime default-deny davranır.
+    expect(isFeatureEnabled(cfg, 'v4Workspace')).toBe(false);
   });
 
   test('updateConfig ve readConfig tutarlı', () => {
@@ -152,18 +199,18 @@ describe('configStore (geçici dizin)', () => {
   });
 
   test('resolvedProviders ENV: değerlerini çözer', () => {
-    process.env.Krevyx_TEST_KEY = 'secret-123';
+    process.env.KREYX_TEST_KEY = 'secret-for-test';
     configStore.updateConfig((c) => ({
       ...c,
-      providers: { ...c.providers, openai: { apiKey: 'ENV:Krevyx_TEST_KEY' } },
+      providers: { ...c.providers, openai: { apiKey: 'ENV:KREYX_TEST_KEY' } },
     }));
     const providers = configStore.resolvedProviders(configStore.readConfig());
-    expect(providers.openai).toBe('secret-123');
-    delete process.env.Krevyx_TEST_KEY;
+    expect(providers.openai).toBe('secret-for-test');
+    delete process.env.KREYX_TEST_KEY;
   });
 
   test('resolveApiKey ön ek olmayan değeri olduğu gibi döner', () => {
-    expect(configStore.resolveApiKey('sk-düz')).toBe('sk-düz');
+    expect(configStore.resolveApiKey('plain-test-value')).toBe('plain-test-value');
     expect(configStore.resolveApiKey('')).toBe('');
     expect(configStore.resolveApiKey(null)).toBe('');
   });
@@ -181,14 +228,12 @@ describe('configStore (geçici dizin)', () => {
   });
 
   test('geçersiz oturum kimliği güvenli hale getirilir (traversal önlenir)', () => {
-    // '..' karakterleri silinir; path traversal mümkün değil
     const p1 = configStore.sessionPath('../hack');
     const p2 = configStore.sessionPath('../../../etc/passwd');
     expect(p1).not.toContain('..');
     expect(p2).not.toContain('..');
     expect(p1.endsWith('hack.json')).toBe(true);
     expect(p2.endsWith('etcpasswd.json')).toBe(true);
-    // boş/dangerous kimlik throw atar (safe='')
     expect(() => configStore.sessionPath('')).toThrow();
   });
 

@@ -16,6 +16,30 @@ const MAX_HOOKS = 8;
 const HOOK_TIMEOUT_MS = 30000;
 
 /**
+ * Shell hook'ları alt süreçler başlatabilir (`sh -c "sleep 60"` gibi). Yalnızca
+ * shell PID'sini öldürmek torun süreci yetim bırakır ve test/app kapanışını
+ * engeller. POSIX'te ayrı process group açıp tüm grubu sonlandırırız; Windows'ta
+ * child.kill fallback'i mevcut davranışı korur.
+ */
+function terminateProcessTree(proc, signal = 'SIGKILL') {
+  if (!proc || !proc.pid) return false;
+  if (process.platform !== 'win32') {
+    try {
+      process.kill(-proc.pid, signal);
+      return true;
+    } catch {
+      /* process group çoktan kapanmış olabilir; child fallback'ine düş */
+    }
+  }
+  try {
+    if (!proc.killed) proc.kill(signal);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * krevyx-hooks.json yükler (çalışma dizini → üst dizinler → ev dizini).
  * @param {string} [workingDir]
  * @returns {{ events: Object<string, string[]>, source: string|null }}
@@ -84,14 +108,28 @@ async function runHooks(event, ctx, opts) {
       const proc = spawn('sh', ['-c', cmd], {
         cwd: ctx && ctx.workingDir,
         env,
-        stdio: ['ignore', 'ignore', 'pipe'],
+        stdio: ['ignore', 'ignore', 'ignore'],
+        detached: process.platform !== 'win32',
       });
       const timer = setTimeout(() => {
-        try { proc.kill('SIGKILL'); } catch (_) { /* noop */ }
+        terminateProcessTree(proc, 'SIGKILL');
       }, timeoutMs);
+      if (typeof timer.unref === 'function') timer.unref();
       const code = await new Promise((resolve) => {
-        proc.on('error', (e) => { res.error = e && e.message ? e.message : String(e); resolve(null); });
-        proc.on('exit', (c) => resolve(c));
+        let settled = false;
+        const finish = (value) => {
+          if (settled) return;
+          settled = true;
+          resolve(value);
+        };
+        proc.on('error', (e) => {
+          res.error = e && e.message ? e.message : String(e);
+          finish(null);
+        });
+        // `close` fires only after the process has exited and all stdio handles
+        // are closed. Waiting for it prevents short-lived child handles from
+        // keeping Jest workers (or the desktop app) alive during teardown.
+        proc.on('close', (c) => finish(c));
       });
       clearTimeout(timer);
       res.exit = code;
@@ -105,4 +143,11 @@ async function runHooks(event, ctx, opts) {
   return results;
 }
 
-module.exports = { loadHooks, runHooks, VALID_EVENTS, HOOKS_FILE, HOOK_TIMEOUT_MS };
+module.exports = {
+  loadHooks,
+  runHooks,
+  terminateProcessTree,
+  VALID_EVENTS,
+  HOOKS_FILE,
+  HOOK_TIMEOUT_MS,
+};

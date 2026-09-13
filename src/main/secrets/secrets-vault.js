@@ -116,7 +116,7 @@ async function removeKey(provider) {
   if (!providerKey) return { ok: true, mode: availability };
   memoryStore.delete(providerKey);
   try {
-    await keytar.deletePassword(SERVICE, accountFor(providerKey));
+    if (keytar) await keytar.deletePassword(SERVICE, accountFor(providerKey));
     return { ok: true, mode: availability };
   } catch {
     setAvailability('memory');
@@ -134,14 +134,21 @@ let probeDone = false;
 async function probeKeytar() {
   if (probeDone || !keytar) return;
   probeDone = true;
+  let timeoutHandle = null;
   try {
-    // Hızlı probe: var olmayan bir account'u sorgula — dbus yoksa bu asla dönmez.
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutHandle = setTimeout(() => reject(new Error('probe-timeout')), 2000);
+      if (timeoutHandle && typeof timeoutHandle.unref === 'function') timeoutHandle.unref();
+    });
+    // Hızlı probe: var olmayan bir account'u sorgula — dbus yoksa timeout devreye girer.
     await Promise.race([
       keytar.getPassword(SERVICE, '__krevyx__probe__'),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('probe-timeout')), 2000)),
+      timeoutPromise,
     ]);
   } catch {
     setAvailability('memory');
+  } finally {
+    if (timeoutHandle) clearTimeout(timeoutHandle);
   }
 }
 

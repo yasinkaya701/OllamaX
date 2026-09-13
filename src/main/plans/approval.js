@@ -18,7 +18,7 @@
  *   planEdit(sessionId, edit)             → { op: remove|add|change, ... }
  *   pendingSteps(sessionId)               → onay bekleyen adımlar
  *   sessionState(sessionId)               → durum + ilerleme
- *   expireTimers()                        → testlerde zamanlayıcı temizliği
+ *   expireTimers()                        → test/app shutdown zamanlayıcı temizliği
  *
  * Güvenlik: yüksek riskli adımlar (risk≥8) varsayılan olarak bekletilir;
  * `skipHighRisk: false` açıkça verilmelidir. Onay süre aşımı (default 15dk)
@@ -30,6 +30,11 @@ const DEFAULT_TIMEOUT_MS = 15 * 60 * 1000;
 
 const sessions = new Map();
 const timers = new Map();
+
+function unrefTimer(timer) {
+  if (timer && typeof timer.unref === 'function') timer.unref();
+  return timer;
+}
 
 function createApprovalSession(plan, opts = {}) {
   if (!plan || !Array.isArray(plan.steps) || !plan.steps.length) {
@@ -51,7 +56,7 @@ function createApprovalSession(plan, opts = {}) {
     decidedAt: null,
   };
   sessions.set(id, session);
-  const t = setTimeout(() => expireSession(id), session.timeoutMs);
+  const t = unrefTimer(setTimeout(() => expireSession(id), session.timeoutMs));
   timers.set(id, t);
   return { ok: true, session: publicView(session) };
 }
@@ -156,7 +161,6 @@ function planEdit(id, edit) {
   if (!edit || !edit.op) return { ok: false, error: 'Edit işlemi gerekli' };
 
   if (edit.op === 'remove') {
-    if (s.status !== 'awaiting_approval') return { ok: false, error: 'Durum uygun değil' };
     const idx = s.steps.findIndex((x) => x.id === edit.stepId);
     if (idx === -1) return { ok: false, error: 'Adım bulunamadı' };
     const removed = s.steps.splice(idx, 1)[0];
@@ -228,12 +232,19 @@ function sessionState(id) {
   };
 }
 
+function clearSessionTimer(id) {
+  const t = timers.get(id);
+  if (!t) return false;
+  clearTimeout(t);
+  timers.delete(id);
+  return true;
+}
+
 function cancelSession(id) {
   const s = getSession(id);
   if (!s) return { ok: false, error: 'Oturum bulunamadı' };
   if (s.status === 'approved' || s.status === 'cancelled') return { ok: false, error: `İptal edilemez: ${s.status}` };
-  const t = timers.get(id);
-  if (t) { clearTimeout(t); timers.delete(id); }
+  clearSessionTimer(id);
   s.status = 'cancelled';
   s.decidedAt = Date.now();
   return { ok: true };
@@ -253,11 +264,17 @@ function resolveSession(id) {
   if (s.status !== 'awaiting_approval') return { ok: false, error: 'Oturum karara varmamış' };
   const pending = s.steps.some((x) => x.status === 'pending');
   if (pending) return { ok: false, error: 'Hâlâ onay bekleyen adım var' };
-  const t = timers.get(id);
-  if (t) { clearTimeout(t); timers.delete(id); }
+  clearSessionTimer(id);
   s.status = 'approved';
   s.decidedAt = Date.now();
   return { ok: true, plan: { id: s.planId, prompt: s.prompt, steps: s.steps, editLog: s.editLog } };
+}
+
+function expireTimers() {
+  for (const timer of timers.values()) clearTimeout(timer);
+  const count = timers.size;
+  timers.clear();
+  return { ok: true, cleared: count };
 }
 
 /* Test yardımcısı: oturum sayısını döndürür */
@@ -278,5 +295,7 @@ module.exports = {
   cancelSession,
   expireSession,
   resolveSession,
+  expireTimers,
+  clearSessionTimer,
   testOnlyCount,
 };
