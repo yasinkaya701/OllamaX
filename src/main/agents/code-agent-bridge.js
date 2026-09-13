@@ -5,22 +5,9 @@
  *
  * Kurulu kod ajanı CLI'larını (Claude Code, Codex, Antigravity/gemini-cli)
  * child_process.spawn ile doğrudan çalıştırır; API anahtarı gerektirmez.
- *
- * v3.19 yenilikleri:
- *   - Claude Code `--output-format stream-json` çıktısının TIPE-bazlı ayrıştırılması
- *     (assistant/tool/user/result), adım etiketleri gerçek akışa göre verilir.
- *   - `workingDir` opsiyonu: ajan doğru proje dizininde çalışır (her ajan için
- *     son çalışma dizini kayıt defterinde tutulur).
- *   - Claude Code `--resume` desteği: aynı çalışma ağacı için mevcut oturumu
- *     devam ettirir (otomatik, son görev aynı dizindeyse).
- *   - Canlı akış: her adım `ipc:3:code-agent:step` event'iyle renderer'a anında
- *     düşer (batch bekleme yok); `ipc:3:code-agent:done` ile tamamlanır.
- *   - Gerçek durdurma: `code-agent-stop { agentId }` süreci kill eder.
- *
- * Ajan bulunamazsa { ok: false, error, missing: true } döner;
- * renderer otomatik olarak simülasyon moduna geçer.
  */
 
+const path = require('path');
 const { spawn } = require('child_process');
 const { BrowserWindow } = require('electron');
 
@@ -28,7 +15,6 @@ const AGENT_PROFILES = {
   'claude-code': {
     label: 'Claude Code',
     detect: ['claude'],
-    // stream-json: type alanlı JSON satırları; stdout ayrıştırıcı etiket üretir
     buildCmd: (task, opts) => {
       const args = ['-p', task, '--output-format', 'stream-json', '--verbose'];
       if (opts && opts.resume) args.push('--resume');
@@ -40,11 +26,7 @@ const AGENT_PROFILES = {
   codex: {
     label: 'Codex',
     detect: ['codex'],
-    // `codex exec` non-interaktif moddur ve pipe edilen stdin'den görevi okur.
-    // `codex prompt` interaktif (PTY) moddur — pipe edilen stdin ile "stdin is not
-    // interaktif `codex prompt` pipe stdin'de "stdin is not a terminal" hatası verir; bu yüzden bridge her zaman `exec` yolunu kullanır.
-    // `--skip-git-repo-check`: güvenilmeyen dizinlerde (sandbox/CI) çalışmayı sağlar.
-    buildCmd: () => ['exec', '--skip-git-repo-check'], // görev stdin'den verilir (interaktif olmayan mod)
+    buildCmd: () => ['exec', '--skip-git-repo-check'],
     parser: 'lines',
     stdin: true,
     cwdFrom: 'workspace',
@@ -52,7 +34,6 @@ const AGENT_PROFILES = {
   antigravity: {
     label: 'Antigravity',
     detect: ['antigravity', 'gemini'],
-    // antigravity CLI öncelikli; yoksa gemini-cli (`gemini -p`)
     buildCmd: (task, opts) => {
       if (opts && opts.executable === 'gemini') return ['-p', task];
       return ['--prompt', task];
@@ -62,11 +43,22 @@ const AGENT_PROFILES = {
   },
 };
 
-/* Çalışma dizini kayıt defteri: ajanId -> son kullanılan proje klasörü */
 const cwdRegistry = new Map();
-
-/* Canlı süreç kayıt defteri: ajanId -> child (durdurma için) */
 const liveProcesses = new Map();
+const lifecycleIntervals = new Map();
+
+function unrefTimer(timer) {
+  if (timer && typeof timer.unref === 'function') timer.unref();
+  return timer;
+}
+
+function clearLifecycleInterval(agentId) {
+  const interval = lifecycleIntervals.get(agentId);
+  if (!interval) return false;
+  clearInterval(interval);
+  lifecycleIntervals.delete(agentId);
+  return true;
+}
 
 function win() {
   const wins = BrowserWindow.getAllWindows();
@@ -79,7 +71,7 @@ function emitStep(agentId, kind, text, seq) {
     try {
       w.webContents.send('ipc:3:code-agent:step', { agentId, kind, text, seq, t: Date.now() });
     } catch {
-      /* pencere kapanmış olabilir — sessizce geç */
+      /* pencere kapanmış olabilir */
     }
   }
 }
@@ -96,120 +88,112 @@ function emitDone(agentId, result) {
 }
 
 function findExecutable(profile) {
-  // Fallback zincirini (detect listesi) EŞZAMANLI dene; ilk bulunanı döndür.
   const isWin = process.platform === 'win32';
   const probes = profile.detect.map(
-    (name) =>
-      new Promise((resolve) => {
-        try {
-          const args = isWin ? [name] : ['-c', `command -v ${name}`];
-          const p = spawn(isWin ? name : 'sh', args, { shell: false, stdio: 'ignore' });
-          p.on('error', () => resolve(null));
-          const t = setTimeout(() => {
-            try { p.kill(); } catch { /* noop */ }
-            resolve(null);
-          }, 2000);
-          p.on('exit', (code) => {
-            clearTimeout(t);
-            resolve(code === 0 ? name : null);
-          });
-        } catch {
-          resolve(null);
-        }
-      })
+    (name) => new Promise((resolve) => {
+      let settled = false;
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        resolve(value);
+      };
+      try {
+        const args = isWin ? [name] : ['-c', `command -v ${name}`];
+        const p = spawn(isWin ? name : 'sh', args, { shell: false, stdio: 'ignore' });
+        p.on('error', () => finish(null));
+        const timer = unrefTimer(setTimeout(() => {
+          try { p.kill(); } catch { /* noop */ }
+          finish(null);
+        }, 2000));
+        p.on('exit', (code) => {
+          clearTimeout(timer);
+          finish(code === 0 ? name : null);
+        });
+      } catch {
+        finish(null);
+      }
+    })
   );
   return Promise.all(probes).then((results) => results.find((r) => r != null) || null);
 }
 
-/* ------------------------------------------------------------------ */
-/* Claude Code stream-json ayrıştırıcı                                */
-/* ------------------------------------------------------------------ */
-/*
- * Satır formatı (tek satır JSON):
- *   {"type":"assistant","message":{"content":[{"type":"text","text":"..."}]}}
- *   {"type":"tool_use", ...}   {"type":"result"}   {"type":"system", ...}
- */
 function parseStreamJsonLine(raw) {
   if (raw == null) return null;
-  const l = String(raw).trim();
-  if (!l || l[0] !== '{') return null;
-  let j;
+  const line = String(raw).trim();
+  if (!line || line[0] !== '{') return null;
+  let parsed;
   try {
-    j = JSON.parse(l);
+    parsed = JSON.parse(line);
   } catch {
     return null;
   }
-  if (!j || !j.type) return null;
-  switch (j.type) {
+  if (!parsed || !parsed.type) return null;
+  switch (parsed.type) {
     case 'assistant': {
-      const content = (j.message && Array.isArray(j.message.content)) ? j.message.content : [];
-      const texts = content.filter((c) => c && c.type === 'text').map((c) => String(c.text || '').trim()).filter(Boolean);
+      const content = parsed.message && Array.isArray(parsed.message.content)
+        ? parsed.message.content
+        : [];
+      const texts = content
+        .filter((item) => item && item.type === 'text')
+        .map((item) => String(item.text || '').trim())
+        .filter(Boolean);
       if (texts.length === 0) return null;
-      const t = texts.join(' ');
-      if (/^plan|Düşünüyorum|Planning/i.test(t)) return { kind: 'plan', text: t };
-      return { kind: 'plan', text: t };
+      return { kind: 'plan', text: texts.join(' ') };
     }
     case 'tool_use': {
-      const name = (j.tool_input && j.tool_input.command) || (j.tool_name) || 'araç';
+      const name = (parsed.tool_input && parsed.tool_input.command) || parsed.tool_name || 'araç';
       return { kind: 'araç', text: `araç: ${String(name).slice(0, 120)}` };
     }
     case 'result': {
-      const summary = (j.result && typeof j.result === 'object' && j.result.type === 'text' && j.result.content)
-        ? String(j.result.content).slice(0, 400)
+      const summary = parsed.result && typeof parsed.result === 'object' && parsed.result.type === 'text' && parsed.result.content
+        ? String(parsed.result.content).slice(0, 400)
         : null;
       return { kind: 'sonuç', text: summary || 'sonuç alındı' };
     }
     case 'system': {
-      const t = (j.subtype === 'init' && j.text) ? String(j.text).slice(0, 200) : '';
-      return t ? { kind: 'plan', text: t } : null;
+      const text = parsed.subtype === 'init' && parsed.text ? String(parsed.text).slice(0, 200) : '';
+      return text ? { kind: 'plan', text } : null;
     }
     default:
       return null;
   }
 }
 
-/* Satır bazlı ayrıştırıcı (codex/antigravity): anlamlı köşeli parantez etiketleri */
 function parseLineTag(line, profileId) {
-  const t = line.trim();
-  if (profileId === 'antigravity' && /inceleme|review|öneri/i.test(t)) return 'plan';
-  if (profileId === 'claude-code' && /^(\[plan\]|\[keşif\]|\[düzenle\]|\[patch\]|Yapılıyor|Tamamlandı)/i.test(t)) return 'plan';
-  if (/^(test|jest|commit|PR)/i.test(t)) return 'plan';
-  if (/Hata|error|failed|başarısız/i.test(t)) return 'sonuç';
+  const text = line.trim();
+  if (profileId === 'antigravity' && /inceleme|review|öneri/i.test(text)) return 'plan';
+  if (profileId === 'claude-code' && /^(\[plan\]|\[keşif\]|\[düzenle\]|\[patch\]|Yapılıyor|Tamamlandı)/i.test(text)) return 'plan';
+  if (/^(test|jest|commit|PR)/i.test(text)) return 'plan';
+  if (/Hata|error|failed|başarısız/i.test(text)) return 'sonuç';
   return 'plan';
 }
 
-/* Görev giriş temizliği — fuzz dayanıklılığı: bozuk unicode, kontrol karakterleri,
-   NULL byte, satır enjeksiyonu ve boyut sınırı uygular */
 const MAX_TASK_BYTES = 32 * 1024;
 function sanitizeTask(task, chain) {
-  let t = task == null ? '' : String(task);
-  /* UTF-8 bozuk çift byte'ları ve NULL byte'ları temizle */
-  t = t.replace(/\0/g, '').replace(/\uFFFD/g, '');
-  /* C0 kontrol karakterlerini sil; TAB/LF/CR sonraki normalizasyon adımına kadar korunur. */
-  t = Array.from(t).filter((char) => {
+  let text = task == null ? '' : String(task);
+  text = text.replace(/\0/g, '').replace(/\uFFFD/g, '');
+  text = Array.from(text).filter((char) => {
     const code = char.charCodeAt(0);
     return code === 9 || code === 10 || code === 13 || (code >= 32 && code !== 127);
   }).join('');
-  /* Satır enjeksiyonunu önle: stdin akışındaki satır ayrımını korumak için LF → boşluk */
-  t = t.replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
-  t = t.slice(0, MAX_TASK_BYTES);
-  if (!t) t = 'yok';
-  if (!chain) return t;
-  return `${t} [HANDOFF] zincir görevi: önceki ajan çıktısını işleyip ilerlet.`;
+  text = text.replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  text = text.slice(0, MAX_TASK_BYTES);
+  if (!text) text = 'yok';
+  if (!chain) return text;
+  return `${text} [HANDOFF] zincir görevi: önceki ajan çıktısını işleyip ilerlet.`;
 }
 
-/* Çalışma dizini güvenliği: silinmiş/geçersiz CWD'yi process.cwd()'ye düşür */
 function resolveCwd(agentId, opts) {
   const fs = require('fs');
-  const raw = (opts && opts.workingDir) ? opts.workingDir : cwdRegistry.get(agentId) || process.cwd();
+  const raw = opts && opts.workingDir ? opts.workingDir : cwdRegistry.get(agentId) || process.cwd();
   try {
-    const st = fs.statSync(raw);
-    if (st.isDirectory()) {
+    const stat = fs.statSync(raw);
+    if (stat.isDirectory()) {
       if (opts && opts.workingDir) cwdRegistry.set(agentId, raw);
       return raw;
     }
   } catch {
-    /* dizin yok/erişim yok — düş */
+    /* güvenli dizine düş */
   }
   const safe = process.cwd();
   if (opts && opts.workingDir) cwdRegistry.set(agentId, safe);
@@ -219,7 +203,7 @@ function resolveCwd(agentId, opts) {
 function runCli(profile, profileId, task, timeoutMs, opts) {
   const args = profile.buildCmd(task, opts);
   const cwd = resolveCwd(profileId, opts);
-  const exe = (opts && opts.executable) ? String(opts.executable) : profile.detect[0];
+  const exe = opts && opts.executable ? String(opts.executable) : profile.detect[0];
   return new Promise((resolve) => {
     let child;
     try {
@@ -227,58 +211,51 @@ function runCli(profile, profileId, task, timeoutMs, opts) {
         shell: false,
         stdio: profile.stdin ? ['pipe', 'pipe', 'pipe'] : ['ignore', 'pipe', 'pipe'],
         cwd,
-        env: { ...process.env, ...(opts && opts.env || {}) },
+        env: { ...process.env, ...((opts && opts.env) || {}) },
       });
     } catch (err) {
-      return resolve({ ok: false, error: String(err.message).slice(0, 200), missing: true });
+      resolve({ ok: false, error: String(err.message).slice(0, 200), missing: true });
+      return;
     }
 
-    /* canlı süreç kayıt defterine al — stop çağrısı buradan kill eder */
     liveProcesses.set(profileId, { child, killed: false });
 
-    /* çift-bitirme koruması: finish yalnızca ilk çağrıda çalışır (timeout/exit/error yarışları) */
     let finished = false;
     const steps = [];
     let buffer = '';
     let seq = 0;
+
     const push = (text, kind) => {
       try {
-        const t = String(text || '').trim();
-        if (!t) return;
+        const value = String(text || '').trim();
+        if (!value) return;
         seq += 1;
-        const entry = { text: t.slice(0, 500), kind: kind || 'plan' };
+        const entry = { text: value.slice(0, 500), kind: kind || 'plan' };
         steps.push(entry);
         emitStep(profileId, entry.kind, entry.text, seq);
       } catch {
-        /* hiçbir ayrıştırıcı/emit hatası ana akışı öldürmez */
+        /* parser/emit hatası akışı durdurmaz */
       }
     };
 
+    let timer;
     const finish = (result) => {
       if (finished) return;
       finished = true;
       clearTimeout(timer);
-      try {
-        liveProcesses.delete(profileId);
-      } catch {
-        /* noop */
-      }
-      try {
-        emitDone(profileId, result);
-      } catch {
-        /* noop */
-      }
+      liveProcesses.delete(profileId);
+      try { emitDone(profileId, result); } catch { /* noop */ }
       resolve(result);
     };
 
-    const timer = setTimeout(() => {
+    timer = unrefTimer(setTimeout(() => {
       try {
         if (child && !child.killed) child.kill();
       } catch {
         /* noop */
       }
       finish({ ok: true, steps, truncated: true });
-    }, timeoutMs);
+    }, timeoutMs));
 
     const safeData = (parser) => (chunk) => {
       try {
@@ -295,16 +272,13 @@ function runCli(profile, profileId, task, timeoutMs, opts) {
           }
         });
       } catch {
-        /* bozuk veri / ayrıştırıcı hatası süreci durdurmaz */
+        /* bozuk veri akışı durdurmaz */
       }
     };
 
     child.stdout.on('data', safeData(profile.parser));
     child.stderr.on('data', safeData(profile.parser));
-
-    child.on('error', (err) => {
-      finish({ ok: false, error: String(err && err.message).slice(0, 200), missing: true });
-    });
+    child.on('error', (err) => finish({ ok: false, error: String(err && err.message).slice(0, 200), missing: true }));
     child.on('exit', (code) => {
       if (buffer && profile.parser !== 'stream-json') push(buffer, parseLineTag(buffer, profileId));
       finish({ ok: true, steps, exitCode: code });
@@ -325,6 +299,7 @@ function runCli(profile, profileId, task, timeoutMs, opts) {
 
 async function stopAgent(agentId) {
   const entry = liveProcesses.get(agentId);
+  clearLifecycleInterval(agentId);
   if (!entry || entry.killed) return { ok: true, stopped: false, reason: 'çalışan süreç yok' };
   entry.killed = true;
   try {
@@ -332,20 +307,19 @@ async function stopAgent(agentId) {
   } catch (err) {
     return { ok: false, error: String(err && err.message).slice(0, 200) };
   }
-  setTimeout(() => {
+  unrefTimer(setTimeout(() => {
     try {
       if (entry.child && !entry.child.killed) entry.child.kill('SIGKILL');
     } catch {
       /* noop */
     }
-  }, 1500);
+  }, 1500));
   return { ok: true, stopped: true };
 }
 
 async function detectAgents() {
   const result = {};
-  const entries = Object.entries(AGENT_PROFILES);
-  const checks = entries.map(async ([id, profile]) => {
+  const checks = Object.entries(AGENT_PROFILES).map(async ([id, profile]) => {
     const exe = await findExecutable(profile);
     result[id] = {
       label: profile.label,
@@ -359,47 +333,50 @@ async function detectAgents() {
   return result;
 }
 
-/* KREYX.md/CLAUDE.md bellek bağlamını görev metnine iliştirir (Claude Code CLAUDE.md öncülü) */
 function attachMemoryContext(profileId, task, workingDir) {
   try {
     const mem = require('./project-memory');
     const { task: next, memoryFiles } = mem.attachMemory(task, workingDir);
     if (memoryFiles && memoryFiles.length) {
-      emitStep(profileId, 'plan', `hafıza iliştirildi: ${memoryFiles.map((f) => path.basename(f)).join(', ')}`, 0);
+      emitStep(profileId, 'plan', `hafıza iliştirildi: ${memoryFiles.map((file) => path.basename(file)).join(', ')}`, 0);
     }
     return next;
-  } catch (_) {
+  } catch {
     return task;
   }
 }
 
-/* Görev yaşam döngüsü kancalarını çalıştırır; krevyx-hooks.json okunur ve adımlara raporlanır */
 async function runLifecycleHooks(profileId, hookType, ctx) {
   try {
     const hooks = require('./agent-hooks');
     const results = await hooks.runHooks(hookType, ctx || {});
     if (!results || !results.length) return [];
     const lines = results
-      .filter((r) => r && r.cmd)
-      .map((r) => `[${r.ok ? 'OK' : 'HATA'}] ${r.cmd}`)
+      .filter((result) => result && result.cmd)
+      .map((result) => `[${result.ok ? 'OK' : 'HATA'}] ${result.cmd}`)
       .join(' | ');
     if (lines) emitStep(profileId, 'plan', `kanca (${hookType}): ${lines.slice(0, 400)}`, 0);
-    /* adım eşiği kancası: her 5 adımda step kancasını tetikle */
+
     if (hookType === 'task-start' && ctx && ctx.workingDir) {
-      try {
-        const interval = setInterval(() => {
-          const entry = liveProcesses.get(profileId);
-          if (!entry) return clearInterval(interval);
-          runLifecycleHooks(profileId, 'step', {
-            agentId,
-            workingDir: ctx.workingDir,
-            stepCount: (entry.stepsCount || 0),
-          });
-        }, 5 * 60 * 1000);
-      } catch (_) { /* noop */ }
+      clearLifecycleInterval(profileId);
+      const interval = unrefTimer(setInterval(() => {
+        const entry = liveProcesses.get(profileId);
+        if (!entry) {
+          clearLifecycleInterval(profileId);
+          return;
+        }
+        runLifecycleHooks(profileId, 'step', {
+          agentId: profileId,
+          workingDir: ctx.workingDir,
+          stepCount: entry.stepsCount || 0,
+        });
+      }, 5 * 60 * 1000));
+      lifecycleIntervals.set(profileId, interval);
+    } else if (hookType === 'task-done' || hookType === 'task-fail') {
+      clearLifecycleInterval(profileId);
     }
     return results;
-  } catch (_) {
+  } catch {
     return [];
   }
 }
@@ -408,7 +385,6 @@ async function runCodeAgent(agentId, task, chain) {
   const profile = AGENT_PROFILES[agentId];
   if (!profile) return { ok: false, error: 'Bilinmeyen ajan: ' + agentId };
 
-  /* hâlihazırda çalışan aynı ajan varsa önce durdur (tek aktif görev disiplini) */
   await stopAgent(agentId);
 
   const exe = await findExecutable(profile);
@@ -424,19 +400,16 @@ async function runCodeAgent(agentId, task, chain) {
   const workingDir = resolveCwd(agentId, opts);
   const finalTask = sanitizeTask(attachMemoryContext(agentId, String(task || ''), workingDir), chain);
 
-  /* task-start kancası */
   await runLifecycleHooks(agentId, 'task-start', { agentId, workingDir, stepCount: 0 });
 
   const result = await runCli(profile, agentId, finalTask, 300000, opts);
 
-  /* task-done / task-fail kancası */
   await runLifecycleHooks(agentId, result && result.ok ? 'task-done' : 'task-fail', {
     agentId,
     workingDir,
-    stepCount: (result && Array.isArray(result.steps) ? result.steps.length : 0),
+    stepCount: result && Array.isArray(result.steps) ? result.steps.length : 0,
   });
 
-  /* Görev sonu değerlendirmesi: diff review + outcomes grading döngüsü */
   try {
     const grading = require('./grade-task');
     const diff = require('./diff-review');
@@ -446,11 +419,7 @@ async function runCodeAgent(agentId, task, chain) {
     }
     const gradeOpts = (opts && opts.grade) || {};
     if (gradeOpts && gradeOpts.provider) {
-      /* Outcomes grading döngüsü: değerlendirme modelinin işaret ettiği sorunlar
-         görev tamamlanmadan önce ajana geri beslenir; tek tekrar deneme (1 tur)
-         ile sonuç iyileştirilir — grading artık ölçüm aracı değil, araç. */
-      const remediationBudget = (gradeOpts && gradeOpts.maxRetry === 0) ? 0 : 1;
-      let retryTask = null;
+      const remediationBudget = gradeOpts.maxRetry === 0 ? 0 : 1;
       for (let attempt = 0; attempt <= remediationBudget; attempt += 1) {
         const grade = await grading.gradeTask({
           provider: gradeOpts.provider,
@@ -461,18 +430,21 @@ async function runCodeAgent(agentId, task, chain) {
         });
         if (grade) result.grading = grade;
 
-        const issues = (grade && Array.isArray(grade.issues) ? grade.issues : [])
-          .filter((i) => i && typeof (i === 'string' ? i : (i.text || i.message || '')) === 'string' || i);
-        const issueTexts = (grade && Array.isArray(grade.issues) ? grade.issues : [])
-          .map((i) => (typeof i === 'string' ? i : (i.text || i.message || JSON.stringify(i) || '')))
-          .filter((s) => Boolean(s))
-          .slice(0, 5);
+        const issueTexts = grade && Array.isArray(grade.issues)
+          ? grade.issues
+            .map((issue) => (typeof issue === 'string' ? issue : (issue.text || issue.message || JSON.stringify(issue) || '')))
+            .filter(Boolean)
+            .slice(0, 5)
+          : [];
 
-        const remediationNeeded = attempt < remediationBudget &&
-          grade && grade.issues && grade.issues.length > 0 && (grade.score || 0) < 80;
+        const remediationNeeded = attempt < remediationBudget
+          && grade
+          && Array.isArray(grade.issues)
+          && grade.issues.length > 0
+          && (grade.score || 0) < 80;
         if (!remediationNeeded) break;
 
-        retryTask = sanitizeTask(
+        const retryTask = sanitizeTask(
           String(task || '') + '\n\n[DÜZELTME DÖNGÜSÜ] Görevin çıktısı değerlendirme modelinden şu sorunlarla döndü. Bu sorunları düzelt ve görevi tamamla: ' + issueTexts.join('; '),
           chain
         );
@@ -484,43 +456,40 @@ async function runCodeAgent(agentId, task, chain) {
         }
       }
     }
-  } catch { /* değerlendirmenin hatası ana sonucu etkilemez */ }
+  } catch {
+    /* değerlendirmenin hatası ana sonucu etkilemez */
+  } finally {
+    clearLifecycleInterval(agentId);
+  }
 
   return result;
 }
 
-/* Plan Modu (Cursor Agent Planning) — ajanı değiştirmeden çalıştırıp sonlandırır;
-   gerçek CLI ajanları native plan bayrağı vermez, bu yüzden görev planlama
-   görevi olarak koşulur ve canlı süreç sonlandırılır; renderer'a plan olarak
-   düşen akış, kullanıcı onayından sonra gerçek görevle tekrar koşulur. */
 async function runAgentPlan(agentId, task) {
   const profile = AGENT_PROFILES[agentId];
   if (!profile) return { ok: false, error: 'Bilinmeyen ajan: ' + agentId };
 
   const exe = await findExecutable(profile);
-  if (!exe) {
-    return { ok: false, error: `${profile.label} kurulu değil`, missing: true };
-  }
+  if (!exe) return { ok: false, error: `${profile.label} kurulu değil`, missing: true };
 
   const planPrompt = sanitizeTask(
     String(task || '') + ' Bu görev için adım adım bir plan çıkar: hangi araçlar kullanılacak, hangi dosyalara dokunulacak, hangi riskler var. YALNIZCA plan yap — hiçbir değişiklik uygulamak yok. [PLAN MODU]',
     null
   );
 
-  const runP = runCli(profile, agentId, planPrompt, 120000, {
+  const runPromise = runCli(profile, agentId, planPrompt, 120000, {
     executable: exe,
     resume: false,
   });
 
-  /* plan üretimini 45 sn ile sınırla; sonlanan ajan "plan hazır" olarak raporlanır */
+  let planTimer;
   const timed = new Promise((resolve) => {
-    setTimeout(() => resolve(null), 45000);
+    planTimer = unrefTimer(setTimeout(() => resolve(null), 45000));
   });
-  const race = await Promise.race([runP, timed]);
-  if (race === null) {
-    await stopAgent(agentId);
-  }
-  const base = race || (liveProcesses.has(agentId) ? { ok: true, steps: [], planMode: true } : { ok: true, steps: [], planMode: true });
+  const race = await Promise.race([runPromise, timed]);
+  clearTimeout(planTimer);
+  if (race === null) await stopAgent(agentId);
+  const base = race || { ok: true, steps: [], planMode: true };
   base.planMode = true;
   return base;
 }
@@ -538,6 +507,7 @@ module.exports = {
   parseLineTag,
   cwdRegistry,
   liveProcesses,
+  lifecycleIntervals,
+  clearLifecycleInterval,
+  unrefTimer,
 };
-
-
