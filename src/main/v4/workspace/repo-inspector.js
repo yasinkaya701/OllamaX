@@ -141,10 +141,17 @@ function inspectRepository(rootPath, options = {}) {
     gitignoreText: readGitignore(resolvedRoot),
     extraPatterns: options.extraPatterns || [],
   });
+  const previousByPath = new Map(
+    (((options.previousInventory && options.previousInventory.files) || []))
+      .map((file) => [file.path, file]),
+  );
 
   const files = [];
   const excluded = [];
   let visitedFiles = 0;
+  let reusedHashes = 0;
+  let hashedFiles = 0;
+  let hashedBytes = 0;
 
   function walk(currentPath) {
     if (files.length >= maxFiles) return;
@@ -193,19 +200,30 @@ function inspectRepository(rootPath, options = {}) {
         continue;
       }
 
-      let buffer;
-      try {
-        buffer = fs.readFileSync(absolutePath);
-      } catch (error) {
-        excluded.push({ path: relativePath, reason: 'unreadable-file', error: error && error.code ? error.code : 'read-error' });
-        continue;
+      const mtimeMs = Math.trunc(stat.mtimeMs);
+      const prior = previousByPath.get(relativePath);
+      let hash;
+      if (prior && prior.size === stat.size && prior.mtimeMs === mtimeMs && typeof prior.hash === 'string') {
+        hash = prior.hash;
+        reusedHashes += 1;
+      } else {
+        let buffer;
+        try {
+          buffer = fs.readFileSync(absolutePath);
+        } catch (error) {
+          excluded.push({ path: relativePath, reason: 'unreadable-file', error: error && error.code ? error.code : 'read-error' });
+          continue;
+        }
+        hash = sha256Buffer(buffer);
+        hashedFiles += 1;
+        hashedBytes += buffer.length;
       }
 
       const file = {
         path: relativePath,
         size: stat.size,
-        mtimeMs: Math.trunc(stat.mtimeMs),
-        hash: sha256Buffer(buffer),
+        mtimeMs,
+        hash,
         language: languageHint(relativePath),
         category: classifyFile(relativePath),
       };
@@ -246,6 +264,9 @@ function inspectRepository(rootPath, options = {}) {
       truncated: files.length >= maxFiles,
       maxFiles,
       maxFileBytes,
+      reusedHashes,
+      hashedFiles,
+      hashedBytes,
       categoryCounts,
       languageCounts,
     },
