@@ -1,7 +1,7 @@
 'use strict';
 
 const fs = require('fs');
-const { EvidenceKind } = require('../../../shared/v4/enums');
+const { AgentRunStatus, EntityType, EvidenceKind } = require('../../../shared/v4/enums');
 const { ErrorCode, V4Error, asV4Error } = require('../../../shared/v4/errors');
 const { PermissionProfile } = require('../tools/policy-engine');
 const { secureWorkspacePath } = require('../tools/path-guard');
@@ -15,6 +15,7 @@ const GateType = Object.freeze({
   COMMAND: 'command',
   FILE_EXISTS: 'file-exists',
   GIT_CLEAN: 'git-clean',
+  EXECUTION_EVIDENCE: 'execution-evidence',
 });
 
 const EVIDENCE_BY_GATE = Object.freeze({
@@ -25,6 +26,7 @@ const EVIDENCE_BY_GATE = Object.freeze({
   [GateType.COMMAND]: EvidenceKind.COMMAND_RESULT,
   [GateType.FILE_EXISTS]: EvidenceKind.COMMAND_RESULT,
   [GateType.GIT_CLEAN]: EvidenceKind.GIT_STATE,
+  [GateType.EXECUTION_EVIDENCE]: EvidenceKind.COMMAND_RESULT,
 });
 
 function normalizeGate(input = {}, index = 0) {
@@ -53,6 +55,9 @@ function normalizeGate(input = {}, index = 0) {
     if (!input.path || typeof input.path !== 'string') throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'file-exists gate requires path');
     gate.path = input.path;
   }
+  if (type === GateType.EXECUTION_EVIDENCE) {
+    gate.minToolCalls = Number.isInteger(input.minToolCalls) ? Math.max(0, input.minToolCalls) : 1;
+  }
   return gate;
 }
 
@@ -75,8 +80,35 @@ function gitStatusIsClean(stdout) {
   return lines.every((line) => line.startsWith('##'));
 }
 
+function executionEvidence(store, taskId, gate) {
+  if (!store || typeof store.list !== 'function') {
+    throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'execution-evidence gate requires durable store access');
+  }
+  if (!taskId) throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'execution-evidence gate requires taskId');
+  const runs = store.list(EntityType.AGENT_RUN)
+    .filter((run) => run.taskId === taskId && run.status === AgentRunStatus.COMPLETE)
+    .sort((a, b) => String(b.finishedAt || '').localeCompare(String(a.finishedAt || '')));
+  const run = runs[0] || null;
+  const calls = run
+    ? store.list(EntityType.TOOL_CALL).filter((call) => call.agentRunId === run.id)
+    : [];
+  const successfulCalls = calls.filter((call) => call.exitState && call.exitState.ok === true);
+  const passed = Boolean(run)
+    && calls.length >= gate.minToolCalls
+    && successfulCalls.length === calls.length;
+  return {
+    passed,
+    runId: run ? run.id : null,
+    toolCallCount: calls.length,
+    successfulToolCallCount: successfulCalls.length,
+    minToolCalls: gate.minToolCalls,
+    toolCallIds: calls.map((call) => call.id),
+  };
+}
+
 function createGateRunner(options = {}) {
   const toolExecutor = options.toolExecutor || defaultExecuteTool;
+  const store = options.store || null;
 
   async function run(gateInput, context = {}, index = 0) {
     const gate = normalizeGate(gateInput, index);
@@ -147,6 +179,21 @@ function createGateRunner(options = {}) {
         };
       }
 
+      if (gate.type === GateType.EXECUTION_EVIDENCE) {
+        const execution = executionEvidence(store, context.taskId, gate);
+        return {
+          gate,
+          passed: execution.passed,
+          startedAt,
+          finishedAt: new Date().toISOString(),
+          evidenceKind: EVIDENCE_BY_GATE[gate.type],
+          summary: execution.passed
+            ? `Durable execution evidence contains ${execution.toolCallCount} successful tool call(s).`
+            : 'Durable execution evidence is incomplete or contains failed tool calls.',
+          payload: execution,
+        };
+      }
+
       throw new V4Error(ErrorCode.NOT_FOUND, `no runner for verification gate: ${gate.type}`);
     } catch (error) {
       const normalized = asV4Error(error, ErrorCode.VALIDATION_FAILED);
@@ -174,5 +221,6 @@ module.exports = {
   normalizeGate,
   summarizeCommandResult,
   gitStatusIsClean,
+  executionEvidence,
   createGateRunner,
 };
