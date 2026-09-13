@@ -31,5 +31,13 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Lint
         run: pnpm run lint
-      - name: Test
-        run: pnpm run test:ci
+      - name: Diagnose worker teardown by suite
+        run: |
+          echo '=== roadmap-modules ==='
+          pnpm exec jest tests/roadmap-modules.test.js --ci --maxWorkers=1
+          echo '=== secrets-vault ==='
+          pnpm exec jest tests/secrets-vault.test.js --ci --maxWorkers=1
+          echo '=== plans ==='
+          pnpm exec jest tests/test-v325-plans.test.js --ci --maxWorkers=1
+          echo '=== bridge/hooks ==='
+          pnpm exec jest tests/v321.test.js tests/bridge-stress.test.js tests/v4-wave0.test.js --ci --maxWorkers=1
