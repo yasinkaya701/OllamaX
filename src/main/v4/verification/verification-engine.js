@@ -48,7 +48,7 @@ function createVerificationEngine(options = {}) {
       throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'at least one verification gate is required');
     }
 
-    const subjectHash = input.subjectHash || inspectRepository({ rootPath: input.rootPath }).inventoryHash;
+    const subjectHash = input.subjectHash || inspectRepository(input.rootPath).inventoryHash;
     const verification = createVerificationRun({
       subjectId: task.id,
       subjectHash,
