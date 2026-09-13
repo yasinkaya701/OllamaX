@@ -106,7 +106,7 @@ function writeStateFile(statePath, backupPath, state, options = {}) {
       if (!fs.existsSync(statePath)) throw error;
     }
   } catch (error) {
-    try { fs.rmSync(tempPath, { force: true }); } catch (_) { /* best effort */ }
+    try { fs.rmSync(tempPath, { force: true }); } catch { /* best effort */ }
     throw new V4Error(ErrorCode.STORE_WRITE_FAILED, 'Failed to persist v4 state', {
       statePath,
       cause: error && error.message ? error.message : String(error),
