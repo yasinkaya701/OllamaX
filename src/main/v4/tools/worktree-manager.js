@@ -103,6 +103,58 @@ function parseChangedFiles(statusText, nameStatusText) {
   return Array.from(files).filter(Boolean).sort();
 }
 
+function parseUntrackedFiles(statusText) {
+  return String(statusText || '').split(/\r?\n/)
+    .filter((line) => line.startsWith('?? '))
+    .map((line) => line.slice(3).trim())
+    .filter(Boolean)
+    .sort();
+}
+
+function safeChangedPath(root, relativePath) {
+  const resolvedRoot = path.resolve(root);
+  const target = path.resolve(resolvedRoot, relativePath);
+  const relative = path.relative(resolvedRoot, target);
+  if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) {
+    throw new V4Error(ErrorCode.VALIDATION_FAILED, `changed path escapes worktree: ${relativePath}`);
+  }
+  return target;
+}
+
+function hashFile(filePath) {
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash('sha256');
+    const stream = fs.createReadStream(filePath);
+    stream.on('data', (chunk) => hash.update(chunk));
+    stream.on('error', reject);
+    stream.on('end', () => resolve(hash.digest('hex')));
+  });
+}
+
+async function buildUntrackedManifest(root, statusText) {
+  const manifest = [];
+  for (const relativePath of parseUntrackedFiles(statusText)) {
+    const filePath = safeChangedPath(root, relativePath);
+    if (!fs.existsSync(filePath)) continue;
+    const stat = fs.lstatSync(filePath);
+    if (stat.isSymbolicLink()) {
+      manifest.push({
+        path: relativePath,
+        kind: 'symlink',
+        size: 0,
+        hash: crypto.createHash('sha256').update(`symlink:${fs.readlinkSync(filePath)}`).digest('hex'),
+      });
+      continue;
+    }
+    if (!stat.isFile()) {
+      manifest.push({ path: relativePath, kind: 'other', size: stat.size, hash: null });
+      continue;
+    }
+    manifest.push({ path: relativePath, kind: 'file', size: stat.size, hash: await hashFile(filePath) });
+  }
+  return manifest;
+}
+
 async function assertGitRepository(rootPath) {
   const result = await runGit(rootPath, ['rev-parse', '--show-toplevel']);
   const topLevel = path.resolve(result.stdout.trim());
@@ -155,14 +207,16 @@ async function inspectManagedWorktree(input = {}) {
   const metadata = readMetadata(input.sandboxRoot, id);
   if (!fs.existsSync(target)) return { exists: false, id, path: target, baseSha: metadata && metadata.baseSha || null };
   const headSha = (await runGit(target, ['rev-parse', 'HEAD'])).stdout.trim();
-  const status = (await runGit(target, ['status', '--porcelain'])).stdout;
+  const status = (await runGit(target, ['status', '--porcelain', '--untracked-files=all'])).stdout;
   const baseSha = metadata && metadata.baseSha ? metadata.baseSha : headSha;
   const nameStatus = (await runGit(target, ['diff', '--name-status', baseSha, '--', '.'])).stdout;
   const diffStat = (await runGit(target, ['diff', '--stat', baseSha, '--', '.'])).stdout.trim();
   const diff = (await runGit(target, ['diff', '--no-ext-diff', '--unified=2', baseSha, '--', '.'])).stdout;
   const changedFiles = parseChangedFiles(status, nameStatus);
+  const untrackedManifest = await buildUntrackedManifest(target, status);
   const workingTreeDirty = Boolean(status.trim());
   const hasChanges = workingTreeDirty || headSha !== baseSha;
+  const fingerprint = JSON.stringify({ baseSha, headSha, trackedDiff: diff, untracked: untrackedManifest });
   return {
     exists: true,
     id,
@@ -173,8 +227,9 @@ async function inspectManagedWorktree(input = {}) {
     dirty: workingTreeDirty,
     status: status.split(/\r?\n/).filter(Boolean).slice(0, 200),
     changedFiles,
+    untrackedManifest,
     diffStat,
-    diffHash: crypto.createHash('sha256').update(diff).digest('hex'),
+    diffHash: crypto.createHash('sha256').update(fingerprint).digest('hex'),
     diffPreview: diff.slice(0, DIFF_PREVIEW_BYTES),
     diffTruncated: Buffer.byteLength(diff) > DIFF_PREVIEW_BYTES,
   };
@@ -213,6 +268,10 @@ module.exports = {
   metadataPath,
   readMetadata,
   parseChangedFiles,
+  parseUntrackedFiles,
+  safeChangedPath,
+  hashFile,
+  buildUntrackedManifest,
   assertGitRepository,
   createManagedWorktree,
   inspectManagedWorktree,
