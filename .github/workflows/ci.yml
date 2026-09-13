@@ -31,15 +31,12 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Lint
         run: pnpm run lint
-      - name: Diagnose worker teardown B quarters
+      - name: Diagnose worker teardown B2 split
         run: |
-          echo '=== B1 ==='
+          echo '=== B2A ==='
           pnpm exec jest \
-            tests/orchestrator.test.js tests/v319.test.js tests/templates-plugins.test.js \
-            tests/v321-1.test.js tests/cost-engine.test.js tests/main-security.test.js \
-            tests/provider-chat.test.js --ci
-          echo '=== B2 ==='
+            tests/featured-discover.test.js tests/cli-verify-audit.test.js \
+            tests/network-mode.test.js tests/secrets-vault.test.js --ci
+          echo '=== B2B ==='
           pnpm exec jest \
-            tests/featured-discover.test.js tests/cli-verify-audit.test.js tests/network-mode.test.js \
-            tests/secrets-vault.test.js tests/delegate-parse.test.js tests/v4-wave0.test.js \
-            tests/manus-agent.test.js --ci
+            tests/delegate-parse.test.js tests/v4-wave0.test.js tests/manus-agent.test.js --ci
