@@ -80,7 +80,7 @@ function buildContextPack(rootPath, inventory, options = {}) {
     let stat;
     try {
       stat = fs.lstatSync(absolutePath);
-    } catch (_) {
+    } catch {
       omitted.push({ path: rankedFile.file.path, reason: 'missing' });
       continue;
     }
@@ -92,7 +92,7 @@ function buildContextPack(rootPath, inventory, options = {}) {
     let buffer;
     try {
       buffer = fs.readFileSync(absolutePath);
-    } catch (_) {
+    } catch {
       omitted.push({ path: rankedFile.file.path, reason: 'unreadable' });
       continue;
     }
