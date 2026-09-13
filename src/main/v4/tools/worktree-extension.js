@@ -35,6 +35,16 @@ function statusPaths(lines = []) {
   return lines.map((line) => line.slice(3).trim()).filter(Boolean);
 }
 
+function boundedUtf8Preview(text, maxBytes = MAX_DIFF_PREVIEW_BYTES) {
+  const buffer = Buffer.from(String(text || ''), 'utf8');
+  const preview = buffer.subarray(0, Math.min(buffer.length, maxBytes));
+  return {
+    text: preview.toString('utf8'),
+    bytes: preview.length,
+    truncated: buffer.length > maxBytes,
+  };
+}
+
 function createWorktreeExtension(options = {}) {
   const runtime = options.runtime;
   const sandboxRoot = path.resolve(String(options.sandboxRoot || ''));
@@ -115,6 +125,7 @@ function createWorktreeExtension(options = {}) {
         untrackedFiles: [],
         diffStat: '',
         diffPreview: '',
+        diffPreviewBytes: 0,
         diffPreviewTruncated: false,
       };
     }
@@ -123,13 +134,15 @@ function createWorktreeExtension(options = {}) {
     const baseSha = (await runGit(current.path, ['merge-base', sourceHeadSha, current.headSha])).stdout.trim();
     const aheadText = (await runGit(current.path, ['rev-list', '--count', `${baseSha}..${current.headSha}`])).stdout.trim();
     const diffStat = (await runGit(current.path, ['diff', '--stat', '--no-ext-diff', baseSha, '--'])).stdout.trim();
+    const diffNames = (await runGit(current.path, ['diff', '--name-only', '--no-ext-diff', baseSha, '--'])).stdout;
     const diffText = (await runGit(current.path, ['diff', '--no-ext-diff', baseSha, '--'])).stdout;
     const untrackedFiles = current.status
       .filter((line) => line.startsWith('??'))
       .map((line) => line.slice(3).trim())
       .filter(Boolean);
-    const changedFiles = Array.from(new Set(statusPaths(current.status)));
-    const previewBytes = Buffer.byteLength(diffText, 'utf8');
+    const trackedChangedFiles = diffNames.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+    const changedFiles = Array.from(new Set([...trackedChangedFiles, ...statusPaths(current.status)]));
+    const preview = boundedUtf8Preview(diffText);
 
     return {
       ...current,
@@ -139,9 +152,9 @@ function createWorktreeExtension(options = {}) {
       changedFiles,
       untrackedFiles,
       diffStat,
-      diffPreview: diffText.slice(0, MAX_DIFF_PREVIEW_BYTES),
-      diffPreviewBytes: Math.min(previewBytes, MAX_DIFF_PREVIEW_BYTES),
-      diffPreviewTruncated: previewBytes > MAX_DIFF_PREVIEW_BYTES,
+      diffPreview: preview.text,
+      diffPreviewBytes: preview.bytes,
+      diffPreviewTruncated: preview.truncated,
     };
   }
 
@@ -204,6 +217,7 @@ module.exports = {
   CHANNELS,
   missionContext,
   statusPaths,
+  boundedUtf8Preview,
   createWorktreeExtension,
   registerWorktreeExtension,
 };
