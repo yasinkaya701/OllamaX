@@ -31,11 +31,5 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Lint
         run: pnpm run lint
-      - name: Diagnose remaining teardown handles
-        run: |
-          echo '=== delegate-parse ==='
-          pnpm exec jest tests/delegate-parse.test.js --ci --runInBand --detectOpenHandles --forceExit
-          echo '=== v4-wave0 ==='
-          pnpm exec jest tests/v4-wave0.test.js --ci --runInBand --detectOpenHandles --forceExit
-          echo '=== manus-agent ==='
-          pnpm exec jest tests/manus-agent.test.js --ci --runInBand --detectOpenHandles --forceExit
+      - name: Test
+        run: pnpm run test:ci
