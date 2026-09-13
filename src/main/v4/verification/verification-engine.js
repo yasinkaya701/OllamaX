@@ -49,6 +49,7 @@ function createVerificationEngine(options = {}) {
 
     const verification = createVerificationRun({
       subjectId: task.id,
+      subjectHash: input.subjectHash || null,
       gates: input.gates,
       status: VerificationStatus.RUNNING,
       startedAt: nowIso(),
@@ -61,6 +62,7 @@ function createVerificationEngine(options = {}) {
     appendEvent('verification.started', 'verificationRun', verification.id, {
       taskId: task.id,
       gateCount: input.gates.length,
+      subjectHash: verification.subjectHash,
     });
 
     const gateResults = [];
@@ -85,6 +87,7 @@ function createVerificationEngine(options = {}) {
           summary: result.summary,
           payload: {
             verificationRunId: verification.id,
+            subjectHash: verification.subjectHash,
             gateId: result.gate.id,
             gateType: result.gate.type,
             required: result.gate.required,
@@ -99,6 +102,7 @@ function createVerificationEngine(options = {}) {
           passed: result.passed,
           required: result.gate.required,
           evidenceId: recorded.evidence.id,
+          subjectHash: verification.subjectHash,
         });
         if (input.stopOnRequiredFailure === true && result.gate.required && !result.passed) break;
       }
@@ -127,6 +131,7 @@ function createVerificationEngine(options = {}) {
 
       appendEvent(`verification.${status.toLowerCase()}`, 'verificationRun', verification.id, {
         taskId: task.id,
+        subjectHash: verification.subjectHash,
         evidenceIds,
         failedGateIds: requiredFailures.map((result) => result.gate.id),
       });
