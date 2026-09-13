@@ -108,7 +108,7 @@ async function runHooks(event, ctx, opts) {
       const proc = spawn('sh', ['-c', cmd], {
         cwd: ctx && ctx.workingDir,
         env,
-        stdio: ['ignore', 'ignore', 'pipe'],
+        stdio: ['ignore', 'ignore', 'ignore'],
         detached: process.platform !== 'win32',
       });
       const timer = setTimeout(() => {
@@ -126,7 +126,10 @@ async function runHooks(event, ctx, opts) {
           res.error = e && e.message ? e.message : String(e);
           finish(null);
         });
-        proc.on('exit', (c) => finish(c));
+        // `close` fires only after the process has exited and all stdio handles
+        // are closed. Waiting for it prevents short-lived child handles from
+        // keeping Jest workers (or the desktop app) alive during teardown.
+        proc.on('close', (c) => finish(c));
       });
       clearTimeout(timer);
       res.exit = code;
