@@ -60,6 +60,23 @@ const INVOKE = new Set([
   'ipc:3:audit-verify', // V3.21.1: denetim zinciri doğrulama (verify-audit)
 ]);
 
+// V4 stays explicit/default-deny. Do not allow arbitrary ipc:4:* strings because
+// future privileged channels must be reviewed before the renderer can invoke them.
+const INVOKE_V4 = new Set([
+  'ipc:4:workspace:open',
+  'ipc:4:workspace:refresh',
+  'ipc:4:workspace:list',
+  'ipc:4:skill:list',
+  'ipc:4:mission:create-from-skill',
+  'ipc:4:mission:list',
+  'ipc:4:mission:tasks',
+  'ipc:4:mission:run-ready',
+  'ipc:4:mission:cancel',
+  'ipc:4:memory:search',
+  'ipc:4:memory:add',
+  'ipc:4:verification:run',
+]);
+
 contextBridge.exposeInMainWorld('krevyxApi', {
   send(channel, ...args) {
     if (!SEND.has(channel)) throw new Error(`Blocked send: ${channel}`);
@@ -72,8 +89,8 @@ contextBridge.exposeInMainWorld('krevyxApi', {
     return () => ipcRenderer.removeListener(channel, wrapped);
   },
   invoke(channel, ...args) {
-    // ipc:3:* ad alanı ipc-v3-handlers.js'te tanımlı uç noktalardır (Faz 1-6)
-    const allowed = INVOKE.has(channel) || (typeof channel === 'string' && channel.startsWith('ipc:3:'));
+    // ipc:3:* is the legacy namespace. ipc:4:* is intentionally exact-allowlisted.
+    const allowed = INVOKE.has(channel) || INVOKE_V4.has(channel) || (typeof channel === 'string' && channel.startsWith('ipc:3:'));
     if (!allowed) return Promise.reject(new Error(`Blocked invoke: ${channel}`));
     return ipcRenderer.invoke(channel, ...args);
   },
