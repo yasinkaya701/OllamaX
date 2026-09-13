@@ -148,6 +148,18 @@
       </div>`;
   }
 
+  function defaultSkillInput(skill, focus) {
+    const input = {};
+    for (const key of (skill && skill.inputKeys) || []) {
+      if (key === 'focus' || key === 'problem') input[key] = focus;
+      else if (key === 'packageManager') input[key] = 'pnpm';
+      else if (key === 'testScript') input[key] = 'test:ci';
+      else if (key === 'lintScript') input[key] = 'lint';
+      else input[key] = focus;
+    }
+    return input;
+  }
+
   function mountWorkspaceShell(options = {}) {
     const root = options.root;
     const store = options.store;
@@ -179,22 +191,14 @@
         const skillId = String(data.get('skillId') || '');
         const focus = String(data.get('focus') || '').trim() || 'production readiness';
         const skill = store.getState().skills.find((item) => item.id === skillId);
-        const skillInput = {};
-        for (const key of (skill && skill.inputKeys) || []) {
-          if (key === 'focus') skillInput[key] = focus;
-          else if (key === 'problem') skillInput[key] = focus;
-          else if (key === 'testExecutable') skillInput[key] = 'pnpm';
-          else if (key === 'lintExecutable') skillInput[key] = 'pnpm';
-          else skillInput[key] = focus;
-        }
-        await store.createMissionFromSkill({ skillId, skillInput });
+        await store.createMissionFromSkill({ skillId, skillInput: defaultSkillInput(skill, focus) });
       }
     });
 
     return { destroy: unsubscribe };
   }
 
-  const exported = { escapeHtml, render, mountWorkspaceShell };
+  const exported = { escapeHtml, defaultSkillInput, render, mountWorkspaceShell };
   if (typeof module !== 'undefined' && module.exports) module.exports = exported;
   if (globalScope) globalScope.KrevyxV4WorkspaceShell = exported;
 })(typeof window !== 'undefined' ? window : globalThis);
