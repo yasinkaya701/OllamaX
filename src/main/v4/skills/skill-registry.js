@@ -61,6 +61,32 @@ function validateTask(task, index, allowedTools) {
   };
 }
 
+function assertAcyclicTasks(tasks) {
+  const byId = new Map(tasks.map((task) => [task.id, task]));
+  const visiting = new Set();
+  const visited = new Set();
+  const stack = [];
+
+  function visit(taskId) {
+    if (visited.has(taskId)) return;
+    if (visiting.has(taskId)) {
+      const cycleStart = stack.indexOf(taskId);
+      const cycle = [...stack.slice(Math.max(0, cycleStart)), taskId];
+      throw new V4Error(ErrorCode.VALIDATION_FAILED, `skill task dependency cycle: ${cycle.join(' -> ')}`, { cycle });
+    }
+    visiting.add(taskId);
+    stack.push(taskId);
+    const task = byId.get(taskId);
+    for (const dependency of task.dependencies) visit(dependency);
+    stack.pop();
+    visiting.delete(taskId);
+    visited.add(taskId);
+  }
+
+  for (const task of tasks) visit(task.id);
+  return true;
+}
+
 function validateSkillManifest(input = {}) {
   const id = String(input.id || '').trim();
   if (!SKILL_ID_PATTERN.test(id)) throw new V4Error(ErrorCode.VALIDATION_FAILED, `invalid skill id: ${id || '(empty)'}`);
@@ -84,6 +110,7 @@ function validateSkillManifest(input = {}) {
       }
     }
   }
+  assertAcyclicTasks(tasks);
   return {
     id,
     version,
@@ -152,7 +179,9 @@ function createSkillRegistry(options = {}) {
     return matches.length ? clone(matches[0].manifest) : null;
   }
   function list() {
-    return Array.from(entries.values()).map((entry) => ({ ...clone(entry.manifest), source: entry.source }));
+    return Array.from(entries.values())
+      .map((entry) => ({ ...clone(entry.manifest), source: entry.source }))
+      .sort((a, b) => a.id.localeCompare(b.id) || compareVersions(b.version, a.version));
   }
   function compile(id, input = {}, version = null) {
     const manifest = get(id, version);
@@ -167,6 +196,7 @@ module.exports = {
   VERSION_PATTERN,
   parseVersion,
   compareVersions,
+  assertAcyclicTasks,
   validateSkillManifest,
   compileSkill,
   createSkillRegistry,
