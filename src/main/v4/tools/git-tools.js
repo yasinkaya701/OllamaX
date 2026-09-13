@@ -31,6 +31,7 @@ async function runGitRead(options, args) {
     executable: 'git',
     args,
     profile: options.profile,
+    signal: options.signal,
     timeoutMs: options.timeoutMs || 30000,
     maxOutputBytes: options.maxOutputBytes,
   });
@@ -46,6 +47,7 @@ async function runGitWrite(options, args) {
     args,
     profile: options.profile,
     approval: options.approval,
+    signal: options.signal,
     timeoutMs: options.timeoutMs || 60000,
     maxOutputBytes: options.maxOutputBytes,
   });
