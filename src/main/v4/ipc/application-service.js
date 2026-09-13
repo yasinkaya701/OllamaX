@@ -6,6 +6,7 @@ const { isFeatureEnabled } = require('../../config/feature-flags');
 const { createWorkspace } = require('../../../shared/v4/contracts');
 const { EntityType } = require('../../../shared/v4/enums');
 const { ErrorCode, V4Error } = require('../../../shared/v4/errors');
+const { PermissionProfile } = require('../tools/policy-engine');
 const { compileSkillMission } = require('../skills/skill-mission-compiler');
 const { refreshWorkspaceContext } = require('../workspace/workspace-context');
 
@@ -32,6 +33,19 @@ function createV4ApplicationService(options = {}) {
   function workspaceByRoot(rootPath) {
     const resolved = path.resolve(rootPath);
     return store.list(EntityType.WORKSPACE).find((workspace) => path.resolve(workspace.rootPath) === resolved) || null;
+  }
+
+  function missionWorkspace(missionId) {
+    const mission = store.get(EntityType.MISSION, missionId);
+    if (!mission) throw new V4Error(ErrorCode.NOT_FOUND, `mission not found: ${missionId}`);
+    const workspace = store.get(EntityType.WORKSPACE, mission.workspaceId);
+    if (!workspace) throw new V4Error(ErrorCode.NOT_FOUND, `workspace not found: ${mission.workspaceId}`);
+    return { mission, workspace };
+  }
+
+  function taskRuntimeInput(task) {
+    if (!task || !Array.isArray(task.inputs)) return null;
+    return task.inputs.find((item) => item && item.kind === 'skill-runtime') || null;
   }
 
   function openWorkspace(input = {}) {
@@ -174,7 +188,44 @@ function createV4ApplicationService(options = {}) {
   async function runReadyBatch(input = {}) {
     assertEnabled();
     if (!missionRunner) throw new V4Error(ErrorCode.NOT_FOUND, 'mission runner is unavailable');
-    return missionRunner.runReadyBatch(input);
+    if (!input.missionId) throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'missionId is required');
+    const { workspace } = missionWorkspace(input.missionId);
+    const permissionProfile = Object.values(PermissionProfile).includes(input.permissionProfile)
+      ? input.permissionProfile
+      : PermissionProfile.DEVELOPER;
+
+    return missionRunner.runReadyBatch({
+      missionId: input.missionId,
+      rootPath: workspace.rootPath,
+      cwd: '.',
+      maxParallel: input.maxParallel,
+      permissionProfile,
+      // Approval objects never cross the renderer boundary. Operations that
+      // require explicit approval fail closed until the main-process approval
+      // inbox supplies a trusted approval provider.
+      approval: null,
+      approvalProvider: null,
+      agentProfileId: input.agentProfileId || 'implementer',
+      modelRoute: input.modelRoute || null,
+      contextSnapshotId: input.contextSnapshotId || null,
+      timeoutMs: input.timeoutMs,
+      maxOutputBytes: input.maxOutputBytes,
+      getWriteScopes: (task) => {
+        const runtime = taskRuntimeInput(task);
+        return runtime && Array.isArray(runtime.writeScopes) ? runtime.writeScopes : [];
+      },
+      planForTask: (task) => {
+        const runtime = taskRuntimeInput(task);
+        if (!runtime) {
+          throw new V4Error(ErrorCode.VALIDATION_FAILED, `task has no trusted runtime plan: ${task.id}`);
+        }
+        const steps = Array.isArray(runtime.toolPlan) ? runtime.toolPlan : [];
+        if (!steps.length) {
+          throw new V4Error(ErrorCode.VALIDATION_FAILED, `task requires planner-generated steps before execution: ${task.id}`);
+        }
+        return steps;
+      },
+    });
   }
 
   function cancelMission(input = {}) {
@@ -186,7 +237,27 @@ function createV4ApplicationService(options = {}) {
   async function verifyTask(input = {}) {
     assertEnabled();
     if (!verificationEngine) throw new V4Error(ErrorCode.NOT_FOUND, 'verification engine is unavailable');
-    return verificationEngine.runTaskVerification(input);
+    const task = store.get(EntityType.TASK, input.taskId);
+    if (!task) throw new V4Error(ErrorCode.NOT_FOUND, `task not found: ${input.taskId}`);
+    const { workspace } = missionWorkspace(task.missionId);
+    const runtime = taskRuntimeInput(task);
+    const storedGates = runtime && Array.isArray(runtime.verificationGates) ? runtime.verificationGates : [];
+    if (!storedGates.length) {
+      throw new V4Error(ErrorCode.VALIDATION_FAILED, `task has no trusted verification gates: ${task.id}`);
+    }
+    const permissionProfile = Object.values(PermissionProfile).includes(input.permissionProfile)
+      ? input.permissionProfile
+      : PermissionProfile.DEVELOPER;
+    return verificationEngine.runTaskVerification({
+      taskId: task.id,
+      rootPath: workspace.rootPath,
+      cwd: '.',
+      gates: storedGates,
+      permissionProfile,
+      timeoutMs: input.timeoutMs,
+      maxOutputBytes: input.maxOutputBytes,
+      stopOnRequiredFailure: input.stopOnRequiredFailure !== false,
+    });
   }
 
   return {
