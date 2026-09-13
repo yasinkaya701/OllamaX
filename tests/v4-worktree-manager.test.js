@@ -26,7 +26,7 @@ function createRepo() {
 }
 
 describe('v4 managed worktree isolation', () => {
-  test('creates detached worktree, reports review metadata and refuses dirty removal', async () => {
+  test('creates detached worktree, fingerprints untracked content and refuses dirty removal', async () => {
     const root = createRepo();
     const sandboxRoot = path.join(root, '.test-worktrees');
     try {
@@ -47,16 +47,25 @@ describe('v4 managed worktree isolation', () => {
       expect(clean.hasChanges).toBe(false);
       expect(clean.dirty).toBe(false);
 
-      fs.writeFileSync(path.join(created.path, 'changed.txt'), 'dirty\n', 'utf8');
+      const changedPath = path.join(created.path, 'changed.txt');
+      fs.writeFileSync(changedPath, 'dirty-one\n', 'utf8');
       const dirty = await inspectManagedWorktree({ sandboxRoot, id: 'mission-123' });
       expect(dirty.dirty).toBe(true);
       expect(dirty.hasChanges).toBe(true);
       expect(dirty.changedFiles).toContain('changed.txt');
+      expect(dirty.untrackedManifest).toHaveLength(1);
+      expect(dirty.untrackedManifest[0].hash).toMatch(/^[a-f0-9]{64}$/);
       expect(dirty.diffHash).toMatch(/^[a-f0-9]{64}$/);
+
+      fs.writeFileSync(changedPath, 'dirty-two\n', 'utf8');
+      const changedAgain = await inspectManagedWorktree({ sandboxRoot, id: 'mission-123' });
+      expect(changedAgain.diffHash).not.toBe(dirty.diffHash);
+      expect(changedAgain.untrackedManifest[0].hash).not.toBe(dirty.untrackedManifest[0].hash);
+
       await expect(removeManagedWorktree({ rootPath: root, sandboxRoot, id: 'mission-123' }))
         .rejects.toThrow(/mission changes/);
 
-      fs.unlinkSync(path.join(created.path, 'changed.txt'));
+      fs.unlinkSync(changedPath);
       const removed = await removeManagedWorktree({ rootPath: root, sandboxRoot, id: 'mission-123' });
       expect(removed.removed).toBe(true);
       expect(fs.existsSync(created.path)).toBe(false);
