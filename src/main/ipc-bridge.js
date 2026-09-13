@@ -14,6 +14,7 @@ const path = require('path');
 const { ipcMain, app } = require('electron');
 const configStore = require('./config/config-store');
 const { bootstrapV4Runtime } = require('./v4/bootstrap');
+const { registerPlanningExtension } = require('./v4/runtime/planning-extension');
 // Legacy handlers main.js'teki mevcut implementasyonlarla eşleşir;
 // bu modül yalnızca isim eşlemesini sağlar.
 
@@ -36,6 +37,7 @@ const LEGACY_TO_V3 = {
 };
 
 let v4Runtime = null;
+let v4Planning = null;
 
 /**
  * Verilen eski IPC adına bir "forward" handler kaydet. Yeni handler
@@ -69,8 +71,22 @@ function forwardLegacy(legacyName, v3Name) {
   }
 }
 
+function attachV4Extensions(runtime) {
+  if (!runtime || runtime.enabled !== true) return null;
+  if (!v4Planning) {
+    v4Planning = registerPlanningExtension(ipcMain, {
+      runtime,
+      configReader: () => configStore.readConfig(),
+    });
+  }
+  return { planning: v4Planning };
+}
+
 function bootstrapV4IfEnabled() {
-  if (v4Runtime) return v4Runtime;
+  if (v4Runtime) {
+    attachV4Extensions(v4Runtime);
+    return v4Runtime;
+  }
   if (!app || typeof app.getPath !== 'function') return { enabled: false, reason: 'electron-app-unavailable' };
   const rootDir = path.join(app.getPath('userData'), 'Krevyx', 'v4');
   v4Runtime = bootstrapV4Runtime({
@@ -78,6 +94,7 @@ function bootstrapV4IfEnabled() {
     ipcMain,
     configReader: () => configStore.readConfig(),
   });
+  attachV4Extensions(v4Runtime);
   return v4Runtime;
 }
 
@@ -99,10 +116,16 @@ function getV4Runtime() {
   return v4Runtime;
 }
 
+function getV4Planning() {
+  return v4Planning;
+}
+
 module.exports = {
   LEGACY_TO_V3,
   forwardLegacy,
+  attachV4Extensions,
   bootstrapV4IfEnabled,
   registerIpcBridge,
   getV4Runtime,
+  getV4Planning,
 };
