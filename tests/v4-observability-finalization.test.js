@@ -16,7 +16,7 @@ describe('v4 final observability', () => {
     try {
       const store = createStore({ rootDir: path.join(root, '.state') });
       const workspace = createWorkspace({ name: 'Fixture', rootPath: root });
-      const mission = createMission({ workspaceId: workspace.id, title: 'Mission' });
+      const mission = createMission({ workspaceId: workspace.id, title: 'Mission', goal: 'attribute usage' });
       const task = createTask({
         missionId: mission.id,
         title: 'Task',
