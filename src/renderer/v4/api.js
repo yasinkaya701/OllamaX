@@ -11,6 +11,9 @@
     missionTasks: 'ipc:4:mission:tasks',
     missionRunReady: 'ipc:4:mission:run-ready',
     missionCancel: 'ipc:4:mission:cancel',
+    worktreeCreate: 'ipc:4:worktree:create',
+    worktreeInspect: 'ipc:4:worktree:inspect',
+    worktreeRemove: 'ipc:4:worktree:remove',
     memorySearch: 'ipc:4:memory:search',
     memoryAdd: 'ipc:4:memory:add',
     verificationRun: 'ipc:4:verification:run',
@@ -51,6 +54,11 @@
         tasks: (input) => invoke(CHANNELS.missionTasks, input),
         runReady: (input) => invoke(CHANNELS.missionRunReady, input),
         cancel: (input) => invoke(CHANNELS.missionCancel, input),
+      }),
+      worktrees: Object.freeze({
+        create: (input) => invoke(CHANNELS.worktreeCreate, input),
+        inspect: (input) => invoke(CHANNELS.worktreeInspect, input),
+        remove: (input) => invoke(CHANNELS.worktreeRemove, input),
       }),
       memory: Object.freeze({
         search: (input) => invoke(CHANNELS.memorySearch, input),
