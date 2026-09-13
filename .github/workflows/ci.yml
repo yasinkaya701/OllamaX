@@ -31,12 +31,11 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Lint
         run: pnpm run lint
-      - name: Diagnose worker teardown B2 split
+      - name: Diagnose final worker leak suites
         run: |
-          echo '=== B2A ==='
-          pnpm exec jest \
-            tests/featured-discover.test.js tests/cli-verify-audit.test.js \
-            tests/network-mode.test.js tests/secrets-vault.test.js --ci
-          echo '=== B2B ==='
-          pnpm exec jest \
-            tests/delegate-parse.test.js tests/v4-wave0.test.js tests/manus-agent.test.js --ci
+          echo '=== delegate-parse ==='
+          pnpm exec jest tests/delegate-parse.test.js --ci
+          echo '=== v4-wave0 ==='
+          pnpm exec jest tests/v4-wave0.test.js --ci
+          echo '=== manus-agent ==='
+          pnpm exec jest tests/manus-agent.test.js --ci
