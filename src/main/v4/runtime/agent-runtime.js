@@ -26,6 +26,19 @@ function summarizeToolResult(execution) {
   };
 }
 
+function applyAcceptedExitCodes(summary, execution, step) {
+  if (summary.ok || summary.cancelled || summary.timedOut || summary.error) return summary;
+  const code = execution && execution.result ? execution.result.code : null;
+  const accepted = Array.isArray(step && step.acceptedExitCodes) ? step.acceptedExitCodes : [0];
+  if (!Number.isInteger(code) || !accepted.includes(code)) return summary;
+  return {
+    ...summary,
+    ok: true,
+    acceptedExitCode: true,
+    acceptedNonZero: code !== 0,
+  };
+}
+
 function skillRuntimePolicy(task) {
   if (!task || !Array.isArray(task.inputs)) return null;
   const policy = task.inputs.find((item) => item && item.kind === 'skill-runtime');
@@ -215,7 +228,7 @@ function createAgentRuntime(options = {}) {
             timeoutMs: step.timeoutMs || input.timeoutMs,
             maxOutputBytes: step.maxOutputBytes || input.maxOutputBytes,
           });
-          const summary = summarizeToolResult(execution);
+          const summary = applyAcceptedExitCodes(summarizeToolResult(execution), execution, step);
           const permissionDecision = execution.result && execution.result.permission
             ? execution.result.permission.decision || null
             : null;
@@ -324,6 +337,7 @@ function createAgentRuntime(options = {}) {
 
 module.exports = {
   summarizeToolResult,
+  applyAcceptedExitCodes,
   skillRuntimePolicy,
   pathWithinScopes,
   assertSkillStepAllowed,
