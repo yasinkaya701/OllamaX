@@ -60,7 +60,6 @@ const INVOKE = new Set([
   'ipc:3:audit-verify',
 ]);
 
-// V4 stays explicit/default-deny. Future privileged channels require review.
 const INVOKE_V4 = new Set([
   'ipc:4:workspace:open',
   'ipc:4:workspace:refresh',
@@ -74,6 +73,8 @@ const INVOKE_V4 = new Set([
   'ipc:4:memory:search',
   'ipc:4:memory:add',
   'ipc:4:verification:run',
+  'ipc:4:approval:list',
+  'ipc:4:approval:resolve',
 ]);
 
 function appendStyle(href) {
@@ -108,6 +109,7 @@ async function loadV4RendererIfEnabled() {
       'v4/state.js',
       'v4/workspace-shell.js',
       'v4/execution-controls.js',
+      'v4/approval-inbox.js',
       'v4/bootstrap.js',
     ]) {
       await appendScript(src);
