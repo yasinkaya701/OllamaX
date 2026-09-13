@@ -29,6 +29,9 @@ const BUILTIN_SKILLS = Object.freeze([
           { toolId: ToolId.GIT_STATUS, args: {} },
           { toolId: ToolId.GIT_HEAD, args: {} },
         ],
+        verificationGates: [
+          { id: 'inventory-execution', type: 'execution-evidence', minToolCalls: 3, required: true },
+        ],
         acceptanceCriteria: ['Repository state and relevant implementation surface are identified.'],
       },
       {
@@ -37,6 +40,9 @@ const BUILTIN_SKILLS = Object.freeze([
         dependencies: ['inventory'],
         writeScopes: [],
         toolPlan: [{ toolId: ToolId.GIT_DIFF, args: {} }],
+        verificationGates: [
+          { id: 'report-execution', type: 'execution-evidence', minToolCalls: 1, required: true },
+        ],
         acceptanceCriteria: ['Findings distinguish verified evidence from recommendations.'],
       },
     ],
@@ -65,8 +71,12 @@ const BUILTIN_SKILLS = Object.freeze([
         toolPlan: [{
           toolId: ToolId.SHELL_RUN,
           args: { executable: '{{input.packageManager}}', args: ['run', '{{input.testScript}}'] },
+          acceptedExitCodes: [0, 1],
         }],
-        acceptanceCriteria: ['Failure is reproduced or the non-reproducibility is recorded as evidence.'],
+        verificationGates: [
+          { id: 'reproduction-execution', type: 'execution-evidence', minToolCalls: 1, required: true },
+        ],
+        acceptanceCriteria: ['Failure is reproduced or the non-reproducibility is recorded as execution evidence.'],
       },
       {
         id: 'implement',
@@ -91,7 +101,7 @@ const BUILTIN_SKILLS = Object.freeze([
         acceptanceCriteria: ['Required regression gate passes and evidence is attached.'],
       },
     ],
-    metadata: { mutatesWorkspace: true },
+    metadata: { mutatesWorkspace: true, requiresPlannerForTasks: ['implement'] },
   },
   {
     id: 'release-prep',
@@ -115,6 +125,10 @@ const BUILTIN_SKILLS = Object.freeze([
         id: 'quality',
         title: 'Run release quality gates',
         writeScopes: [],
+        toolPlan: [
+          { toolId: ToolId.SHELL_RUN, args: { executable: '{{input.packageManager}}', args: ['run', '{{input.testScript}}'] } },
+          { toolId: ToolId.SHELL_RUN, args: { executable: '{{input.packageManager}}', args: ['run', '{{input.lintScript}}'] } },
+        ],
         verificationGates: [
           { id: 'tests', type: 'test', executable: '{{input.packageManager}}', args: ['run', '{{input.testScript}}'], required: true },
           { id: 'lint', type: 'lint', executable: '{{input.packageManager}}', args: ['run', '{{input.lintScript}}'], required: true },
@@ -129,6 +143,9 @@ const BUILTIN_SKILLS = Object.freeze([
         toolPlan: [
           { toolId: ToolId.GIT_STATUS, args: {} },
           { toolId: ToolId.GIT_DIFF, args: {} },
+        ],
+        verificationGates: [
+          { id: 'review-execution', type: 'execution-evidence', minToolCalls: 2, required: true },
         ],
         acceptanceCriteria: ['Release diff is reviewable and unresolved blockers are surfaced.'],
       },
