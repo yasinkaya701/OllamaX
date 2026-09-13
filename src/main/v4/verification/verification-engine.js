@@ -14,7 +14,7 @@ function createVerificationEngine(options = {}) {
     throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'createVerificationEngine requires a v4 store');
   }
   const evidenceService = options.evidenceService || createEvidenceService({ store, journal });
-  const gateRunner = options.gateRunner || createGateRunner({ toolExecutor: options.toolExecutor });
+  const gateRunner = options.gateRunner || createGateRunner({ toolExecutor: options.toolExecutor, store });
   const active = new Map();
 
   function appendEvent(type, subjectType, subjectId, payload = {}) {
@@ -69,6 +69,7 @@ function createVerificationEngine(options = {}) {
       for (let index = 0; index < input.gates.length; index += 1) {
         if (controller.signal.aborted) break;
         const result = await gateRunner.run(input.gates[index], {
+          taskId: task.id,
           rootPath: input.rootPath,
           cwd: input.cwd || '.',
           permissionProfile: input.permissionProfile,
