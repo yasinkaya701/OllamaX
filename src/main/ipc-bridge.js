@@ -59,7 +59,12 @@ function attachV4Extensions(runtime) {
       configReader: () => configStore.readConfig(),
     });
   }
-  if (!v4Insights) v4Insights = registerRuntimeInsightsExtension(ipcMain, runtime);
+  if (!v4Insights) {
+    v4Insights = registerRuntimeInsightsExtension(ipcMain, runtime, {
+      configReader: () => configStore.readConfig(),
+      appVersion: app && typeof app.getVersion === 'function' ? app.getVersion() : null,
+    });
+  }
   return { planning: v4Planning, insights: v4Insights };
 }
 
