@@ -10,7 +10,10 @@
 
 'use strict';
 
-const { ipcMain } = require('electron');
+const path = require('path');
+const { ipcMain, app } = require('electron');
+const configStore = require('./config/config-store');
+const { bootstrapV4Runtime } = require('./v4/bootstrap');
 // Legacy handlers main.js'teki mevcut implementasyonlarla eşleşir;
 // bu modül yalnızca isim eşlemesini sağlar.
 
@@ -31,6 +34,8 @@ const LEGACY_TO_V3 = {
   'fetch-provider-models': 'ipc:3:fetch-provider-models',
   'open-path': 'ipc:3:open-path',
 };
+
+let v4Runtime = null;
 
 /**
  * Verilen eski IPC adına bir "forward" handler kaydet. Yeni handler
@@ -64,16 +69,40 @@ function forwardLegacy(legacyName, v3Name) {
   }
 }
 
+function bootstrapV4IfEnabled() {
+  if (v4Runtime) return v4Runtime;
+  if (!app || typeof app.getPath !== 'function') return { enabled: false, reason: 'electron-app-unavailable' };
+  const rootDir = path.join(app.getPath('userData'), 'Krevyx', 'v4');
+  v4Runtime = bootstrapV4Runtime({
+    rootDir,
+    ipcMain,
+    configReader: () => configStore.readConfig(),
+  });
+  return v4Runtime;
+}
+
 function registerIpcBridge() {
   const results = {};
   for (const [legacy, v3] of Object.entries(LEGACY_TO_V3)) {
     results[legacy] = forwardLegacy(legacy, v3);
   }
+  try {
+    bootstrapV4IfEnabled();
+  } catch (error) {
+    // V4 is feature-gated and must never prevent the legacy product from booting.
+    console.error('[Krevyx] v4 bootstrap failed:', error && error.message ? error.message : error);
+  }
   return results;
+}
+
+function getV4Runtime() {
+  return v4Runtime;
 }
 
 module.exports = {
   LEGACY_TO_V3,
   forwardLegacy,
+  bootstrapV4IfEnabled,
   registerIpcBridge,
+  getV4Runtime,
 };
