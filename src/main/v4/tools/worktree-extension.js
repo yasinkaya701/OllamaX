@@ -37,11 +37,19 @@ function statusPaths(lines = []) {
 
 function boundedUtf8Preview(text, maxBytes = MAX_DIFF_PREVIEW_BYTES) {
   const buffer = Buffer.from(String(text || ''), 'utf8');
-  const preview = buffer.subarray(0, Math.min(buffer.length, maxBytes));
+  if (buffer.length <= maxBytes) {
+    return { text: buffer.toString('utf8'), bytes: buffer.length, truncated: false };
+  }
+  let end = Math.max(0, maxBytes);
+  let decoded = buffer.subarray(0, end).toString('utf8');
+  while (end > 0 && decoded.endsWith('\uFFFD')) {
+    end -= 1;
+    decoded = buffer.subarray(0, end).toString('utf8');
+  }
   return {
-    text: preview.toString('utf8'),
-    bytes: preview.length,
-    truncated: buffer.length > maxBytes,
+    text: decoded,
+    bytes: Buffer.byteLength(decoded, 'utf8'),
+    truncated: true,
   };
 }
 
