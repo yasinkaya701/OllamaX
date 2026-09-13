@@ -27,6 +27,18 @@ function compareVersions(left, right) {
   return 0;
 }
 
+function validateAcceptedExitCodes(value, taskId, stepIndex) {
+  if (value === undefined) return [0];
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new V4Error(ErrorCode.VALIDATION_FAILED, `skill task ${taskId} step ${stepIndex + 1} acceptedExitCodes must be a non-empty array`);
+  }
+  const codes = Array.from(new Set(value.map(Number)));
+  if (codes.some((code) => !Number.isInteger(code) || code < 0 || code > 255)) {
+    throw new V4Error(ErrorCode.VALIDATION_FAILED, `skill task ${taskId} step ${stepIndex + 1} has invalid accepted exit code`);
+  }
+  return codes;
+}
+
 function validateTask(task, index, allowedTools) {
   if (!task || typeof task !== 'object' || Array.isArray(task)) {
     throw new V4Error(ErrorCode.VALIDATION_FAILED, `skill task ${index + 1} must be an object`);
@@ -44,6 +56,7 @@ function validateTask(task, index, allowedTools) {
       toolId,
       args: clone(step.args || {}),
       approval: step.approval || null,
+      acceptedExitCodes: validateAcceptedExitCodes(step.acceptedExitCodes, id, stepIndex),
     };
   }) : [];
   return {
@@ -196,6 +209,7 @@ module.exports = {
   VERSION_PATTERN,
   parseVersion,
   compareVersions,
+  validateAcceptedExitCodes,
   assertAcyclicTasks,
   validateSkillManifest,
   compileSkill,
