@@ -75,12 +75,8 @@ function bootstrapV4IfEnabled() {
     ipcMain,
     configReader: () => configStore.readConfig(),
   });
-  if (candidate.enabled === true) {
-    v4Runtime = candidate;
-    attachV4Extensions(v4Runtime);
-  } else {
-    v4Runtime = null;
-  }
+  v4Runtime = candidate;
+  if (candidate.enabled === true) attachV4Extensions(v4Runtime);
   return candidate;
 }
 
