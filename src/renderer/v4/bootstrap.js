@@ -10,18 +10,10 @@
     launcher.textContent = 'Open Krevyx v4';
     launcher.setAttribute('aria-label', 'Open Krevyx v4 engineering workspace');
     Object.assign(launcher.style, {
-      position: 'fixed',
-      right: '18px',
-      bottom: '18px',
-      zIndex: '11999',
-      border: '1px solid rgba(120,150,255,.55)',
-      borderRadius: '10px',
-      padding: '9px 13px',
-      background: '#101827',
-      color: '#eaf0ff',
-      font: '600 12px Inter, system-ui, sans-serif',
-      cursor: 'pointer',
-      boxShadow: '0 10px 30px rgba(0,0,0,.35)',
+      position: 'fixed', right: '18px', bottom: '18px', zIndex: '11999',
+      border: '1px solid rgba(120,150,255,.55)', borderRadius: '10px', padding: '9px 13px',
+      background: '#101827', color: '#eaf0ff', font: '600 12px Inter, system-ui, sans-serif',
+      cursor: 'pointer', boxShadow: '0 10px 30px rgba(0,0,0,.35)',
     });
     launcher.addEventListener('click', openWorkspace);
     document.body.appendChild(launcher);
@@ -54,13 +46,12 @@
       if (launcher) launcher.hidden = false;
     }
 
-    const shell = globalScope.KrevyxV4WorkspaceShell.mountWorkspaceShell({
-      root,
-      store,
-      onClose: closeWorkspace,
-    });
+    const shell = globalScope.KrevyxV4WorkspaceShell.mountWorkspaceShell({ root, store, onClose: closeWorkspace });
     const controls = globalScope.KrevyxV4ExecutionControls
       ? globalScope.KrevyxV4ExecutionControls.mountExecutionControls({ root, store })
+      : null;
+    const finalization = globalScope.KrevyxV4FinalizationPanel
+      ? globalScope.KrevyxV4FinalizationPanel.mountFinalizationPanel({ root, store, api })
       : null;
 
     launcher = createLauncher(openWorkspace);
@@ -80,6 +71,7 @@
       destroy() {
         if (shell && shell.destroy) shell.destroy();
         if (controls && controls.destroy) controls.destroy();
+        if (finalization && finalization.destroy) finalization.destroy();
         root.remove();
         if (launcher) launcher.remove();
       },
