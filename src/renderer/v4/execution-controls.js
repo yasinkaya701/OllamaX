@@ -1,6 +1,8 @@
 (function initV4ExecutionControls(globalScope) {
   'use strict';
 
+  const TASK_PLAN_CHANNEL = 'ipc:4:task:plan';
+
   function inferPackageManager(state) {
     const files = (((state || {}).inventory || {}).files || []).map((file) => file.path);
     if (files.includes('pnpm-lock.yaml')) return 'pnpm';
@@ -22,14 +24,20 @@
     return input;
   }
 
-  function button(label, action, disabled) {
+  function button(label, action, disabled, secondary = false) {
     const element = document.createElement('button');
     element.type = 'button';
-    element.className = 'kxv4-btn kxv4-btn--primary';
+    element.className = secondary ? 'kxv4-btn kxv4-btn--secondary' : 'kxv4-btn kxv4-btn--primary';
     element.dataset.v4ExecutionAction = action;
     element.textContent = label;
     element.disabled = Boolean(disabled);
     return element;
+  }
+
+  function taskRuntimeInput(task) {
+    return Array.isArray(task && task.inputs)
+      ? task.inputs.find((item) => item && item.kind === 'skill-runtime') || null
+      : null;
   }
 
   function render(root, state) {
@@ -44,34 +52,47 @@
       }
       actions.replaceChildren(
         button(state.runningMissionId ? 'Running…' : 'Run ready tasks', 'run-ready', Boolean(state.runningMissionId)),
-        button('Cancel runs', 'cancel-mission', !state.runningMissionId),
+        button('Cancel runs', 'cancel-mission', !state.runningMissionId, true),
       );
     }
 
+    const tasks = state.selectedMissionId ? (state.tasksByMission[state.selectedMissionId] || []) : [];
     for (const card of root.querySelectorAll('[data-v4-task]')) {
       const taskId = card.getAttribute('data-v4-task');
-      const tasks = state.selectedMissionId ? (state.tasksByMission[state.selectedMissionId] || []) : [];
       const task = tasks.find((item) => item.id === taskId);
-      const existing = card.querySelector('[data-v4-verify-control]');
-      if (!task || task.status !== 'VERIFYING') {
-        if (existing) existing.remove();
+      let holder = card.querySelector('[data-v4-runtime-controls]');
+      const runtime = taskRuntimeInput(task);
+      const needsPlan = Boolean(task && runtime && (!Array.isArray(runtime.toolPlan) || runtime.toolPlan.length === 0)
+        && !['RUNNING', 'VERIFYING', 'COMPLETE', 'FAILED', 'CANCELLED'].includes(task.status));
+      const needsVerification = Boolean(task && task.status === 'VERIFYING');
+
+      if (!needsPlan && !needsVerification) {
+        if (holder) holder.remove();
         continue;
       }
-      const holder = existing || document.createElement('div');
-      holder.dataset.v4VerifyControl = 'true';
-      holder.className = 'kxv4-task__criteria';
-      holder.replaceChildren(button(
-        state.verifyingTaskId === task.id ? 'Verifying…' : 'Run verification gates',
-        `verify:${task.id}`,
-        state.verifyingTaskId === task.id,
-      ));
-      if (!existing) card.appendChild(holder);
+      if (!holder) {
+        holder = document.createElement('div');
+        holder.dataset.v4RuntimeControls = 'true';
+        holder.className = 'kxv4-topbar__actions';
+        card.appendChild(holder);
+      }
+      const controls = [];
+      if (needsPlan) controls.push(button('Generate implementation plan', `plan:${task.id}`, false, true));
+      if (needsVerification) {
+        controls.push(button(
+          state.verifyingTaskId === task.id ? 'Verifying…' : 'Run verification gates',
+          `verify:${task.id}`,
+          state.verifyingTaskId === task.id,
+        ));
+      }
+      holder.replaceChildren(...controls);
     }
   }
 
   function mountExecutionControls(options = {}) {
     const root = options.root;
     const store = options.store;
+    const bridge = options.bridge || (globalScope && globalScope.krevyxApi);
     if (!root || !store) throw new Error('execution controls require root and store');
 
     const unsubscribe = store.subscribe((state) => render(root, state));
@@ -84,8 +105,25 @@
         if (action === 'run-ready') await store.runReadyBatch();
         else if (action === 'cancel-mission') await store.cancelMission();
         else if (action.startsWith('verify:')) await store.verifyTask(action.slice('verify:'.length));
-      } catch {
-        // Store owns user-visible error/activity state.
+        else if (action.startsWith('plan:')) {
+          if (!bridge || typeof bridge.invoke !== 'function') throw new Error('IPC bridge unavailable');
+          const taskId = action.slice('plan:'.length);
+          target.disabled = true;
+          target.textContent = 'Planning with local model…';
+          const response = await bridge.invoke(TASK_PLAN_CHANNEL, { taskId });
+          if (!response || response.ok !== true) {
+            const message = response && response.error && response.error.message ? response.error.message : 'Planner request failed';
+            throw new Error(message);
+          }
+          await store.loadMissionTasks(store.getState().selectedMissionId);
+          store.addActivity('planning', 'Generated trusted implementation plan', {
+            taskId,
+            model: response.data && response.data.task && taskRuntimeInput(response.data.task)?.planner?.model || null,
+          });
+        }
+      } catch (error) {
+        store.setState({ error: error && error.message ? error.message : String(error) });
+        store.addActivity('error', error && error.message ? error.message : String(error));
       }
     });
 
@@ -108,7 +146,13 @@
     return { destroy: unsubscribe };
   }
 
-  const exported = { inferPackageManager, buildSkillInput, mountExecutionControls };
+  const exported = {
+    TASK_PLAN_CHANNEL,
+    inferPackageManager,
+    buildSkillInput,
+    taskRuntimeInput,
+    mountExecutionControls,
+  };
   if (typeof module !== 'undefined' && module.exports) module.exports = exported;
   if (globalScope) globalScope.KrevyxV4ExecutionControls = exported;
 })(typeof window !== 'undefined' ? window : globalThis);
