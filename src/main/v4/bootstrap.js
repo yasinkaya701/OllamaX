@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require('path');
 const configStore = require('../config/config-store');
 const { isFeatureEnabled } = require('../config/feature-flags');
 const { ErrorCode, V4Error } = require('../../shared/v4/errors');
@@ -10,6 +11,7 @@ const { createSkillRegistry } = require('./skills/skill-registry');
 const { registerBuiltins } = require('./skills/builtins');
 const { createApprovalBroker } = require('./tools/approval-broker');
 const { createApprovedToolExecutor } = require('./tools/approved-tool-executor');
+const { registerWorktreeExtension } = require('./tools/worktree-extension');
 const { createAgentRuntime } = require('./runtime/agent-runtime');
 const { createMissionRunner } = require('./runtime/mission-runner');
 const { createVerificationEngine } = require('./verification/verification-engine');
@@ -58,8 +60,13 @@ function bootstrapV4Runtime(options = {}) {
   });
 
   let ipc = null;
+  let worktrees = null;
   if (options.ipcMain) {
     ipc = registerV4IpcHandlers(options.ipcMain, service, { approvalBroker });
+    worktrees = registerWorktreeExtension(options.ipcMain, {
+      runtime: { service, store, journal },
+      sandboxRoot: path.join(options.rootDir, 'worktrees'),
+    });
   }
 
   return {
@@ -75,6 +82,7 @@ function bootstrapV4Runtime(options = {}) {
     verificationEngine,
     service,
     ipc,
+    worktrees,
   };
 }
 
