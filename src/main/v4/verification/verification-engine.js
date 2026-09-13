@@ -4,6 +4,7 @@ const { createVerificationRun, nowIso } = require('../../../shared/v4/contracts'
 const { EntityType, TaskStatus, VerificationStatus } = require('../../../shared/v4/enums');
 const { ErrorCode, V4Error } = require('../../../shared/v4/errors');
 const { transitionTask } = require('../missions/state-machine');
+const { inspectRepository } = require('../workspace/repo-inspector');
 const { createEvidenceService } = require('./evidence-service');
 const { createGateRunner } = require('./gates');
 
@@ -47,9 +48,10 @@ function createVerificationEngine(options = {}) {
       throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'at least one verification gate is required');
     }
 
+    const subjectHash = input.subjectHash || inspectRepository({ rootPath: input.rootPath }).inventoryHash;
     const verification = createVerificationRun({
       subjectId: task.id,
-      subjectHash: input.subjectHash || null,
+      subjectHash,
       gates: input.gates,
       status: VerificationStatus.RUNNING,
       startedAt: nowIso(),
