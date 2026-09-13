@@ -33,7 +33,7 @@ const INVOKE = new Set([
 const INVOKE_V4 = new Set([
   'ipc:4:workspace:open', 'ipc:4:workspace:refresh', 'ipc:4:workspace:list', 'ipc:4:skill:list',
   'ipc:4:mission:create-from-skill', 'ipc:4:mission:list', 'ipc:4:mission:tasks',
-  'ipc:4:mission:run-ready', 'ipc:4:mission:cancel', 'ipc:4:task:plan',
+  'ipc:4:mission:run-ready', 'ipc:4:mission:cancel', 'ipc:4:task:plan', 'ipc:4:insights:task',
   'ipc:4:memory:search', 'ipc:4:memory:add', 'ipc:4:verification:run',
   'ipc:4:approval:list', 'ipc:4:approval:resolve',
 ]);
