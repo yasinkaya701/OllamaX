@@ -39,8 +39,20 @@ const MANIFESTS = Object.freeze({
   [ToolId.GIT_COMMIT]: { id: ToolId.GIT_COMMIT, capability: Capability.GIT_WRITE, risk: Risk.HIGH, mutates: true },
 });
 
+function canonicalize(value) {
+  if (value == null || typeof value === 'string' || typeof value === 'boolean' || typeof value === 'number') return value;
+  if (Buffer.isBuffer(value)) return { $buffer: value.toString('base64') };
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (typeof value === 'object') {
+    const out = {};
+    for (const key of Object.keys(value).sort()) out[key] = canonicalize(value[key]);
+    return out;
+  }
+  return String(value);
+}
+
 function digestArguments(args) {
-  const json = JSON.stringify(args || {}, Object.keys(args || {}).sort());
+  const json = JSON.stringify(canonicalize(args || {}));
   return crypto.createHash('sha256').update(json).digest('hex');
 }
 
@@ -116,6 +128,7 @@ async function executeTool(toolId, args = {}, context = {}) {
     profile: context.profile,
     approval: context.approval,
     forceApproval: context.forceApproval,
+    signal: context.signal,
     timeoutMs: context.timeoutMs,
     maxOutputBytes: context.maxOutputBytes,
   };
@@ -175,6 +188,7 @@ async function executeTool(toolId, args = {}, context = {}) {
 module.exports = {
   ToolId,
   MANIFESTS,
+  canonicalize,
   digestArguments,
   getManifest,
   listTools,
