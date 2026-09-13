@@ -1,7 +1,7 @@
 'use strict';
 
 const { ErrorCode, V4Error } = require('../../../shared/v4/errors');
-const { TaskStatus, RiskLevel } = require('../../../shared/v4/enums');
+const { MissionStatus, TaskStatus, RiskLevel } = require('../../../shared/v4/enums');
 const { createMission, createTask } = require('../../../shared/v4/contracts');
 
 function clone(value) {
@@ -23,6 +23,7 @@ function compileSkillMission(compiledSkill, input = {}) {
     title,
     goal,
     constraints: clone(input.constraints || []),
+    status: MissionStatus.READY,
     priority: input.priority || 'NORMAL',
     policyProfileId: input.policyProfileId || null,
     createdBy: input.createdBy || 'skill',
