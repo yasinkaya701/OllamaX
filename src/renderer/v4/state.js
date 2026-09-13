@@ -17,6 +17,7 @@
       missions: [],
       selectedMissionId: null,
       tasksByMission: {},
+      reviewByMission: {},
       memoryHits: [],
       activity: [],
       runningMissionId: null,
@@ -72,6 +73,7 @@
           missions,
           selectedMissionId: missions[0] ? missions[0].id : null,
           tasksByMission: {},
+          reviewByMission: {},
         });
         addActivity('workspace', `Opened ${result.workspace.name}`);
         if (missions[0]) await loadMissionTasks(missions[0].id);
@@ -97,12 +99,27 @@
       return missions;
     }
 
+    async function refreshMissionReview(missionId) {
+      if (!missionId || !api.worktrees || typeof api.worktrees.review !== 'function') return null;
+      try {
+        const review = await api.worktrees.review({ missionId });
+        setState((current) => ({
+          reviewByMission: { ...current.reviewByMission, [missionId]: review },
+        }));
+        return review;
+      } catch (error) {
+        addActivity('isolation', `Isolation review unavailable: ${error.message}`, { missionId });
+        return null;
+      }
+    }
+
     async function loadMissionTasks(missionId) {
       const tasks = await api.missions.tasks({ missionId });
       setState((current) => ({
         selectedMissionId: missionId,
         tasksByMission: { ...current.tasksByMission, [missionId]: tasks },
       }));
+      await refreshMissionReview(missionId);
       return tasks;
     }
 
@@ -191,6 +208,7 @@
       openWorkspace,
       refreshWorkspace,
       refreshMissions,
+      refreshMissionReview,
       loadMissionTasks,
       createMissionFromSkill,
       runReadyBatch,
