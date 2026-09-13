@@ -70,6 +70,7 @@ const INVOKE_V4 = new Set([
   'ipc:4:mission:tasks',
   'ipc:4:mission:run-ready',
   'ipc:4:mission:cancel',
+  'ipc:4:task:plan',
   'ipc:4:memory:search',
   'ipc:4:memory:add',
   'ipc:4:verification:run',
