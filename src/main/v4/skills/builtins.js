@@ -56,7 +56,7 @@ const BUILTIN_SKILLS = Object.freeze([
       ToolId.GIT_STATUS,
       ToolId.GIT_DIFF,
     ],
-    inputKeys: ['problem', 'testExecutable'],
+    inputKeys: ['problem', 'packageManager', 'testScript'],
     tasks: [
       {
         id: 'reproduce',
@@ -64,7 +64,7 @@ const BUILTIN_SKILLS = Object.freeze([
         writeScopes: [],
         toolPlan: [{
           toolId: ToolId.SHELL_RUN,
-          args: { executable: '{{input.testExecutable}}', args: [] },
+          args: { executable: '{{input.packageManager}}', args: ['run', '{{input.testScript}}'] },
         }],
         acceptanceCriteria: ['Failure is reproduced or the non-reproducibility is recorded as evidence.'],
       },
@@ -84,8 +84,8 @@ const BUILTIN_SKILLS = Object.freeze([
         verificationGates: [{
           id: 'regression-test',
           type: 'test',
-          executable: '{{input.testExecutable}}',
-          args: [],
+          executable: '{{input.packageManager}}',
+          args: ['run', '{{input.testScript}}'],
           required: true,
         }],
         acceptanceCriteria: ['Required regression gate passes and evidence is attached.'],
@@ -97,7 +97,7 @@ const BUILTIN_SKILLS = Object.freeze([
     id: 'release-prep',
     version: '1.0.0',
     title: 'Release Preparation',
-    description: 'Validate a release candidate and prepare a reviewable local commit without pushing or merging.',
+    description: 'Validate a release candidate without pushing or merging.',
     category: 'release',
     allowedTools: [
       ToolId.FS_READ,
@@ -109,15 +109,15 @@ const BUILTIN_SKILLS = Object.freeze([
       ToolId.GIT_COMMIT,
       ToolId.SHELL_RUN,
     ],
-    inputKeys: ['testExecutable', 'lintExecutable'],
+    inputKeys: ['packageManager', 'testScript', 'lintScript'],
     tasks: [
       {
         id: 'quality',
         title: 'Run release quality gates',
         writeScopes: [],
         verificationGates: [
-          { id: 'tests', type: 'test', executable: '{{input.testExecutable}}', args: [], required: true },
-          { id: 'lint', type: 'lint', executable: '{{input.lintExecutable}}', args: [], required: true },
+          { id: 'tests', type: 'test', executable: '{{input.packageManager}}', args: ['run', '{{input.testScript}}'], required: true },
+          { id: 'lint', type: 'lint', executable: '{{input.packageManager}}', args: ['run', '{{input.lintScript}}'], required: true },
         ],
         acceptanceCriteria: ['Required release quality gates pass.'],
       },
