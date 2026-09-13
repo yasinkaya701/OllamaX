@@ -3,6 +3,7 @@
 const { EntityType } = require('../../../shared/v4/enums');
 const { ErrorCode, V4Error } = require('../../../shared/v4/errors');
 const { toSerializable, serializeError } = require('../ipc/serializers');
+const { inspectRepository } = require('../workspace/repo-inspector');
 const { buildPullRequestArtifact } = require('./pr-artifact');
 
 const DELIVERY_CHANNEL = 'ipc:4:delivery:prepare';
@@ -29,18 +30,24 @@ function createDeliveryService(options = {}) {
       throw new V4Error(ErrorCode.NOT_FOUND, `mission worktree does not exist: ${missionId}`);
     }
 
+    const currentInventoryHash = inspectRepository(worktree.path).inventoryHash;
     const tasks = store.list(EntityType.TASK).filter((task) => task.missionId === mission.id);
     const taskIds = new Set(tasks.map((task) => task.id));
     const runs = store.list(EntityType.AGENT_RUN).filter((run) => taskIds.has(run.taskId));
     const verifications = store.list(EntityType.VERIFICATION_RUN).filter((run) => taskIds.has(run.subjectId));
     const evidence = store.list(EntityType.EVIDENCE).filter((item) => taskIds.has(item.subjectId));
+    const passed = verifications.filter((run) => run.status === 'PASSED');
+    const currentPassed = passed.filter((run) => run.subjectHash && run.subjectHash === currentInventoryHash);
+    const stalePassed = passed.filter((run) => !run.subjectHash || run.subjectHash !== currentInventoryHash);
     const summary = {
       taskCount: tasks.length,
       agentRunCount: runs.length,
       verificationRunCount: verifications.length,
-      verificationPassed: verifications.filter((run) => run.status === 'PASSED').length,
+      verificationPassed: currentPassed.length,
+      verificationStale: stalePassed.length,
       verificationFailed: verifications.filter((run) => run.status === 'FAILED').length,
       evidenceCount: evidence.length,
+      currentInventoryHash,
     };
     const delivery = {
       missionId: mission.id,
@@ -53,6 +60,7 @@ function createDeliveryService(options = {}) {
       diffStat: worktree.diffStat || '',
       diffHash: worktree.diffHash || null,
       diffTruncated: worktree.diffTruncated === true,
+      currentInventoryHash,
     };
     return {
       mission,
