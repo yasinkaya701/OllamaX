@@ -37,12 +37,15 @@ function buildPullRequestArtifact(input = {}) {
     '### Verification evidence',
     `- Agent runs: ${Number(evidence.agentRunCount || 0)}`,
     `- Verification runs: ${Number(evidence.verificationRunCount || 0)}`,
-    `- Passed verification runs: ${Number(evidence.verificationPassed || 0)}`,
+    `- Current passed verification runs: ${Number(evidence.verificationPassed || 0)}`,
+    `- Stale passed verification runs: ${Number(evidence.verificationStale || 0)}`,
     `- Failed verification runs: ${Number(evidence.verificationFailed || 0)}`,
     `- Evidence records: ${Number(evidence.evidenceCount || 0)}`,
+    `- Current inventory hash: ${evidence.currentInventoryHash || delivery.currentInventoryHash || 'unknown'}`,
     '',
     '### Safety',
     '- Mission changes were produced in an isolated worktree.',
+    '- Verification is considered current only when its subject hash matches the current isolated repository state.',
     '- This artifact is descriptive only and performs no remote Git action.',
   );
   return { title, body: lines.join('\n') };
