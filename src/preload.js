@@ -40,28 +40,27 @@ const INVOKE = new Set([
   'terminal-create',
   'composer-file-read',
   'get-behavior-profiles',
-  'agent-discover-all', // Orkestrasyon: tüm lokal ajanları keşfet
-  'vault-status', // V3.14 (A1-1): kasa durumu
-  'vault-set', // V3.14 (A1-1): kasaya anahtar taşı
-  'vault-get', // V3.14 (A1-1): kasa anahtar kontrolü
-  'network-mode-get', // V3.14 (A1-2): ağ modu okuma
-  'network-mode-set', // V3.14 (A1-2): ağ modu (air-gapped) geçişi
-  'cost-totals', // V3.15 (A2): aylık maliyet toplamları
-  'cost-budgets-get', // V3.15 (A2-1): bütçe limitleri okuma
-  'cost-budgets-set', // V3.15 (A2-1): bütçe limiti yazma
-  'cost-check', // V3.15 (A2-1): istek öncesi bütçe kontrolü
-  'cost-csv', // V3.15 (A2-4): kullanım raporu CSV export
-  'audit-verify', // V3.15 (A1-3): SHA-256 zincir bütünlük doğrulaması
-  'ipc:3:code-agent-stop', // V3.19: çalışan kod ajanı sürecini gerçek durdur
-  'ipc:3:code-agent-plan', // V3.21: Plan Modu (Cursor Agent Planning) — onay öncesi plan üretir
-  'ipc:3:code-agent-plan-edit', // V3.21.1: plan üzerinde tekil adım kaldır/ekle/değiştir
-  'ipc:3:code-agent-plan-edits', // V3.21.1: mevcut düzenlemeleri listele
-  'ipc:3:code-agent-plan-clear', // V3.21.1: düzenlemeleri sıfırla
-  'ipc:3:audit-verify', // V3.21.1: denetim zinciri doğrulama (verify-audit)
+  'agent-discover-all',
+  'vault-status',
+  'vault-set',
+  'vault-get',
+  'network-mode-get',
+  'network-mode-set',
+  'cost-totals',
+  'cost-budgets-get',
+  'cost-budgets-set',
+  'cost-check',
+  'cost-csv',
+  'audit-verify',
+  'ipc:3:code-agent-stop',
+  'ipc:3:code-agent-plan',
+  'ipc:3:code-agent-plan-edit',
+  'ipc:3:code-agent-plan-edits',
+  'ipc:3:code-agent-plan-clear',
+  'ipc:3:audit-verify',
 ]);
 
-// V4 stays explicit/default-deny. Do not allow arbitrary ipc:4:* strings because
-// future privileged channels must be reviewed before the renderer can invoke them.
+// V4 stays explicit/default-deny. Future privileged channels require review.
 const INVOKE_V4 = new Set([
   'ipc:4:workspace:open',
   'ipc:4:workspace:refresh',
@@ -77,6 +76,53 @@ const INVOKE_V4 = new Set([
   'ipc:4:verification:run',
 ]);
 
+function appendStyle(href) {
+  if (document.querySelector(`link[data-krevyx-v4="${href}"]`)) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = href;
+  link.dataset.krevyxV4 = href;
+  document.head.appendChild(link);
+}
+
+function appendScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[data-krevyx-v4="${src}"]`)) return resolve();
+    const script = document.createElement('script');
+    script.src = src;
+    script.defer = false;
+    script.dataset.krevyxV4 = src;
+    script.addEventListener('load', resolve, { once: true });
+    script.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)), { once: true });
+    document.body.appendChild(script);
+  });
+}
+
+async function loadV4RendererIfEnabled() {
+  try {
+    const response = await ipcRenderer.invoke('ipc:3:config-get');
+    if (!response || response.ok !== true || response.config?.features?.v4Workspace !== true) return false;
+    appendStyle('v4/workspace.css');
+    for (const src of [
+      'v4/api.js',
+      'v4/state.js',
+      'v4/workspace-shell.js',
+      'v4/execution-controls.js',
+      'v4/bootstrap.js',
+    ]) {
+      await appendScript(src);
+    }
+    return true;
+  } catch (error) {
+    console.error('[Krevyx v4] feature loader failed:', error && error.message ? error.message : error);
+    return false;
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  loadV4RendererIfEnabled();
+}, { once: true });
+
 contextBridge.exposeInMainWorld('krevyxApi', {
   send(channel, ...args) {
     if (!SEND.has(channel)) throw new Error(`Blocked send: ${channel}`);
@@ -89,7 +135,6 @@ contextBridge.exposeInMainWorld('krevyxApi', {
     return () => ipcRenderer.removeListener(channel, wrapped);
   },
   invoke(channel, ...args) {
-    // ipc:3:* is the legacy namespace. ipc:4:* is intentionally exact-allowlisted.
     const allowed = INVOKE.has(channel) || INVOKE_V4.has(channel) || (typeof channel === 'string' && channel.startsWith('ipc:3:'));
     if (!allowed) return Promise.reject(new Error(`Blocked invoke: ${channel}`));
     return ipcRenderer.invoke(channel, ...args);
