@@ -121,6 +121,7 @@
 .kxv4-btn--primary:hover { background: #687df6; }
 .kxv4-btn--secondary { background: #192334; border-color: rgba(255,255,255,.1); }
 .kxv4-btn--ghost { background: transparent; border-color: rgba(255,255,255,.1); color: #aeb9c9; }
+.kxv4-btn--compact { min-height: 28px; margin-top: 10px; padding: 5px 8px; font-size: 10px; }
 
 .kxv4-workspace-card {
   display: grid;
@@ -192,8 +193,25 @@
 .kxv4-status--failed,
 .kxv4-status--blocked { color: #ff9999; background: rgba(224,65,65,.12); }
 
-.kxv4-stat-row { display: flex; justify-content: space-between; padding: 5px 0; color: #8f9db0; font-size: 11px; }
+.kxv4-stat-row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; color: #8f9db0; font-size: 11px; }
+.kxv4-stat-row strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .kxv4-list-compact { display: grid; gap: 6px; margin-top: 7px; color: #9ba8ba; font-size: 10px; line-height: 1.4; overflow-wrap: anywhere; }
+.kxv4-diff-stat,
+.kxv4-diff-preview {
+  max-width: 100%;
+  overflow: auto;
+  white-space: pre;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 7px;
+  background: #090e14;
+  color: #9cabc0;
+  padding: 8px;
+  font: 9px/1.45 "JetBrains Mono", monospace;
+}
+.kxv4-diff-stat { max-height: 110px; margin: 10px 0; }
+.kxv4-diff-preview { max-height: 300px; margin: 8px 0; }
+.kxv4-review-details { margin-top: 9px; color: #8998ab; font-size: 10px; }
+.kxv4-review-details summary { cursor: pointer; user-select: none; }
 
 .kxv4-activity {
   border-top: 1px solid rgba(255,255,255,.07);
