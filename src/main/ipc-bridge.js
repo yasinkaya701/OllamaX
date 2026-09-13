@@ -1,20 +1,18 @@
 /**
  * ipc-bridge.js — IPC API sürümleme köprüsü (ADR-002)
- *
- * Yeni uç noktalar ipc:3:* namespace'inde çalışır. Eski uç nokta isimleri
- * (v2 uyumu, eklentiler için) bu köprü üzerinden yeni isimlere yönlendirilir.
- * Böylece hem eski hem yeni istemciler aynı anda çalışabilir.
- *
- * Kullanım (main.js içinde): registerIpcBridge() açılışta çağrılır.
  */
 
 'use strict';
 
-const { ipcMain } = require('electron');
-// Legacy handlers main.js'teki mevcut implementasyonlarla eşleşir;
-// bu modül yalnızca isim eşlemesini sağlar.
+const path = require('path');
+const { ipcMain, app } = require('electron');
+const configStore = require('./config/config-store');
+const { withFeature, isFeatureEnabled } = require('./config/feature-flags');
+const { bootstrapV4Runtime } = require('./v4/bootstrap');
+const { installLifecycleExtension } = require('./v4/runtime/lifecycle-extension');
+const { registerPlanningExtension } = require('./v4/runtime/planning-extension');
+const { registerRuntimeInsightsExtension } = require('./v4/observability/runtime-insights-extension');
 
-// Eski isim -> yeni ipc:3:* isim eşlemesi
 const LEGACY_TO_V3 = {
   'get-model-catalog': 'ipc:3:get-model-catalog',
   'normalize-ollama-host': 'ipc:3:normalize-ollama-host',
@@ -32,36 +30,80 @@ const LEGACY_TO_V3 = {
   'open-path': 'ipc:3:open-path',
 };
 
-/**
- * Verilen eski IPC adına bir "forward" handler kaydet. Yeni handler
- * zaten mevcut olmalıdır (asıl implementasyon main.js'te ipc:3:* ile
- * tanımlanır); bu köprü yalnızca eski ismi ona yönlendirir.
- */
+let v4Runtime = null;
+let v4Planning = null;
+let v4Insights = null;
+let controlHandlersRegistered = false;
+
 function forwardLegacy(legacyName, v3Name) {
-  if (ipcMain.eventNames && typeof ipcMain.eventNames === 'function') {
-    /* electron sürümüne göre mevcudiyet kontrolü; handler yönünden
-       bağımsız olarak invoke üzerinden çift kayıt yapılabilir. */
-  }
   try {
     ipcMain.handle(legacyName, async (event, ...args) => {
-      const delegates = ipcMain.listeners(v3Name);
-      if (delegates && delegates.length) {
-        // Kayıtlı handler'ları doğrudan çağırmak yerine invoke zincirini
-        // kullanmak circular olur; bunun yerine event objesiyle yeni ad
-        // üzerinden yeniden göndeririz.
-      }
       try {
-        const result = await event.sender.invoke(v3Name, ...args);
-        return result;
+        return await event.sender.invoke(v3Name, ...args);
       } catch (err) {
         return { ok: false, error: err.message };
       }
     });
     return true;
   } catch {
-    // Handler zaten kayıtlıysa veya isim çakışırsa köprü bu uç için atlanır
     return false;
   }
+}
+
+function attachV4Extensions(runtime) {
+  if (!runtime || runtime.enabled !== true) return null;
+  installLifecycleExtension(runtime);
+  if (!v4Planning) {
+    v4Planning = registerPlanningExtension(ipcMain, {
+      runtime,
+      configReader: () => configStore.readConfig(),
+    });
+  }
+  if (!v4Insights) v4Insights = registerRuntimeInsightsExtension(ipcMain, runtime);
+  return { planning: v4Planning, insights: v4Insights };
+}
+
+function bootstrapV4IfEnabled() {
+  if (v4Runtime && v4Runtime.enabled === true) {
+    attachV4Extensions(v4Runtime);
+    return v4Runtime;
+  }
+  if (!app || typeof app.getPath !== 'function') return { enabled: false, reason: 'electron-app-unavailable' };
+  const rootDir = path.join(app.getPath('userData'), 'Krevyx', 'v4');
+  const candidate = bootstrapV4Runtime({
+    rootDir,
+    ipcMain,
+    configReader: () => configStore.readConfig(),
+  });
+  v4Runtime = candidate;
+  if (candidate.enabled === true) attachV4Extensions(v4Runtime);
+  return candidate;
+}
+
+function registerV4ControlHandlers() {
+  if (controlHandlersRegistered) return true;
+  const handlers = {
+    'ipc:3:v4-feature-status': async () => {
+      const config = configStore.readConfig() || {};
+      return { ok: true, enabled: isFeatureEnabled(config, 'v4Workspace') };
+    },
+    'ipc:3:v4-feature-set': async (_event, payload = {}) => {
+      const enabled = payload.enabled === true;
+      const config = configStore.updateConfig((current) => withFeature(current, 'v4Workspace', enabled));
+      let runtime = null;
+      if (enabled) runtime = bootstrapV4IfEnabled();
+      return {
+        ok: true,
+        enabled: isFeatureEnabled(config, 'v4Workspace'),
+        runtimeReady: Boolean(runtime && runtime.enabled === true),
+      };
+    },
+  };
+  for (const [channel, handler] of Object.entries(handlers)) {
+    try { ipcMain.handle(channel, handler); } catch { /* already registered */ }
+  }
+  controlHandlersRegistered = true;
+  return true;
 }
 
 function registerIpcBridge() {
@@ -69,11 +111,35 @@ function registerIpcBridge() {
   for (const [legacy, v3] of Object.entries(LEGACY_TO_V3)) {
     results[legacy] = forwardLegacy(legacy, v3);
   }
+  registerV4ControlHandlers();
+  try {
+    bootstrapV4IfEnabled();
+  } catch (error) {
+    console.error('[Krevyx] v4 bootstrap failed:', error && error.message ? error.message : error);
+  }
   return results;
+}
+
+function getV4Runtime() {
+  return v4Runtime;
+}
+
+function getV4Planning() {
+  return v4Planning;
+}
+
+function getV4Insights() {
+  return v4Insights;
 }
 
 module.exports = {
   LEGACY_TO_V3,
   forwardLegacy,
+  attachV4Extensions,
+  bootstrapV4IfEnabled,
+  registerV4ControlHandlers,
   registerIpcBridge,
+  getV4Runtime,
+  getV4Planning,
+  getV4Insights,
 };
