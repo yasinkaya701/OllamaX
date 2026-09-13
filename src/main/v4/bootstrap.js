@@ -8,6 +8,8 @@ const { createRunJournal } = require('./observability/run-journal');
 const { createProjectMemory } = require('./memory/project-memory');
 const { createSkillRegistry } = require('./skills/skill-registry');
 const { registerBuiltins } = require('./skills/builtins');
+const { createApprovalBroker } = require('./tools/approval-broker');
+const { createApprovedToolExecutor } = require('./tools/approved-tool-executor');
 const { createAgentRuntime } = require('./runtime/agent-runtime');
 const { createMissionRunner } = require('./runtime/mission-runner');
 const { createVerificationEngine } = require('./verification/verification-engine');
@@ -29,12 +31,22 @@ function bootstrapV4Runtime(options = {}) {
   const memory = options.memory || createProjectMemory({ rootDir: options.rootDir });
   const skillRegistry = options.skillRegistry || createSkillRegistry();
   if (!options.skillRegistry) registerBuiltins(skillRegistry);
-  const agentRuntime = options.agentRuntime || createAgentRuntime({ store, journal, toolExecutor: options.toolExecutor });
+
+  const approvalBroker = options.approvalBroker || createApprovalBroker({
+    journal,
+    timeoutMs: options.approvalTimeoutMs,
+  });
+  const toolExecutor = options.approvedToolExecutor || createApprovedToolExecutor({
+    broker: approvalBroker,
+    baseExecutor: options.toolExecutor,
+  });
+
+  const agentRuntime = options.agentRuntime || createAgentRuntime({ store, journal, toolExecutor });
   const missionRunner = options.missionRunner || createMissionRunner({ store, agentRuntime });
   const verificationEngine = options.verificationEngine || createVerificationEngine({
     store,
     journal,
-    toolExecutor: options.toolExecutor,
+    toolExecutor,
   });
   const service = options.service || createV4ApplicationService({
     store,
@@ -46,7 +58,9 @@ function bootstrapV4Runtime(options = {}) {
   });
 
   let ipc = null;
-  if (options.ipcMain) ipc = registerV4IpcHandlers(options.ipcMain, service);
+  if (options.ipcMain) {
+    ipc = registerV4IpcHandlers(options.ipcMain, service, { approvalBroker });
+  }
 
   return {
     enabled: true,
@@ -54,6 +68,8 @@ function bootstrapV4Runtime(options = {}) {
     journal,
     memory,
     skillRegistry,
+    approvalBroker,
+    toolExecutor,
     agentRuntime,
     missionRunner,
     verificationEngine,
