@@ -12,6 +12,7 @@ const { registerBuiltins } = require('./skills/builtins');
 const { createApprovalBroker } = require('./tools/approval-broker');
 const { createApprovedToolExecutor } = require('./tools/approved-tool-executor');
 const { registerWorktreeExtension } = require('./tools/worktree-extension');
+const { createDeliveryService, registerDeliveryService } = require('./tools/delivery-service');
 const { createAgentRuntime } = require('./runtime/agent-runtime');
 const { createMissionRunner } = require('./runtime/mission-runner');
 const { createVerificationEngine } = require('./verification/verification-engine');
@@ -61,12 +62,16 @@ function bootstrapV4Runtime(options = {}) {
 
   let ipc = null;
   let worktrees = null;
+  let delivery = null;
+  let deliveryIpc = null;
   if (options.ipcMain) {
     ipc = registerV4IpcHandlers(options.ipcMain, service, { approvalBroker });
     worktrees = registerWorktreeExtension(options.ipcMain, {
       runtime: { service, store, journal },
       sandboxRoot: path.join(options.rootDir, 'worktrees'),
     });
+    delivery = createDeliveryService({ store, inspectWorktree: worktrees.inspect });
+    deliveryIpc = registerDeliveryService(options.ipcMain, delivery);
   }
 
   return {
@@ -83,6 +88,8 @@ function bootstrapV4Runtime(options = {}) {
     service,
     ipc,
     worktrees,
+    delivery,
+    deliveryIpc,
   };
 }
 
