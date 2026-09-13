@@ -41,6 +41,9 @@ function compileSkillMission(compiledSkill, input = {}) {
       return taskId;
     });
     const status = dependencyIds.length ? TaskStatus.PENDING : TaskStatus.READY;
+    const taskGates = Array.isArray(taskTemplate.verificationGates) && taskTemplate.verificationGates.length
+      ? taskTemplate.verificationGates
+      : (compiledSkill.defaultVerificationGates || []);
     return createTask({
       id: taskIdByTemplateId.get(taskTemplate.id),
       missionId: mission.id,
@@ -57,7 +60,7 @@ function compileSkillMission(compiledSkill, input = {}) {
         allowedTools: clone(compiledSkill.allowedTools || []),
         toolPlan: clone(taskTemplate.toolPlan || []),
         writeScopes: clone(taskTemplate.writeScopes || []),
-        verificationGates: clone(taskTemplate.verificationGates || compiledSkill.defaultVerificationGates || []),
+        verificationGates: clone(taskGates),
       }],
       expectedOutputs: clone(input.expectedOutputs || []),
       acceptanceCriteria: clone(taskTemplate.acceptanceCriteria || []),
