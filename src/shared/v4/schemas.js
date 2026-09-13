@@ -21,7 +21,10 @@ const ENUM_VALUES = new Map([
 ]);
 
 const REQUIRED_FIELDS = Object.freeze({
-  [EntityType.WORKSPACE]: ['id', 'name', 'rootPath', 'createdAt', 'lastOpenedAt', 'settings'],
+  [EntityType.WORKSPACE]: [
+    'id', 'name', 'rootPath', 'repositoryMetadata', 'activeBranch', 'indexState',
+    'createdAt', 'lastOpenedAt', 'settings',
+  ],
   [EntityType.MISSION]: [
     'id', 'workspaceId', 'title', 'goal', 'constraints', 'status', 'priority',
     'createdBy', 'createdAt', 'updatedAt', 'budget', 'policyProfileId',
