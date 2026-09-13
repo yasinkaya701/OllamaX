@@ -90,7 +90,7 @@ function readGitMetadata(rootPath) {
   let stat;
   try {
     stat = fs.statSync(gitPath);
-  } catch (_) {
+  } catch {
     return { isGitRepository: false, activeBranch: null, head: null };
   }
   if (!stat.isDirectory()) return { isGitRepository: true, activeBranch: null, head: null };
@@ -106,7 +106,7 @@ function readGitMetadata(rootPath) {
       };
     }
     return { isGitRepository: true, activeBranch: null, head };
-  } catch (_) {
+  } catch {
     return { isGitRepository: true, activeBranch: null, head: null };
   }
 }
@@ -114,7 +114,7 @@ function readGitMetadata(rootPath) {
 function readGitignore(rootPath) {
   try {
     return fs.readFileSync(path.join(rootPath, '.gitignore'), 'utf8');
-  } catch (_) {
+  } catch {
     return '';
   }
 }
@@ -124,7 +124,7 @@ function inspectRepository(rootPath, options = {}) {
   let rootStat;
   try {
     rootStat = fs.statSync(resolvedRoot);
-  } catch (_) {
+  } catch {
     throw new V4Error(ErrorCode.NOT_FOUND, `Workspace root not found: ${resolvedRoot}`);
   }
   if (!rootStat.isDirectory()) {
