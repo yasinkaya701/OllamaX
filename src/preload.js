@@ -122,6 +122,7 @@ async function loadV4RendererIfEnabled() {
       'v4/workspace-shell.js',
       'v4/execution-controls.js',
       'v4/approval-inbox.js',
+      'v4/finalization-panel.js',
       'v4/bootstrap.js',
     ]) {
       await appendScript(src);
