@@ -2,7 +2,10 @@
 
 const { EntityType } = require('../../../shared/v4/enums');
 const { ErrorCode, V4Error } = require('../../../shared/v4/errors');
+const { toSerializable, serializeError } = require('../ipc/serializers');
 const { buildPullRequestArtifact } = require('./pr-artifact');
+
+const DELIVERY_CHANNEL = 'ipc:4:delivery:prepare';
 
 function createDeliveryService(options = {}) {
   const store = options.store;
@@ -63,4 +66,25 @@ function createDeliveryService(options = {}) {
   return { prepareMission };
 }
 
-module.exports = { createDeliveryService };
+function registerDeliveryService(ipcMain, service) {
+  if (!ipcMain || typeof ipcMain.handle !== 'function') {
+    throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'delivery IPC requires ipcMain.handle');
+  }
+  if (!service || typeof service.prepareMission !== 'function') {
+    throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'delivery IPC requires delivery service');
+  }
+  ipcMain.handle(DELIVERY_CHANNEL, async (_event, input = {}) => {
+    try {
+      return { ok: true, data: toSerializable(await service.prepareMission(input || {})) };
+    } catch (error) {
+      return { ok: false, error: serializeError(error) };
+    }
+  });
+  return { channel: DELIVERY_CHANNEL };
+}
+
+module.exports = {
+  DELIVERY_CHANNEL,
+  createDeliveryService,
+  registerDeliveryService,
+};
