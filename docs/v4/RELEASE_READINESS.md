@@ -14,10 +14,12 @@ Status: truth ledger for the current v4 implementation. This file deliberately d
 - confined filesystem, shell and Git tool runtime;
 - main-process approval broker;
 - mission-scoped detached worktree isolation;
-- evidence-backed verification gates;
+- evidence-backed verification gates bound to repository inventory hashes;
+- stale passed verification invalidation when the isolated repository state changes;
 - provenance-aware project memory;
 - declarative versioned Skills with built-in audit/bug-fix/release-prep flows;
 - mission-first renderer shell, task execution controls, approval inbox and task evidence inspector;
+- Delivery / Cost / Diagnostics mission inspector controls;
 - read-only Git delivery summary and PR-body artifact formatting;
 - planner/run cost attribution primitives;
 - secret-free diagnostic bundle;
@@ -29,7 +31,6 @@ Status: truth ledger for the current v4 implementation. This file deliberately d
 | Area | Current state | Missing evidence |
 | --- | --- | --- |
 | Diff review | Worktree diff hash/stat/preview and delivery artifact exist | Dedicated reviewer findings engine + full file-navigation UI |
-| Stale evidence invalidation | Verification is evidence-backed and task-state gated | Explicit content-hash invalidation test across a post-verification mutation |
 | Context inspector | Context is bounded/provenance-aware | Complete renderer provenance navigation for every context entry |
 | Cloud model execution | Capability registry/router models cloud providers | v4 provider execution adapters; local planner intentionally does not fall back to cloud |
 | Artifact storage | Durable Artifact entity exists in the v4 store | Dedicated large/binary artifact storage policy if needed |
