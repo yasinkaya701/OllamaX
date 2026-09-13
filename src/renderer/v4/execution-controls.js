@@ -2,6 +2,7 @@
   'use strict';
 
   const TASK_PLAN_CHANNEL = 'ipc:4:task:plan';
+  const TASK_INSIGHTS_CHANNEL = 'ipc:4:insights:task';
 
   function inferPackageManager(state) {
     const files = (((state || {}).inventory || {}).files || []).map((file) => file.path);
@@ -40,6 +41,68 @@
       : null;
   }
 
+  function appendTextRow(host, label, value) {
+    const row = document.createElement('div');
+    row.className = 'kxv4-stat-row';
+    const left = document.createElement('span');
+    left.textContent = label;
+    const right = document.createElement('strong');
+    right.textContent = String(value == null ? '' : value);
+    row.append(left, right);
+    host.appendChild(row);
+  }
+
+  function renderInsights(root, data) {
+    const inspector = root.querySelector('.kxv4-inspector');
+    if (!inspector) return;
+    let host = inspector.querySelector('[data-v4-task-insights]');
+    if (!host) {
+      host = document.createElement('section');
+      host.dataset.v4TaskInsights = 'true';
+      host.className = 'kxv4-panel-section';
+      inspector.prepend(host);
+    }
+    host.replaceChildren();
+    const title = document.createElement('div');
+    title.className = 'kxv4-section-title';
+    title.textContent = 'Task evidence';
+    host.appendChild(title);
+    appendTextRow(host, 'Status', data.task && data.task.status);
+    appendTextRow(host, 'Evidence', (data.evidence || []).length);
+    appendTextRow(host, 'Agent runs', (data.runs || []).length);
+    appendTextRow(host, 'Verification runs', (data.verifications || []).length);
+
+    const evidenceList = document.createElement('div');
+    evidenceList.className = 'kxv4-list-compact';
+    for (const item of (data.evidence || []).slice(0, 8)) {
+      const row = document.createElement('div');
+      row.textContent = `${item.kind} · ${item.summary || 'evidence'} · ${String(item.hash || '').slice(0, 12)}`;
+      evidenceList.appendChild(row);
+    }
+    if (!evidenceList.childNodes.length) {
+      const empty = document.createElement('span');
+      empty.className = 'kxv4-muted';
+      empty.textContent = 'No evidence recorded yet.';
+      evidenceList.appendChild(empty);
+    }
+    host.appendChild(evidenceList);
+
+    for (const run of (data.runs || []).slice(0, 3)) {
+      const runBlock = document.createElement('div');
+      runBlock.className = 'kxv4-list-compact';
+      const summary = document.createElement('div');
+      summary.textContent = `${run.status} · ${run.agentProfileId || 'agent'} · ${(run.toolCalls || []).length} tool call(s)`;
+      runBlock.appendChild(summary);
+      for (const call of (run.toolCalls || []).slice(0, 8)) {
+        const line = document.createElement('div');
+        const state = call.exitState && call.exitState.ok === true ? 'ok' : call.exitState && call.exitState.cancelled ? 'cancelled' : 'failed';
+        line.textContent = `${call.toolId} · ${state} · ${String(call.argumentsDigest || '').slice(0, 10)}`;
+        runBlock.appendChild(line);
+      }
+      host.appendChild(runBlock);
+    }
+  }
+
   function render(root, state) {
     const header = root.querySelector('.kxv4-main__header');
     if (header && state.selectedMissionId) {
@@ -60,23 +123,19 @@
     for (const card of root.querySelectorAll('[data-v4-task]')) {
       const taskId = card.getAttribute('data-v4-task');
       const task = tasks.find((item) => item.id === taskId);
+      if (!task) continue;
       let holder = card.querySelector('[data-v4-runtime-controls]');
       const runtime = taskRuntimeInput(task);
-      const needsPlan = Boolean(task && runtime && (!Array.isArray(runtime.toolPlan) || runtime.toolPlan.length === 0)
+      const needsPlan = Boolean(runtime && (!Array.isArray(runtime.toolPlan) || runtime.toolPlan.length === 0)
         && !['RUNNING', 'VERIFYING', 'COMPLETE', 'FAILED', 'CANCELLED'].includes(task.status));
-      const needsVerification = Boolean(task && task.status === 'VERIFYING');
-
-      if (!needsPlan && !needsVerification) {
-        if (holder) holder.remove();
-        continue;
-      }
+      const needsVerification = task.status === 'VERIFYING';
       if (!holder) {
         holder = document.createElement('div');
         holder.dataset.v4RuntimeControls = 'true';
         holder.className = 'kxv4-topbar__actions';
         card.appendChild(holder);
       }
-      const controls = [];
+      const controls = [button('Evidence', `insights:${task.id}`, false, true)];
       if (needsPlan) controls.push(button('Generate implementation plan', `plan:${task.id}`, false, true));
       if (needsVerification) {
         controls.push(button(
@@ -108,7 +167,13 @@
         if (action === 'run-ready') await store.runReadyBatch();
         else if (action === 'cancel-mission') await store.cancelMission();
         else if (action.startsWith('verify:')) await store.verifyTask(action.slice('verify:'.length));
-        else if (action.startsWith('plan:')) {
+        else if (action.startsWith('insights:')) {
+          if (!bridge || typeof bridge.invoke !== 'function') throw new Error('IPC bridge unavailable');
+          const taskId = action.slice('insights:'.length);
+          const response = await bridge.invoke(TASK_INSIGHTS_CHANNEL, { taskId });
+          if (!response || response.ok !== true) throw new Error(response?.error?.message || 'Could not load evidence');
+          renderInsights(root, response.data || {});
+        } else if (action.startsWith('plan:')) {
           if (!bridge || typeof bridge.invoke !== 'function') throw new Error('IPC bridge unavailable');
           const taskId = action.slice('plan:'.length);
           target.disabled = true;
@@ -156,9 +221,11 @@
 
   const exported = {
     TASK_PLAN_CHANNEL,
+    TASK_INSIGHTS_CHANNEL,
     inferPackageManager,
     buildSkillInput,
     taskRuntimeInput,
+    renderInsights,
     mountExecutionControls,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = exported;
