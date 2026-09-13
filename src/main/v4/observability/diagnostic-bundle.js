@@ -4,7 +4,7 @@ const { EntityType } = require('../../../shared/v4/enums');
 const { ErrorCode, V4Error } = require('../../../shared/v4/errors');
 
 const SECRET_KEY = /(secret|token|password|passphrase|authorization|cookie|api[_-]?key|private[_-]?key)/i;
-const PATH_KEY = /(^|_)(path|root|cwd|directory|dir)$/i;
+const PATH_KEY = /(path|root|cwd|directory|dir)$/i;
 const SECRET_VALUE = /(Bearer\s+[A-Za-z0-9._~+\/-]+=*|sk-[A-Za-z0-9_-]{8,}|gh[pousr]_[A-Za-z0-9]{12,})/g;
 
 function redact(value, key = '') {
