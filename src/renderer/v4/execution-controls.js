@@ -96,6 +96,9 @@
     if (!root || !store) throw new Error('execution controls require root and store');
 
     const unsubscribe = store.subscribe((state) => render(root, state));
+    const inboxHandle = globalScope && globalScope.KrevyxV4ApprovalInbox && bridge
+      ? globalScope.KrevyxV4ApprovalInbox.mountApprovalInbox({ root, bridge })
+      : null;
 
     root.addEventListener('click', async (event) => {
       const target = event.target.closest('[data-v4-execution-action]');
@@ -143,7 +146,12 @@
       }
     }, true);
 
-    return { destroy: unsubscribe };
+    return {
+      destroy() {
+        unsubscribe();
+        if (inboxHandle && inboxHandle.destroy) inboxHandle.destroy();
+      },
+    };
   }
 
   const exported = {
