@@ -1,8 +1,5 @@
 /**
  * ipc-bridge.js — IPC API sürümleme köprüsü (ADR-002)
- *
- * Yeni uç noktalar ipc:3:* namespace'inde çalışır. Eski uç nokta isimleri
- * (v2 uyumu, eklentiler için) bu köprü üzerinden yeni isimlere yönlendirilir.
  */
 
 'use strict';
@@ -14,6 +11,7 @@ const { withFeature, isFeatureEnabled } = require('./config/feature-flags');
 const { bootstrapV4Runtime } = require('./v4/bootstrap');
 const { installLifecycleExtension } = require('./v4/runtime/lifecycle-extension');
 const { registerPlanningExtension } = require('./v4/runtime/planning-extension');
+const { registerRuntimeInsightsExtension } = require('./v4/observability/runtime-insights-extension');
 
 const LEGACY_TO_V3 = {
   'get-model-catalog': 'ipc:3:get-model-catalog',
@@ -34,6 +32,7 @@ const LEGACY_TO_V3 = {
 
 let v4Runtime = null;
 let v4Planning = null;
+let v4Insights = null;
 let controlHandlersRegistered = false;
 
 function forwardLegacy(legacyName, v3Name) {
@@ -60,7 +59,8 @@ function attachV4Extensions(runtime) {
       configReader: () => configStore.readConfig(),
     });
   }
-  return { planning: v4Planning };
+  if (!v4Insights) v4Insights = registerRuntimeInsightsExtension(ipcMain, runtime);
+  return { planning: v4Planning, insights: v4Insights };
 }
 
 function bootstrapV4IfEnabled() {
@@ -128,6 +128,10 @@ function getV4Planning() {
   return v4Planning;
 }
 
+function getV4Insights() {
+  return v4Insights;
+}
+
 module.exports = {
   LEGACY_TO_V3,
   forwardLegacy,
@@ -137,4 +141,5 @@ module.exports = {
   registerIpcBridge,
   getV4Runtime,
   getV4Planning,
+  getV4Insights,
 };
