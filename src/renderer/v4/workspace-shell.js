@@ -51,11 +51,62 @@
     }).join('');
   }
 
+  function renderIsolation(state) {
+    if (!state.selectedMissionId) {
+      return `
+        <section class="kxv4-panel-section">
+          <div class="kxv4-section-title">Mission isolation</div>
+          <span class="kxv4-muted">Select a mission to inspect its isolated worktree.</span>
+        </section>`;
+    }
+    const review = (state.reviewByMission || {})[state.selectedMissionId];
+    if (!review) {
+      return `
+        <section class="kxv4-panel-section">
+          <div class="kxv4-section-title">Mission isolation</div>
+          <span class="kxv4-muted">Loading isolation state…</span>
+        </section>`;
+    }
+    if (!review.exists) {
+      return `
+        <section class="kxv4-panel-section">
+          <div class="kxv4-section-title">Mission isolation</div>
+          <div class="kxv4-stat-row"><span>Status</span><strong>NOT CREATED</strong></div>
+          <div class="kxv4-muted">A detached worktree will be created automatically on first planning, execution, or verification.</div>
+          <button data-v4-action="refresh-isolation" class="kxv4-btn kxv4-btn--secondary kxv4-btn--compact">Refresh review</button>
+        </section>`;
+    }
+
+    const changedFiles = review.changedFiles || [];
+    const untrackedFiles = review.untrackedFiles || [];
+    const preview = review.diffPreview || '';
+    return `
+      <section class="kxv4-panel-section">
+        <div class="kxv4-section-title">Mission isolation <span>${review.dirty || review.aheadCommits ? 'CHANGED' : 'CLEAN'}</span></div>
+        <div class="kxv4-stat-row"><span>HEAD</span><strong>${escapeHtml(String(review.headSha || '').slice(0, 12))}</strong></div>
+        <div class="kxv4-stat-row"><span>Base</span><strong>${escapeHtml(String(review.baseSha || '').slice(0, 12))}</strong></div>
+        <div class="kxv4-stat-row"><span>Ahead commits</span><strong>${Number(review.aheadCommits || 0)}</strong></div>
+        <div class="kxv4-stat-row"><span>Changed files</span><strong>${changedFiles.length}</strong></div>
+        <div class="kxv4-stat-row"><span>Untracked</span><strong>${untrackedFiles.length}</strong></div>
+        <div class="kxv4-list-compact">
+          ${changedFiles.slice(0, 12).map((file) => `<div title="${escapeHtml(file)}">${escapeHtml(file)}</div>`).join('') || '<span class="kxv4-muted">No tracked changes.</span>'}
+        </div>
+        ${review.diffStat ? `<pre class="kxv4-diff-stat">${escapeHtml(review.diffStat)}</pre>` : ''}
+        <details class="kxv4-review-details">
+          <summary>Diff preview${review.diffPreviewTruncated ? ' · truncated' : ''}</summary>
+          <pre class="kxv4-diff-preview">${escapeHtml(preview || 'No tracked diff.')}</pre>
+        </details>
+        ${untrackedFiles.length ? `<div class="kxv4-muted">Untracked file contents are intentionally not included in the diff preview.</div>` : ''}
+        <button data-v4-action="refresh-isolation" class="kxv4-btn kxv4-btn--secondary kxv4-btn--compact">Refresh review</button>
+      </section>`;
+  }
+
   function renderContext(state) {
     const context = state.context || {};
     const files = context.entries || [];
     const memory = context.memory || [];
     return `
+      ${renderIsolation(state)}
       <section class="kxv4-panel-section">
         <div class="kxv4-section-title">Context pack</div>
         <div class="kxv4-stat-row"><span>Files</span><strong>${files.length}</strong></div>
@@ -176,6 +227,7 @@
       if (!action) return;
       const id = action.getAttribute('data-v4-action');
       if (id === 'refresh') await store.refreshWorkspace('current mission and changed files');
+      if (id === 'refresh-isolation') await store.refreshMissionReview(store.getState().selectedMissionId);
       if (id === 'close' && typeof options.onClose === 'function') options.onClose();
     });
 
@@ -198,7 +250,7 @@
     return { destroy: unsubscribe };
   }
 
-  const exported = { escapeHtml, defaultSkillInput, render, mountWorkspaceShell };
+  const exported = { escapeHtml, defaultSkillInput, renderIsolation, render, mountWorkspaceShell };
   if (typeof module !== 'undefined' && module.exports) module.exports = exported;
   if (globalScope) globalScope.KrevyxV4WorkspaceShell = exported;
 })(typeof window !== 'undefined' ? window : globalThis);
