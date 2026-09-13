@@ -19,6 +19,8 @@
       tasksByMission: {},
       memoryHits: [],
       activity: [],
+      runningMissionId: null,
+      verifyingTaskId: null,
     };
   }
 
@@ -88,6 +90,13 @@
       return result;
     }
 
+    async function refreshMissions() {
+      if (!state.workspace) return [];
+      const missions = await api.missions.list({ workspaceId: state.workspace.id });
+      setState({ missions });
+      return missions;
+    }
+
     async function loadMissionTasks(missionId) {
       const tasks = await api.missions.tasks({ missionId });
       setState((current) => ({
@@ -104,6 +113,60 @@
       setState({ missions, selectedMissionId: result.mission.id });
       await loadMissionTasks(result.mission.id);
       addActivity('mission', `Created mission ${result.mission.title}`, { skill: result.provenance });
+      return result;
+    }
+
+    async function runReadyBatch(missionId = state.selectedMissionId) {
+      if (!missionId) throw new Error('No mission selected');
+      setState({ runningMissionId: missionId, error: null });
+      addActivity('execution', 'Starting ready task batch', { missionId });
+      try {
+        const result = await api.missions.runReady({ missionId, maxParallel: 4, permissionProfile: 'developer' });
+        await Promise.all([loadMissionTasks(missionId), refreshMissions()]);
+        addActivity('execution', `Finished batch with ${result.results ? result.results.length : 0} run(s)`, {
+          missionId,
+          selectedTaskIds: result.selectedTaskIds || [],
+          deferred: result.deferred || [],
+        });
+        return result;
+      } catch (error) {
+        setState({ error: error.message });
+        addActivity('error', `Execution failed: ${error.message}`, { missionId });
+        throw error;
+      } finally {
+        setState({ runningMissionId: null });
+      }
+    }
+
+    async function verifyTask(taskId) {
+      if (!taskId) throw new Error('taskId is required');
+      setState({ verifyingTaskId: taskId, error: null });
+      addActivity('verification', 'Running verification gates', { taskId });
+      try {
+        const result = await api.verification.run({ taskId, permissionProfile: 'developer', stopOnRequiredFailure: true });
+        if (state.selectedMissionId) await loadMissionTasks(state.selectedMissionId);
+        await refreshMissions();
+        addActivity('verification', result.ok ? 'Verification passed' : 'Verification blocked task completion', {
+          taskId,
+          evidenceIds: result.evidenceIds || [],
+          failedGateIds: result.requiredFailures || [],
+        });
+        return result;
+      } catch (error) {
+        setState({ error: error.message });
+        addActivity('error', `Verification failed: ${error.message}`, { taskId });
+        throw error;
+      } finally {
+        setState({ verifyingTaskId: null });
+      }
+    }
+
+    async function cancelMission(missionId = state.selectedMissionId) {
+      if (!missionId) throw new Error('No mission selected');
+      const result = await api.missions.cancel({ missionId, reason: 'user-requested' });
+      await loadMissionTasks(missionId);
+      await refreshMissions();
+      addActivity('execution', 'Cancellation requested', { missionId, cancelledRunIds: result.cancelledRunIds || [] });
       return result;
     }
 
@@ -127,8 +190,12 @@
       loadOverview,
       openWorkspace,
       refreshWorkspace,
+      refreshMissions,
       loadMissionTasks,
       createMissionFromSkill,
+      runReadyBatch,
+      verifyTask,
+      cancelMission,
       searchMemory,
     });
   }
