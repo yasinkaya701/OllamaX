@@ -30,6 +30,7 @@ function missionContext(runtime, missionId) {
 function createWorktreeExtension(options = {}) {
   const runtime = options.runtime;
   const sandboxRoot = path.resolve(String(options.sandboxRoot || ''));
+  const creationByMission = new Map();
   if (!runtime || !runtime.store || !runtime.service) {
     throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'worktree extension requires bootstrapped runtime');
   }
@@ -43,22 +44,6 @@ function createWorktreeExtension(options = {}) {
       rootPath: workspace.rootPath,
       sandboxRoot,
     };
-  }
-
-  async function resolveMissionRoot({ mission, workspace, purpose = 'execution' } = {}) {
-    if (!mission || !workspace) {
-      throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'mission and workspace are required to resolve isolated root');
-    }
-    const spec = descriptor(mission, workspace);
-    const inspected = await inspectManagedWorktree({ sandboxRoot: spec.sandboxRoot, id: spec.id });
-    if (!inspected.exists) {
-      throw new V4Error(
-        ErrorCode.VALIDATION_FAILED,
-        `isolated worktree is required before ${purpose}: ${mission.id}`,
-        { missionId: mission.id, workspaceId: workspace.id, expectedPath: inspected.path },
-      );
-    }
-    return inspected.path;
   }
 
   async function create(input = {}) {
@@ -83,6 +68,23 @@ function createWorktreeExtension(options = {}) {
       });
     }
     return { ...created, missionId: mission.id, workspaceId: workspace.id };
+  }
+
+  async function resolveMissionRoot({ mission, workspace } = {}) {
+    if (!mission || !workspace) {
+      throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'mission and workspace are required to resolve isolated root');
+    }
+    const spec = descriptor(mission, workspace);
+    const inspected = await inspectManagedWorktree({ sandboxRoot: spec.sandboxRoot, id: spec.id });
+    if (inspected.exists) return inspected.path;
+
+    let pending = creationByMission.get(mission.id);
+    if (!pending) {
+      pending = create({ missionId: mission.id }).finally(() => creationByMission.delete(mission.id));
+      creationByMission.set(mission.id, pending);
+    }
+    const created = await pending;
+    return created.path;
   }
 
   async function inspect(input = {}) {
