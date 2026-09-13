@@ -98,6 +98,14 @@ function normalizePlan(task, rawPlan) {
   };
 }
 
+function normalizeUsage(usage) {
+  const source = usage && typeof usage === 'object' ? usage : {};
+  const promptTokens = Number.isFinite(source.promptTokens) ? Math.max(0, Number(source.promptTokens)) : null;
+  const completionTokens = Number.isFinite(source.completionTokens) ? Math.max(0, Number(source.completionTokens)) : null;
+  const costUsd = Number.isFinite(source.costUsd) ? Math.max(0, Number(source.costUsd)) : 0;
+  return { promptTokens, completionTokens, costUsd };
+}
+
 function createTaskPlanner(options = {}) {
   const store = options.store;
   const journal = options.journal || null;
@@ -125,6 +133,7 @@ function createTaskPlanner(options = {}) {
     const plan = normalizePlan(task, rawPlan);
     const promptDigest = crypto.createHash('sha256').update(JSON.stringify(messages)).digest('hex');
     const generatedAt = new Date().toISOString();
+    const usage = normalizeUsage(response && response.usage);
 
     const updated = store.update(EntityType.TASK, task.id, (current) => ({
       ...current,
@@ -138,6 +147,7 @@ function createTaskPlanner(options = {}) {
               promptDigest,
               provider: response && response.provider || null,
               model: response && response.model || null,
+              usage,
             },
           }
         : item),
@@ -148,7 +158,13 @@ function createTaskPlanner(options = {}) {
         type: 'task.plan-generated',
         subjectType: 'task',
         subjectId: task.id,
-        payload: { stepCount: plan.steps.length, promptDigest, provider: response && response.provider || null, model: response && response.model || null },
+        payload: {
+          stepCount: plan.steps.length,
+          promptDigest,
+          provider: response && response.provider || null,
+          model: response && response.model || null,
+          usage,
+        },
       });
     }
     return { task: updated, plan, reused: false };
@@ -163,5 +179,6 @@ module.exports = {
   contextExcerpt,
   buildPlannerMessages,
   normalizePlan,
+  normalizeUsage,
   createTaskPlanner,
 };
