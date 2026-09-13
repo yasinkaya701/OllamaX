@@ -31,19 +31,15 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Lint
         run: pnpm run lint
-      - name: Diagnose worker teardown halves
+      - name: Diagnose worker teardown B quarters
         run: |
-          echo '=== HALF A ==='
-          pnpm exec jest \
-            tests/test-v325-agents.test.js tests/renderer-modules.test.js tests/v321.test.js \
-            tests/test-v325-plans.test.js tests/ui-upgrade.test.js tests/test-v326-orch.test.js \
-            tests/v318.test.js tests/roadmap-modules.test.js tests/config-migrations.test.js \
-            tests/test-v326-core.test.js tests/test-v325-trust.test.js tests/v324-updater.test.js \
-            tests/bridge-stress.test.js tests/test-v326-guard.test.js tests/cli-integration.test.js --ci
-          echo '=== HALF B ==='
+          echo '=== B1 ==='
           pnpm exec jest \
             tests/orchestrator.test.js tests/v319.test.js tests/templates-plugins.test.js \
             tests/v321-1.test.js tests/cost-engine.test.js tests/main-security.test.js \
-            tests/provider-chat.test.js tests/featured-discover.test.js tests/cli-verify-audit.test.js \
-            tests/network-mode.test.js tests/secrets-vault.test.js tests/delegate-parse.test.js \
-            tests/v4-wave0.test.js tests/manus-agent.test.js --ci
+            tests/provider-chat.test.js --ci
+          echo '=== B2 ==='
+          pnpm exec jest \
+            tests/featured-discover.test.js tests/cli-verify-audit.test.js tests/network-mode.test.js \
+            tests/secrets-vault.test.js tests/delegate-parse.test.js tests/v4-wave0.test.js \
+            tests/manus-agent.test.js --ci
