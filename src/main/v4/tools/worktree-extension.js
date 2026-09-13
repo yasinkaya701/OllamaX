@@ -45,6 +45,22 @@ function createWorktreeExtension(options = {}) {
     };
   }
 
+  async function resolveMissionRoot({ mission, workspace, purpose = 'execution' } = {}) {
+    if (!mission || !workspace) {
+      throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'mission and workspace are required to resolve isolated root');
+    }
+    const spec = descriptor(mission, workspace);
+    const inspected = await inspectManagedWorktree({ sandboxRoot: spec.sandboxRoot, id: spec.id });
+    if (!inspected.exists) {
+      throw new V4Error(
+        ErrorCode.VALIDATION_FAILED,
+        `isolated worktree is required before ${purpose}: ${mission.id}`,
+        { missionId: mission.id, workspaceId: workspace.id, expectedPath: inspected.path },
+      );
+    }
+    return inspected.path;
+  }
+
   async function create(input = {}) {
     const { mission, workspace } = missionContext(runtime, input.missionId);
     const spec = descriptor(mission, workspace);
@@ -95,7 +111,15 @@ function createWorktreeExtension(options = {}) {
     return { ...removed, missionId: mission.id, workspaceId: workspace.id };
   }
 
-  return { sandboxRoot, create, inspect, remove };
+  function installIsolation() {
+    if (typeof runtime.service.setExecutionRootResolver !== 'function') {
+      throw new V4Error(ErrorCode.VALIDATION_FAILED, 'v4 application service does not support isolated execution roots');
+    }
+    runtime.service.setExecutionRootResolver(resolveMissionRoot);
+    return true;
+  }
+
+  return { sandboxRoot, descriptor, resolveMissionRoot, installIsolation, create, inspect, remove };
 }
 
 function registerWorktreeExtension(ipcMain, options = {}) {
@@ -103,6 +127,7 @@ function registerWorktreeExtension(ipcMain, options = {}) {
     throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'worktree extension requires ipcMain.handle');
   }
   const extension = createWorktreeExtension(options);
+  extension.installIsolation();
   const handlers = [
     [CHANNELS.CREATE, extension.create],
     [CHANNELS.INSPECT, extension.inspect],
