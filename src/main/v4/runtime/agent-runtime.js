@@ -12,7 +12,7 @@ const {
 } = require('../../../shared/v4/enums');
 const { ErrorCode, V4Error, asV4Error } = require('../../../shared/v4/errors');
 const { transitionTask } = require('../missions/state-machine');
-const { executeTool: defaultExecuteTool } = require('../tools/tool-registry');
+const { executeTool: defaultExecuteTool, ToolId } = require('../tools/tool-registry');
 
 function summarizeToolResult(execution) {
   const result = execution && execution.result ? execution.result : {};
@@ -24,6 +24,60 @@ function summarizeToolResult(execution) {
     timedOut: result.timedOut === true,
     outputTruncated: result.outputTruncated === true,
   };
+}
+
+function skillRuntimePolicy(task) {
+  if (!task || !Array.isArray(task.inputs)) return null;
+  const policy = task.inputs.find((item) => item && item.kind === 'skill-runtime');
+  if (!policy) return null;
+  return {
+    skillId: policy.skillId || null,
+    skillVersion: policy.skillVersion || null,
+    allowedTools: Array.isArray(policy.allowedTools) ? policy.allowedTools.map(String) : [],
+    writeScopes: Array.isArray(policy.writeScopes) ? policy.writeScopes.map(String) : [],
+  };
+}
+
+function normalizeScope(value) {
+  return String(value || '').replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/{2,}/g, '/').replace(/\/$/, '');
+}
+
+function pathWithinScopes(targetPath, writeScopes) {
+  const target = normalizeScope(targetPath);
+  if (!target) return false;
+  const scopes = (writeScopes || []).map(normalizeScope).filter(Boolean);
+  if (scopes.includes('*')) return true;
+  return scopes.some((scope) => target === scope || target.startsWith(`${scope}/`));
+}
+
+function assertSkillStepAllowed(task, step) {
+  const policy = skillRuntimePolicy(task);
+  if (!policy) return true;
+  if (!policy.allowedTools.includes(step.toolId)) {
+    throw new V4Error(ErrorCode.VALIDATION_FAILED, `skill ${policy.skillId || 'unknown'} does not allow tool: ${step.toolId}`, {
+      taskId: task.id,
+      skillId: policy.skillId,
+      skillVersion: policy.skillVersion,
+      toolId: step.toolId,
+    });
+  }
+
+  const paths = [];
+  if ([ToolId.FS_WRITE, ToolId.FS_DELETE].includes(step.toolId) && step.args && step.args.path) {
+    paths.push(step.args.path);
+  }
+  if (step.toolId === ToolId.GIT_STAGE && step.args && Array.isArray(step.args.paths)) {
+    paths.push(...step.args.paths);
+  }
+  if (paths.length && !paths.every((item) => pathWithinScopes(item, policy.writeScopes))) {
+    throw new V4Error(ErrorCode.VALIDATION_FAILED, `skill ${policy.skillId || 'unknown'} write exceeds declared scope`, {
+      taskId: task.id,
+      toolId: step.toolId,
+      paths,
+      writeScopes: policy.writeScopes,
+    });
+  }
+  return true;
 }
 
 function createAgentRuntime(options = {}) {
@@ -107,6 +161,18 @@ function createAgentRuntime(options = {}) {
         const step = input.steps[index] || {};
         if (!step.toolId) {
           failure = new V4Error(ErrorCode.INVALID_ARGUMENT, `toolId missing at step ${index}`);
+          break;
+        }
+        try {
+          assertSkillStepAllowed(runnableTask, step);
+        } catch (error) {
+          failure = asV4Error(error, ErrorCode.VALIDATION_FAILED);
+          appendEvent('tool-call.policy-denied', 'task', task.id, {
+            taskId: task.id,
+            toolId: step.toolId,
+            index,
+            error: { code: failure.code, message: failure.message },
+          });
           break;
         }
 
@@ -258,5 +324,8 @@ function createAgentRuntime(options = {}) {
 
 module.exports = {
   summarizeToolResult,
+  skillRuntimePolicy,
+  pathWithinScopes,
+  assertSkillStepAllowed,
   createAgentRuntime,
 };
