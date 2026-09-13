@@ -153,6 +153,10 @@ assets/     real project logo, icons and current application preview
 
 - [Krevyx v4 Master Execution Program](docs/KREVYX_V4_MASTER_PROGRAM.md)
 - [Krevyx v4 Execution Plan](docs/KREVYX_V4_EXECUTION_PLAN.md)
+- [v4 Release Readiness](docs/v4/RELEASE_READINESS.md)
+- [v4 Compatibility Matrix](docs/v4/COMPATIBILITY_MATRIX.md)
+- [v4 Threat Model](docs/v4/THREAT_MODEL.md)
+- [v4 Golden Demo Procedure](docs/v4/GOLDEN_DEMO.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Feature catalog](docs/FEATURES.md)
 - [API notes](docs/API.md)
