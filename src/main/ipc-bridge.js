@@ -14,11 +14,11 @@ const path = require('path');
 const { ipcMain, app } = require('electron');
 const configStore = require('./config/config-store');
 const { bootstrapV4Runtime } = require('./v4/bootstrap');
+const { installLifecycleExtension } = require('./v4/runtime/lifecycle-extension');
 const { registerPlanningExtension } = require('./v4/runtime/planning-extension');
 // Legacy handlers main.js'teki mevcut implementasyonlarla eşleşir;
 // bu modül yalnızca isim eşlemesini sağlar.
 
-// Eski isim -> yeni ipc:3:* isim eşlemesi
 const LEGACY_TO_V3 = {
   'get-model-catalog': 'ipc:3:get-model-catalog',
   'normalize-ollama-host': 'ipc:3:normalize-ollama-host',
@@ -39,23 +39,15 @@ const LEGACY_TO_V3 = {
 let v4Runtime = null;
 let v4Planning = null;
 
-/**
- * Verilen eski IPC adına bir "forward" handler kaydet. Yeni handler
- * zaten mevcut olmalıdır (asıl implementasyon main.js'te ipc:3:* ile
- * tanımlanır); bu köprü yalnızca eski ismi ona yönlendirir.
- */
 function forwardLegacy(legacyName, v3Name) {
   if (ipcMain.eventNames && typeof ipcMain.eventNames === 'function') {
-    /* electron sürümüne göre mevcudiyet kontrolü; handler yönünden
-       bağımsız olarak invoke üzerinden çift kayıt yapılabilir. */
+    /* electron sürümüne göre mevcudiyet kontrolü */
   }
   try {
     ipcMain.handle(legacyName, async (event, ...args) => {
       const delegates = ipcMain.listeners(v3Name);
       if (delegates && delegates.length) {
-        // Kayıtlı handler'ları doğrudan çağırmak yerine invoke zincirini
-        // kullanmak circular olur; bunun yerine event objesiyle yeni ad
-        // üzerinden yeniden göndeririz.
+        /* compatibility bridge retains existing behavior */
       }
       try {
         const result = await event.sender.invoke(v3Name, ...args);
@@ -66,13 +58,13 @@ function forwardLegacy(legacyName, v3Name) {
     });
     return true;
   } catch {
-    // Handler zaten kayıtlıysa veya isim çakışırsa köprü bu uç için atlanır
     return false;
   }
 }
 
 function attachV4Extensions(runtime) {
   if (!runtime || runtime.enabled !== true) return null;
+  installLifecycleExtension(runtime);
   if (!v4Planning) {
     v4Planning = registerPlanningExtension(ipcMain, {
       runtime,
@@ -106,7 +98,6 @@ function registerIpcBridge() {
   try {
     bootstrapV4IfEnabled();
   } catch (error) {
-    // V4 is feature-gated and must never prevent the legacy product from booting.
     console.error('[Krevyx] v4 bootstrap failed:', error && error.message ? error.message : error);
   }
   return results;
