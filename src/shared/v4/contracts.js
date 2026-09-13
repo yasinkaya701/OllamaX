@@ -132,6 +132,7 @@ function createVerificationRun(input = {}) {
   return {
     id: input.id || makeId('verify'),
     subjectId: input.subjectId || null,
+    subjectHash: input.subjectHash || null,
     gates: clone(input.gates || []),
     status: input.status || VerificationStatus.PENDING,
     startedAt: input.startedAt || null,

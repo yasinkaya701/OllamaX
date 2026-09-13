@@ -14,6 +14,9 @@
     worktreeCreate: 'ipc:4:worktree:create',
     worktreeInspect: 'ipc:4:worktree:inspect',
     worktreeRemove: 'ipc:4:worktree:remove',
+    deliveryPrepare: 'ipc:4:delivery:prepare',
+    missionCost: 'ipc:4:insights:mission-cost',
+    diagnosticBundle: 'ipc:4:diagnostics:bundle',
     memorySearch: 'ipc:4:memory:search',
     memoryAdd: 'ipc:4:memory:add',
     verificationRun: 'ipc:4:verification:run',
@@ -59,6 +62,13 @@
         create: (input) => invoke(CHANNELS.worktreeCreate, input),
         inspect: (input) => invoke(CHANNELS.worktreeInspect, input),
         remove: (input) => invoke(CHANNELS.worktreeRemove, input),
+      }),
+      delivery: Object.freeze({
+        prepare: (input) => invoke(CHANNELS.deliveryPrepare, input),
+      }),
+      insights: Object.freeze({
+        missionCost: (input) => invoke(CHANNELS.missionCost, input),
+        diagnostics: (input) => invoke(CHANNELS.diagnosticBundle, input),
       }),
       memory: Object.freeze({
         search: (input) => invoke(CHANNELS.memorySearch, input),

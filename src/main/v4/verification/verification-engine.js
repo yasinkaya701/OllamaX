@@ -4,6 +4,7 @@ const { createVerificationRun, nowIso } = require('../../../shared/v4/contracts'
 const { EntityType, TaskStatus, VerificationStatus } = require('../../../shared/v4/enums');
 const { ErrorCode, V4Error } = require('../../../shared/v4/errors');
 const { transitionTask } = require('../missions/state-machine');
+const { inspectRepository } = require('../workspace/repo-inspector');
 const { createEvidenceService } = require('./evidence-service');
 const { createGateRunner } = require('./gates');
 
@@ -47,8 +48,10 @@ function createVerificationEngine(options = {}) {
       throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'at least one verification gate is required');
     }
 
+    const subjectHash = input.subjectHash || inspectRepository(input.rootPath).inventoryHash;
     const verification = createVerificationRun({
       subjectId: task.id,
+      subjectHash,
       gates: input.gates,
       status: VerificationStatus.RUNNING,
       startedAt: nowIso(),
@@ -61,6 +64,7 @@ function createVerificationEngine(options = {}) {
     appendEvent('verification.started', 'verificationRun', verification.id, {
       taskId: task.id,
       gateCount: input.gates.length,
+      subjectHash: verification.subjectHash,
     });
 
     const gateResults = [];
@@ -85,6 +89,7 @@ function createVerificationEngine(options = {}) {
           summary: result.summary,
           payload: {
             verificationRunId: verification.id,
+            subjectHash: verification.subjectHash,
             gateId: result.gate.id,
             gateType: result.gate.type,
             required: result.gate.required,
@@ -99,6 +104,7 @@ function createVerificationEngine(options = {}) {
           passed: result.passed,
           required: result.gate.required,
           evidenceId: recorded.evidence.id,
+          subjectHash: verification.subjectHash,
         });
         if (input.stopOnRequiredFailure === true && result.gate.required && !result.passed) break;
       }
@@ -127,6 +133,7 @@ function createVerificationEngine(options = {}) {
 
       appendEvent(`verification.${status.toLowerCase()}`, 'verificationRun', verification.id, {
         taskId: task.id,
+        subjectHash: verification.subjectHash,
         evidenceIds,
         failedGateIds: requiredFailures.map((result) => result.gate.id),
       });
