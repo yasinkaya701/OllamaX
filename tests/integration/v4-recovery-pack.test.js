@@ -14,7 +14,7 @@ describe('v4 recovery pack', () => {
     try {
       const store = createStore({ rootDir: root });
       const workspace = createWorkspace({ name: 'Fixture', rootPath: root });
-      const mission = createMission({ workspaceId: workspace.id, title: 'Recover me' });
+      const mission = createMission({ workspaceId: workspace.id, title: 'Recover me', goal: 'verify recovery' });
       const task = createTask({ missionId: mission.id, title: 'Persist me' });
       store.put(EntityType.WORKSPACE, workspace);
       store.put(EntityType.MISSION, mission);
