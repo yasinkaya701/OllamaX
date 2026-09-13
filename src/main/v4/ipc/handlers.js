@@ -16,6 +16,8 @@ const CHANNELS = Object.freeze({
   MEMORY_SEARCH: 'ipc:4:memory:search',
   MEMORY_ADD: 'ipc:4:memory:add',
   VERIFICATION_RUN: 'ipc:4:verification:run',
+  APPROVAL_LIST: 'ipc:4:approval:list',
+  APPROVAL_RESOLVE: 'ipc:4:approval:resolve',
 });
 
 function wrap(handler) {
@@ -29,11 +31,18 @@ function wrap(handler) {
   };
 }
 
-function registerV4IpcHandlers(ipcMain, service) {
+function registerV4IpcHandlers(ipcMain, service, options = {}) {
   if (!ipcMain || typeof ipcMain.handle !== 'function') {
     throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'registerV4IpcHandlers requires ipcMain.handle');
   }
   if (!service) throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'registerV4IpcHandlers requires application service');
+  const approvalBroker = options.approvalBroker || null;
+
+  function requireApprovalBroker() {
+    service.assertEnabled();
+    if (!approvalBroker) throw new V4Error(ErrorCode.NOT_FOUND, 'approval broker is unavailable');
+    return approvalBroker;
+  }
 
   const registrations = [
     [CHANNELS.WORKSPACE_OPEN, (input) => service.openWorkspace(input)],
@@ -48,6 +57,16 @@ function registerV4IpcHandlers(ipcMain, service) {
     [CHANNELS.MEMORY_SEARCH, (input) => service.memorySearch(input)],
     [CHANNELS.MEMORY_ADD, (input) => service.memoryAdd(input)],
     [CHANNELS.VERIFICATION_RUN, (input) => service.verifyTask(input)],
+    [CHANNELS.APPROVAL_LIST, () => requireApprovalBroker().listPending()],
+    [CHANNELS.APPROVAL_RESOLVE, (input) => {
+      if (!input.requestId || typeof input.requestId !== 'string') {
+        throw new V4Error(ErrorCode.INVALID_ARGUMENT, 'approval requestId is required');
+      }
+      return requireApprovalBroker().resolve(input.requestId, input.approved === true, {
+        actor: 'user',
+        note: input.note || null,
+      });
+    }],
   ];
 
   for (const [channel, handler] of registrations) ipcMain.handle(channel, wrap(handler));
