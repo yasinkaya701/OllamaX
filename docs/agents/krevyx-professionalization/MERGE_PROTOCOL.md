@@ -1,6 +1,6 @@
 # Mandatory Merge Protocol
 
-Worker merge target: `codex/campaign/krevyx-professionalization`.
+Worker merge target: `campaign-krevyx-professionalization`.
 Final promotion target: `main`.
 
 ## Worker flow
