@@ -37,7 +37,7 @@ const INVOKE_V4 = new Set([
   'ipc:4:insights:mission-cost', 'ipc:4:diagnostics:bundle', 'ipc:4:delivery:prepare',
   'ipc:4:memory:search', 'ipc:4:memory:add', 'ipc:4:verification:run',
   'ipc:4:approval:list', 'ipc:4:approval:resolve',
-  'ipc:4:worktree:create', 'ipc:4:worktree:inspect', 'ipc:4:worktree:remove',
+  'ipc:4:worktree:create', 'ipc:4:worktree:inspect', 'ipc:4:worktree:review', 'ipc:4:worktree:remove',
 ]);
 
 function appendStyle(href) {

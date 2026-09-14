@@ -8,11 +8,15 @@ const {
   createManagedWorktree,
   inspectManagedWorktree,
   removeManagedWorktree,
+  runGit,
 } = require('./worktree-manager');
+
+const MAX_DIFF_PREVIEW_BYTES = 64 * 1024;
 
 const CHANNELS = Object.freeze({
   CREATE: 'ipc:4:worktree:create',
   INSPECT: 'ipc:4:worktree:inspect',
+  REVIEW: 'ipc:4:worktree:review',
   REMOVE: 'ipc:4:worktree:remove',
 });
 
@@ -25,6 +29,28 @@ function missionContext(runtime, missionId) {
   const workspace = runtime.store.get(EntityType.WORKSPACE, mission.workspaceId);
   if (!workspace) throw new V4Error(ErrorCode.NOT_FOUND, `workspace not found: ${mission.workspaceId}`);
   return { mission, workspace };
+}
+
+function statusPaths(lines = []) {
+  return lines.map((line) => line.slice(3).trim()).filter(Boolean);
+}
+
+function boundedUtf8Preview(text, maxBytes = MAX_DIFF_PREVIEW_BYTES) {
+  const buffer = Buffer.from(String(text || ''), 'utf8');
+  if (buffer.length <= maxBytes) {
+    return { text: buffer.toString('utf8'), bytes: buffer.length, truncated: false };
+  }
+  let end = Math.max(0, maxBytes);
+  let decoded = buffer.subarray(0, end).toString('utf8');
+  while (end > 0 && decoded.endsWith('\uFFFD')) {
+    end -= 1;
+    decoded = buffer.subarray(0, end).toString('utf8');
+  }
+  return {
+    text: decoded,
+    bytes: Buffer.byteLength(decoded, 'utf8'),
+    truncated: true,
+  };
 }
 
 function createWorktreeExtension(options = {}) {
@@ -94,6 +120,52 @@ function createWorktreeExtension(options = {}) {
     return { ...inspected, missionId: mission.id, workspaceId: workspace.id, sourceRootPath: workspace.rootPath };
   }
 
+  async function review(input = {}) {
+    const { mission, workspace } = missionContext(runtime, input.missionId);
+    const current = await inspect({ missionId: mission.id });
+    if (!current.exists) {
+      return {
+        ...current,
+        baseSha: null,
+        sourceHeadSha: null,
+        aheadCommits: 0,
+        changedFiles: [],
+        untrackedFiles: [],
+        diffStat: '',
+        diffPreview: '',
+        diffPreviewBytes: 0,
+        diffPreviewTruncated: false,
+      };
+    }
+
+    const sourceHeadSha = (await runGit(workspace.rootPath, ['rev-parse', 'HEAD'])).stdout.trim();
+    const baseSha = (await runGit(current.path, ['merge-base', sourceHeadSha, current.headSha])).stdout.trim();
+    const aheadText = (await runGit(current.path, ['rev-list', '--count', `${baseSha}..${current.headSha}`])).stdout.trim();
+    const diffStat = (await runGit(current.path, ['diff', '--stat', '--no-ext-diff', baseSha, '--'])).stdout.trim();
+    const diffNames = (await runGit(current.path, ['diff', '--name-only', '--no-ext-diff', baseSha, '--'])).stdout;
+    const diffText = (await runGit(current.path, ['diff', '--no-ext-diff', baseSha, '--'])).stdout;
+    const untrackedFiles = current.status
+      .filter((line) => line.startsWith('??'))
+      .map((line) => line.slice(3).trim())
+      .filter(Boolean);
+    const trackedChangedFiles = diffNames.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+    const changedFiles = Array.from(new Set([...trackedChangedFiles, ...statusPaths(current.status)]));
+    const preview = boundedUtf8Preview(diffText);
+
+    return {
+      ...current,
+      baseSha,
+      sourceHeadSha,
+      aheadCommits: Number.parseInt(aheadText, 10) || 0,
+      changedFiles,
+      untrackedFiles,
+      diffStat,
+      diffPreview: preview.text,
+      diffPreviewBytes: preview.bytes,
+      diffPreviewTruncated: preview.truncated,
+    };
+  }
+
   async function remove(input = {}) {
     const { mission, workspace } = missionContext(runtime, input.missionId);
     const spec = descriptor(mission, workspace);
@@ -121,7 +193,7 @@ function createWorktreeExtension(options = {}) {
     return true;
   }
 
-  return { sandboxRoot, descriptor, resolveMissionRoot, installIsolation, create, inspect, remove };
+  return { sandboxRoot, descriptor, resolveMissionRoot, installIsolation, create, inspect, review, remove };
 }
 
 function registerWorktreeExtension(ipcMain, options = {}) {
@@ -133,6 +205,7 @@ function registerWorktreeExtension(ipcMain, options = {}) {
   const handlers = [
     [CHANNELS.CREATE, extension.create],
     [CHANNELS.INSPECT, extension.inspect],
+    [CHANNELS.REVIEW, extension.review],
     [CHANNELS.REMOVE, extension.remove],
   ];
   for (const [channel, handler] of handlers) {
@@ -148,8 +221,11 @@ function registerWorktreeExtension(ipcMain, options = {}) {
 }
 
 module.exports = {
+  MAX_DIFF_PREVIEW_BYTES,
   CHANNELS,
   missionContext,
+  statusPaths,
+  boundedUtf8Preview,
   createWorktreeExtension,
   registerWorktreeExtension,
 };

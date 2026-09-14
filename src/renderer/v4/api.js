@@ -13,6 +13,7 @@
     missionCancel: 'ipc:4:mission:cancel',
     worktreeCreate: 'ipc:4:worktree:create',
     worktreeInspect: 'ipc:4:worktree:inspect',
+    worktreeReview: 'ipc:4:worktree:review',
     worktreeRemove: 'ipc:4:worktree:remove',
     deliveryPrepare: 'ipc:4:delivery:prepare',
     missionCost: 'ipc:4:insights:mission-cost',
@@ -61,6 +62,7 @@
       worktrees: Object.freeze({
         create: (input) => invoke(CHANNELS.worktreeCreate, input),
         inspect: (input) => invoke(CHANNELS.worktreeInspect, input),
+        review: (input) => invoke(CHANNELS.worktreeReview, input),
         remove: (input) => invoke(CHANNELS.worktreeRemove, input),
       }),
       delivery: Object.freeze({
