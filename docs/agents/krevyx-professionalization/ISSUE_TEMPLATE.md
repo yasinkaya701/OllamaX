@@ -1,85 +1,21 @@
 # Canonical Agent Task Issue Template
 
-Use this body when creating a missing campaign task issue. Replace placeholders from `INDEX.md` and `TASKS.md`.
+Create missing campaign task issues from `INDEX.md` and `TASKS.md`.
 
-```text
-TASK_ID: Txxx
-CAMPAIGN: krevyx-professionalization
-PRIORITY: P0|P1|P2
-MERGE_TARGET: codex/campaign/krevyx-professionalization
-GATE_CLASS: G0|G1|G2|G3|G4
+Required issue fields:
 
-DEPENDS_ON:
-- Txxx
+- `TASK_ID`: task ID from the campaign index.
+- `CAMPAIGN`: `krevyx-professionalization`.
+- `PRIORITY`: priority from the index.
+- `MERGE_TARGET`: `campaign-krevyx-professionalization`.
+- `GATE_CLASS`: gate class from the index.
+- `DEPENDS_ON`: dependencies from the index.
+- `OWNS`, `MAY_TOUCH`, `MUST_NOT_TOUCH`, `SEMANTIC_HOTSPOTS`, `ACCEPTANCE`: copy from the task specification.
 
-OWNS:
-- <paths/invariants>
+Title format: `[AGENT TASK Txxx] <task title>`.
 
-MAY_TOUCH:
-- <paths>
+A claim record must include the stable agent ID, task ID, campaign-base SHA, task branch, and UTC timestamp. After posting, re-read the issue; the earliest valid unreleased claim owns the task.
 
-MUST_NOT_TOUCH:
-- <paths/domains>
+A completion record must include the task ID, agent ID, PR number, task-head SHA, resulting integration SHA, required gate results, and `MERGED_AND_VERIFIED`.
 
-SEMANTIC_HOTSPOTS:
-- <invariants>
-
-ACCEPTANCE:
-- <criterion>
-
-COMPLETION:
-- validated PR merged to MERGE_TARGET
-- resulting integration SHA verified
-- COMPLETE v1 recorded
-```
-
-Issue title format:
-
-`[AGENT TASK Txxx] <exact task title from INDEX.md>`
-
-## Claim comment
-
-```text
-CLAIM v1
-agent: <stable-agent-id>
-task: Txxx
-base: <campaign-head-sha>
-branch: agent/Txxx-<short-name>
-timestamp: <UTC ISO-8601>
-```
-
-## Lost claim
-
-```text
-CLAIM_LOST v1
-agent: <stable-agent-id>
-task: Txxx
-winner_comment: <canonical earlier claim reference>
-```
-
-## Completion comment
-
-```text
-COMPLETE v1
-task: Txxx
-agent: <stable-agent-id>
-pr: #<number>
-task_head: <sha>
-integration_sha: <sha>
-gates:
-- <gate>: PASS
-result: MERGED_AND_VERIFIED
-```
-
-## Campaign completion
-
-```text
-CAMPAIGN_COMPLETE
-campaign: krevyx-professionalization
-promotion_pr: #<number>
-main_before: <sha>
-main_after: <sha>
-tasks: 23/23 COMPLETE
-critical_gates: PASS
-promotion: MERGED_AND_VERIFIED
-```
+A final campaign-completion record must identify the promotion PR, main SHA before promotion, main SHA after promotion, completion of all 23 tasks, final gate result, and `MERGED_AND_VERIFIED`.
