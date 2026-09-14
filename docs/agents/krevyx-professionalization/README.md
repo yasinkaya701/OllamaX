@@ -8,7 +8,7 @@ The design goal is simple: an agent enters the repository, discovers one eligibl
 
 Worker merge target:
 
-`codex/campaign/krevyx-professionalization`
+`campaign-krevyx-professionalization`
 
 Final promotion target:
 
