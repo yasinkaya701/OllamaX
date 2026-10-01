@@ -28,7 +28,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # The site is pre-built locally (krevyx-site/dist/public) and committed.
       # This guarantees the deployed bundle matches the tested build — builds
